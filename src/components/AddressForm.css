@@ -1,0 +1,192 @@
+/* ===================================================== */
+/* ADDRESS FORM COMPONENT STYLES */
+/* ===================================================== */
+
+.address-form-container {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.address-form-title {
+  margin: 0 0 12px 0;
+  color: #495057;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-bottom: 1px solid #fd7e14;
+  padding-bottom: 4px;
+}
+
+.address-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .address-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.address-field {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0; /* Allows flex items to shrink below content size */
+}
+
+.address-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.address-field input,
+.address-field select {
+  padding: 8px 10px;
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #495057;
+  background-color: white;
+  transition: all 0.3s ease;
+  height: 34px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.address-field input:focus,
+.address-field select:focus {
+  outline: none;
+  border-color: #fd7e14;
+  box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.1);
+}
+
+.address-field input.error,
+.address-field select.error {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.address-error {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.required-indicator {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+/* Pin Code Lookup Indicator */
+.pin-code-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lookup-indicator {
+  position: absolute;
+  right: 12px;
+  font-size: 11px;
+  color: #fd7e14;
+  font-weight: 500;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* PIN code completion styling */
+.address-field input.pin-complete {
+  border-color: #fd7e14;
+  box-shadow: 0 0 0 2px rgba(253, 126, 20, 0.1);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Auto-fill Status Message */
+.auto-fill-message {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 15px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.auto-fill-message.success {
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #e9ecef;
+}
+
+.auto-fill-message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Auto-filled field styling */
+.address-field input.auto-filled,
+.address-field select.auto-filled {
+  background-color: #f8f9fa;
+  border-color: #e9ecef;
+  box-shadow: 0 0 0 2px rgba(233, 236, 239, 0.1);
+}
+
+.address-field input.auto-filled::placeholder,
+.address-field select.auto-filled::placeholder {
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .address-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .address-form-container {
+    padding: 15px;
+  }
+  
+  .address-form-title {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .address-field input,
+  .address-field select {
+    padding: 8px 10px;
+    font-size: 13px;
+    height: 38px;
+  }
+  
+  .address-label {
+    font-size: 13px;
+  }
+}

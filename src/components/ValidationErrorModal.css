@@ -1,0 +1,382 @@
+/* Validation Error Modal Styles */
+
+.validation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.validation-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+
+/* Header */
+.validation-modal-header {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  position: relative;
+}
+
+.error-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.error-title {
+  flex: 1;
+}
+
+.error-title h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.error-title p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Body */
+.validation-modal-body {
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.error-section {
+  margin-bottom: 20px;
+}
+
+.error-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #495057;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.error-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-left: 4px solid #dc3545;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.error-item.clickable {
+  cursor: pointer;
+  position: relative;
+}
+
+.error-item.clickable:hover {
+  background: rgba(255, 107, 107, 0.1);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.error-bullet {
+  color: #dc3545;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.error-text {
+  color: #495057;
+  font-size: 14px;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.error-detail {
+  color: #6c757d;
+  font-size: 12px;
+  font-style: italic;
+  margin-left: 8px;
+}
+
+.go-to-field {
+  color: #007bff;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.error-item.clickable:hover .go-to-field {
+  opacity: 1;
+}
+
+/* Footer */
+.validation-modal-footer {
+  background: #f8f9fa;
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.error-summary {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.error-count {
+  background: #dc3545;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 120px;
+}
+
+.btn-primary {
+  background: #fd7e14;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #e8690b;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: #6c757d;
+  border: 2px solid #6c757d;
+}
+
+.btn-outline:hover {
+  background: #6c757d;
+  color: white;
+}
+
+/* Progress Indicator */
+.validation-progress {
+  background: #e9ecef;
+  padding: 12px 20px;
+  text-align: center;
+  border-top: 1px solid #dee2e6;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Field Highlight Animation (for focused fields) */
+.field-highlight {
+  animation: highlightPulse 2s ease-in-out;
+  position: relative;
+}
+
+.field-highlight::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: rgba(253, 126, 20, 0.2);
+  border: 2px solid #fd7e14;
+  border-radius: 8px;
+  pointer-events: none;
+  animation: highlightFade 3s ease-out forwards;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes highlightFade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .validation-modal {
+    width: 95%;
+    margin: 10px;
+  }
+  
+  .validation-modal-header {
+    padding: 15px;
+  }
+  
+  .error-icon {
+    font-size: 24px;
+  }
+  
+  .error-title h3 {
+    font-size: 18px;
+  }
+  
+  .validation-modal-body {
+    padding: 15px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+}
+
+/* Accessibility */
+.validation-modal:focus {
+  outline: none;
+}
+
+.btn:focus {
+  outline: 2px solid #fd7e14;
+  outline-offset: 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .validation-modal {
+    background: #2d3748;
+    color: #e2e8f0;
+  }
+  
+  .validation-modal-footer {
+    background: #1a202c;
+    border-top-color: #4a5568;
+  }
+  
+  .error-item {
+    background: #1a202c;
+    color: #e2e8f0;
+  }
+  
+  .section-title {
+    color: #e2e8f0;
+  }
+  
+  .validation-progress {
+    background: #1a202c;
+    border-top-color: #4a5568;
+  }
+  
+  .progress-text {
+    color: #a0aec0;
+  }
+}

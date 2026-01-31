@@ -1,0 +1,83 @@
+.notification-settings {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.notification-settings h2 {
+  color: #333;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.settings-section {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.settings-section:last-child {
+  border-bottom: none;
+}
+
+.settings-section h3 {
+  color: #555;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.settings-section p {
+  color: #666;
+  margin-bottom: 15px;
+  font-size: 0.9em;
+}
+
+.setting-item {
+  margin-bottom: 10px;
+}
+
+.setting-item label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.95em;
+}
+
+.setting-item input[type="checkbox"] {
+  margin-right: 10px;
+  transform: scale(1.1);
+}
+
+.settings-actions {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.save-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.save-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.notification-settings-loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}

@@ -1,0 +1,347 @@
+/* Universal File Preview Component Styles */
+
+.file-preview {
+  margin: 10px 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.file-preview:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.1);
+}
+
+.file-preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Image Preview Styles */
+.file-preview-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.preview-image {
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.clickable-preview:hover {
+  transform: scale(1.02);
+}
+
+/* PDF Preview Styles */
+.file-preview-pdf {
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  padding: 15px;
+}
+
+.pdf-preview-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Document Preview Styles */
+.file-preview-document {
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  padding: 15px;
+}
+
+.document-preview-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* File Info Styles */
+.file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.file-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.file-type {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.file-size {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+/* Action Buttons */
+.file-preview-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.file-action-btn {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-action-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.view-btn {
+  color: #007bff;
+  border-color: #007bff;
+}
+
+.view-btn:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.download-btn {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.download-btn:hover {
+  background-color: #28a745;
+  color: white;
+}
+
+.remove-btn {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.remove-btn:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+/* Modal Styles */
+.file-preview-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.file-preview-modal-content {
+  background-color: white;
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.file-preview-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+}
+
+.file-preview-modal-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.file-preview-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  overflow: auto;
+}
+
+.modal-image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.modal-file-info {
+  text-align: center;
+  color: #666;
+}
+
+.modal-file-name {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.modal-file-size {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.file-preview-modal-actions {
+  padding: 15px 20px;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.modal-action-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.modal-action-btn:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+.modal-action-btn.download-btn {
+  background-color: #28a745;
+}
+
+.modal-action-btn.download-btn:hover {
+  background-color: #1e7e34;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .file-preview-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .file-action-btn {
+    justify-content: center;
+  }
+  
+  .file-preview-modal-overlay {
+    padding: 10px;
+  }
+  
+  .file-preview-modal-content {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .file-preview-modal-header {
+    padding: 15px;
+  }
+  
+  .file-preview-modal-body {
+    padding: 15px;
+  }
+  
+  .modal-image {
+    max-height: 60vh;
+  }
+}
+
+/* Animation for smooth transitions */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.file-preview-modal-content {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* File icon styling */
+.file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}

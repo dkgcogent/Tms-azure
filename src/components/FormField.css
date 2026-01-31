@@ -1,0 +1,173 @@
+/* ============================================================================
+   MODERN FORM FIELD STYLING - Standardized across all TMS forms
+   ============================================================================ */
+
+/* CSS Variables for consistent theming */
+:root {
+  --form-field-spacing: 24px;
+  --form-field-spacing-sm: 16px;
+  --form-label-color: #1f2937;
+  --form-label-font-size: 16px;
+  --form-label-font-weight: 600;
+  --form-required-color: #ef4444;
+  --form-optional-color: #6b7280;
+  --form-hint-color: #6b7280;
+  --form-hint-font-size: 14px;
+  --form-error-bg: #fef2f2;
+  --form-error-border: #fecaca;
+  --form-error-text: #dc2626;
+  --form-input-border: #e5e7eb;
+  --form-input-border-focus: #3b82f6;
+  --form-input-bg: #ffffff;
+  --form-input-bg-disabled: #f3f4f6;
+  --form-input-padding: 0.75rem 1rem;
+  --form-input-border-radius: 6px;
+  --form-input-font-size: 16px;
+  --form-transition: all 0.2s ease;
+}
+
+/* Base Form Field Container */
+.form-field {
+  margin-bottom: var(--form-field-spacing);
+  transition: var(--form-transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Form Field Header - Label and Hint */
+.form-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+/* Form Field Label */
+.form-field-label {
+  display: block;
+  font-weight: var(--form-label-font-weight);
+  color: var(--form-label-color);
+  font-size: var(--form-label-font-size);
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+
+/* Required Field Indicator */
+.required-indicator {
+  color: var(--form-required-color);
+  font-weight: 700;
+  font-size: var(--form-label-font-size);
+  margin-left: 4px;
+  display: inline-block;
+}
+
+/* Optional Field Indicator */
+.optional-indicator {
+  color: var(--form-optional-color);
+  font-weight: 400;
+  font-size: 13px;
+  font-style: italic;
+  margin-left: 4px;
+  display: inline-block;
+}
+
+/* Form Field Hint/Help Text */
+.form-field-hint {
+  color: var(--form-hint-color);
+  font-size: var(--form-hint-font-size);
+  font-weight: 400;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0;
+}
+
+/* Form Field Input Container */
+.form-field-input {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Error Message Display */
+.form-field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background-color: var(--form-error-bg);
+  border: 1px solid var(--form-error-border);
+  border-radius: 6px;
+  animation: slideIn 0.2s ease-out;
+}
+
+.error-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.error-text {
+  color: var(--form-error-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Error State Styling */
+.form-field.has-error .form-field-label {
+  color: var(--form-error-text);
+}
+
+/* Animation for error messages */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Field Highlight Animation (for focus/validation) */
+@keyframes fieldHighlight {
+  0% {
+    background-color: #fef3c7;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.field-highlight {
+  animation: fieldHighlight 2s ease-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-field {
+    margin-bottom: var(--form-field-spacing-sm);
+  }
+
+  .form-field-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .form-field-label {
+    font-size: 15px;
+  }
+
+  .form-field-hint {
+    font-size: 13px;
+  }
+}

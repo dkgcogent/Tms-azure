@@ -1,0 +1,1007 @@
+/* ============================================================================
+   VEHICLE FORM STYLING - Extends standardized form layout patterns
+   ============================================================================ */
+
+@import '../styles/formLayout.css';
+
+.vehicle-form-container {
+  padding: 30px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.vehicle-form {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin-bottom: 30px;
+}
+
+/* Input with button layout */
+.input-with-button {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-with-button input {
+  flex: 1;
+}
+
+.generate-code-btn {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.generate-code-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056b3 0%, #007bff 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.generate-code-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-field-help {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.vehicle-form h3 {
+  margin: 0 0 25px 0;
+  color: #495057;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 15px 0;
+  border-bottom: 2px solid #6f42c1;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  margin: -30px -30px 25px -30px;
+  border-radius: 8px 8px 0 0;
+}
+
+.edit-mode-notice {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.edit-mode-notice p {
+  margin: 0;
+  color: #856404;
+  font-weight: 600;
+}
+
+.cancel-edit-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.cancel-edit-btn:hover {
+  background: #5a6268;
+}
+
+.form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.form-section {
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 25px;
+  background: #f8f9fa;
+}
+
+.form-section h4 {
+  margin: 0 0 20px 0;
+  color: #495057;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border-bottom: 2px solid #6f42c1;
+  padding-bottom: 10px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group.checkbox-group {
+  justify-content: center;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #495057;
+  cursor: pointer;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.checkbox-label:hover {
+  border-color: #6f42c1;
+  background: #f8f9fa;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6f42c1;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #495057;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #6f42c1;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+/* Enhanced error field highlighting */
+.form-field input.error,
+.form-field select.error,
+.form-field textarea.error {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+  animation: shake 0.5s ease-in-out;
+}
+
+.form-field-error {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.form-field.has-error {
+  position: relative;
+}
+
+.form-field.has-error .form-field-label::after {
+  content: ' ⚠️';
+  color: #dc3545;
+  animation: pulse 1s infinite;
+}
+
+/* Animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #6f42c1 0%, #9c27b0 100%);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .vehicle-form-container {
+    padding: 20px;
+  }
+  
+  .form-header h1 {
+    font-size: 2rem;
+  }
+  
+  .vehicle-form {
+    padding: 20px;
+  }
+  
+  .vehicle-form h3 {
+    font-size: 1.5rem;
+    margin: -20px -20px 20px -20px;
+  }
+  
+  .form-section {
+    padding: 20px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .edit-mode-notice {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .vehicle-form-container {
+    padding: 15px;
+  }
+  
+  .form-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .vehicle-form {
+    padding: 15px;
+  }
+  
+  .vehicle-form h3 {
+    margin: -15px -15px 15px -15px;
+  }
+  
+  .form-section {
+    padding: 15px;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px 12px;
+  }
+}
+
+/* File Preview Styles */
+.file-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  margin-top: 8px;
+}
+
+.image-preview {
+  max-width: 60px;
+  max-height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #17a2b8;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.clickable-preview {
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.clickable-preview:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.document-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #495057;
+}
+
+.document-icon {
+  font-size: 16px;
+}
+
+.document-type {
+  font-size: 11px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.document-link {
+  font-size: 12px;
+  color: #007bff;
+  text-decoration: none;
+  padding: 4px 8px;
+  border: 1px solid #007bff;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.document-link:hover {
+  background: #007bff;
+  color: white;
+}
+
+.file-info {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+}
+
+.file-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: #495057;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
+
+.file-size {
+  font-size: 10px;
+  color: #6c757d;
+  margin-left: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .image-preview {
+    max-width: 50px;
+    max-height: 50px;
+  }
+}
+
+/* Image Modal Styles */
+.image-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.image-modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.image-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+}
+
+.image-modal-header h3 {
+  margin: 0;
+  color: #495057;
+  font-size: 16px;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.modal-close-btn:hover {
+  background-color: #e9ecef;
+}
+
+.image-modal-body {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.modal-image-full {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ===================================================== */
+/* ENHANCED VEHICLE FORM COMPONENTS */
+/* ===================================================== */
+
+/* Vehicle Code Section */
+.vehicle-code-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+}
+
+.code-display {
+  flex: 1;
+}
+
+.code-display label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.generated-code {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fd7e14;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 2px solid #fd7e14;
+  letter-spacing: 1px;
+}
+
+.code-display small {
+  color: #6c757d;
+  font-size: 11px;
+  font-style: italic;
+  display: block;
+  margin-top: 4px;
+}
+
+.regenerate-btn {
+  background: #fd7e14;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.regenerate-btn:hover:not(:disabled) {
+  background: #e8690b;
+  transform: translateY(-1px);
+}
+
+.regenerate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Readonly Field */
+.readonly-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.readonly-field label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.readonly-input {
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
+  color: #6c757d;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+/* Global Validation Field Highlighting */
+.field-highlight {
+  position: relative;
+  animation: highlightPulse 2s ease-in-out;
+}
+
+.field-highlight::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: rgba(253, 126, 20, 0.2);
+  border: 2px solid #fd7e14;
+  border-radius: 8px;
+  pointer-events: none;
+  animation: highlightFade 3s ease-out forwards;
+  z-index: 1;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes highlightFade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Enhanced error state for invalid fields */
+.form-field.has-error,
+.validated-input-container.has-error,
+.dynamic-dropdown-container.has-error,
+.date-input-container.has-error {
+  border-left: 4px solid #dc3545;
+  padding-left: 12px;
+  background: rgba(220, 53, 69, 0.05);
+  border-radius: 4px;
+}
+
+/* Mobile responsive for new components */
+@media (max-width: 768px) {
+  .vehicle-code-section {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .generated-code {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .regenerate-btn {
+    width: 100%;
+    padding: 14px 20px;
+  }
+
+  .form-field-group {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
+
+/* Form Field Group - Side by Side Layout */
+.form-field-group {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.form-field-group .form-field {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.form-field-group .form-field:first-child {
+  flex: 1.2; /* Vehicle Code field slightly wider */
+}
+
+.form-field-group .form-field:last-child {
+  flex: 1.8; /* Vendor dropdown wider */
+}
+
+/* Vehicle Photos Grid */
+.vehicle-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin-top: 10px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+.vehicle-photos-grid .form-group {
+  margin-bottom: 0;
+  background: white;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.vehicle-photos-grid .form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 5px;
+}
+
+.vehicle-photos-grid .form-group input[type="file"] {
+  font-size: 12px;
+  padding: 8px;
+}
+
+.photo-hint {
+  display: block;
+  margin-top: 10px;
+  color: #6c757d;
+  font-style: italic;
+  font-size: 14px;
+  text-align: center;
+  padding: 10px;
+  background: #e3f2fd;
+  border-radius: 6px;
+  border-left: 4px solid #2196f3;
+}
+
+/* Full width form field */
+.form-field.full-width {
+  grid-column: 1 / -1;
+  margin-bottom: 25px;
+}
+
+.form-field.full-width .form-field-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 15px;
+  display: block;
+}
+
+/* Vehicle Code Display */
+.vehicle-code-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vehicle-code-display input {
+  flex: 1;
+  background-color: #f8f9fa;
+  border: 2px solid #e9ecef;
+  color: #495057;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.regenerate-code-btn {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  min-width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.regenerate-code-btn:hover:not(:disabled) {
+  background: #138496;
+  transform: scale(1.05);
+}
+
+.regenerate-code-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.code-format-hint {
+  display: block;
+  margin-top: 5px;
+  color: #6c757d;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Vehicle Code Input Group */
+.vehicle-code-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vehicle-code-input-group input {
+  flex: 1;
+  background-color: #f8f9fa;
+  border: 2px solid #e9ecef;
+  color: #495057;
+  font-weight: 600;
+}
+
+.regenerate-code-btn {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  min-width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.regenerate-code-btn:hover:not(:disabled) {
+  background: #138496;
+  transform: scale(1.05);
+}
+
+.regenerate-code-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.code-format-hint {
+  display: block;
+  margin-top: 5px;
+  color: #6c757d;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Vehicle Code Field Styling */
+.form-field input[readonly] {
+  background-color: #e9ecef;
+  color: #495057;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+/* Expiry Status Indicators */
+.expiry-expired {
+  border-left: 4px solid #dc3545 !important;
+  background: rgba(220, 53, 69, 0.05) !important;
+}
+
+.expiry-critical {
+  border-left: 4px solid #fd7e14 !important;
+  background: rgba(253, 126, 20, 0.05) !important;
+}
+
+.expiry-warning {
+  border-left: 4px solid #ffc107 !important;
+  background: rgba(255, 193, 7, 0.05) !important;
+}
+
+.expiry-indicator {
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.expiry-indicator.expired {
+  background: #dc3545;
+  color: white;
+  animation: pulse-red 2s infinite;
+}
+
+.expiry-indicator.critical {
+  background: #fd7e14;
+  color: white;
+  animation: pulse-orange 2s infinite;
+}
+
+.expiry-indicator.warning {
+  background: #ffc107;
+  color: #212529;
+  animation: pulse-yellow 2s infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes pulse-orange {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes pulse-yellow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Input with Unit Styling */
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.input-with-unit input {
+  flex: 1;
+  padding-right: 60px; /* Space for unit indicator */
+}
+
+.unit-indicator {
+  position: absolute;
+  right: 12px;
+  color: #6c757d;
+  font-weight: 600;
+  font-size: 14px;
+  pointer-events: none;
+  background: white;
+  padding: 0 4px;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 4px;
+  color: #6c757d;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Enhanced Form Field Styling */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-field-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.required-indicator {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.photo-indicator {
+  color: #17a2b8;
+}
+
+.expiry-indicator {
+  color: #ffc107;
+}
+
+.crm-indicator {
+  color: #28a745;
+}

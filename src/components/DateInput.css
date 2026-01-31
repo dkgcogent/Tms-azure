@@ -1,0 +1,227 @@
+/* Date Input Component Styles */
+
+.date-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.date-input-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.required-indicator {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.date-input-wrapper {
+  position: relative;
+}
+
+.date-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: 'Courier New', monospace;
+  color: #495057;
+  background-color: white;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #fd7e14;
+  box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.1);
+}
+
+.date-input.error {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+  background-color: #fff5f5;
+}
+
+.date-input.valid {
+  border-color: #e9ecef;
+  box-shadow: 0 0 0 3px rgba(233, 236, 239, 0.1);
+  background-color: #fff;
+}
+
+.date-input:disabled {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.date-input::placeholder {
+  color: #adb5bd;
+  font-style: italic;
+}
+
+/* Format Hint */
+.format-hint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.hint-text {
+  font-size: 11px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.progress-indicator {
+  font-size: 11px;
+  color: #fd7e14;
+  font-weight: 600;
+  background: rgba(253, 126, 20, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Error Message */
+.date-error-message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #dc3545;
+  font-size: 12px;
+  font-weight: 500;
+  background: #f8d7da;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border-left: 4px solid #dc3545;
+}
+
+.error-icon {
+  font-size: 14px;
+}
+
+/* Success Message - Removed */
+
+
+
+/* Input Animation */
+.date-input {
+  position: relative;
+}
+
+.date-input:focus {
+  animation: focusPulse 0.3s ease;
+}
+
+@keyframes focusPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Character-by-character validation feedback */
+.date-input.partial-valid {
+  border-color: #ffc107;
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .date-input {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 14px 16px;
+  }
+  
+  .format-hint {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .date-error-message,
+  .date-success-message {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .date-input {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    border-color: #4a5568;
+  }
+  
+  .date-input:focus {
+    border-color: #fd7e14;
+  }
+  
+  .date-input-label {
+    color: #e2e8f0;
+  }
+  
+  .hint-text {
+    color: #a0aec0;
+  }
+  
+  .date-error-message {
+    background: #2d3748;
+    color: #fc8181;
+    border-left-color: #e53e3e;
+  }
+  
+
+}
+
+/* Field highlighting for global validation */
+.date-input-container.field-highlight {
+  position: relative;
+  animation: highlightPulse 2s ease-in-out;
+}
+
+.date-input-container.field-highlight::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: rgba(253, 126, 20, 0.2);
+  border: 2px solid #fd7e14;
+  border-radius: 8px;
+  pointer-events: none;
+  animation: highlightFade 3s ease-out forwards;
+  z-index: 1;
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes highlightFade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

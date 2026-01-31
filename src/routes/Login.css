@@ -1,0 +1,338 @@
+/* Ultra-Modern Login Page */
+@keyframes loginFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(2deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+background: 
+    linear-gradient(135deg, 
+      rgba(0, 0, 0, 0.4) 0%, 
+      rgba(0, 0, 0, 0.2) 100%),
+    url('https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') no-repeat center center fixed,
+    /* Fallback vehicle-themed gradient */
+    linear-gradient(45deg, 
+      #1e3a8a 0%, 
+      #3b82f6 25%, 
+      #1e40af 50%, 
+      #2563eb 75%, 
+      #1d4ed8 100%),
+    /* Vehicle pattern overlay */
+    url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M20 20h40v40H20V20zm20 35a15 15 0 1 1 0-30 15 15 0 0 1 0 30zm0-5a10 10 0 1 0 0-20 10 10 0 0 0 0 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-size: cover, cover, cover, 80px 80px;
+  background-position: center, center, center, 0 0;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  animation: loginFloat 8s ease-in-out infinite;
+}
+
+/* Logo Styles */
+.auth-logo {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+.auth-logo img {
+  height: 50px;
+  width: auto;
+  border-radius: 8px;
+  background: white;
+  padding: 5px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.login-logo, .register-logo {
+  height: 60px;
+  width: auto;
+  border-radius: 10px;
+  background: white;
+  padding: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  margin-bottom: 15px;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.08); /* More transparent for better vehicle visibility */
+  backdrop-filter: blur(60px) saturate(2.2); /* Much stronger glass effect for vehicle visibility */
+  -webkit-backdrop-filter: blur(60px) saturate(2.2); /* Safari support */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0, 0, 0, 0.2),
+    0 8px 16px -6px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3); /* Inner highlight */
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInScale 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  border-radius: 24px 24px 0 0;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 16px; /* Much smaller margin */
+}
+
+.login-header h1 {
+  font-size: 1.5rem; /* Much smaller font */
+  font-weight: 800; /* Bolder for dark black appearance */
+  color: #000000 !important; /* Pure black text with importance */
+  margin-bottom: 4px; /* Minimal margin */
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.9); /* Stronger white shadow for better contrast */
+}
+
+.login-header p {
+  color: #000000 !important; /* Pure black text with importance */
+  font-size: 0.875rem;
+  font-weight: 600; /* Bolder text */
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.9); /* Stronger white shadow for better contrast */
+}
+
+.already-logged-in {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.info-message {
+  background-color: #e0f2fe;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  text-align: left;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(3, 105, 161, 0.1);
+}
+
+.info-icon {
+  font-size: 1.2em;
+  margin-right: 8px;
+}
+
+.info-message strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #0284c7;
+}
+
+.info-message small {
+  color: #075985;
+  font-style: italic;
+}
+
+.logout-btn {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.logout-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+.logout-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Much smaller gap */
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-weight: 700; /* Bolder for dark black appearance */
+  color: #000000 !important; /* Pure black text with importance */
+  font-size: 0.875rem;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.9); /* Stronger white shadow for better contrast */
+}
+
+.form-input {
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.05); /* More transparent for vehicle visibility */
+  backdrop-filter: blur(30px); /* Stronger glass effect for inputs */
+  -webkit-backdrop-filter: blur(30px);
+  color: #000000 !important; /* Pure black text with importance */
+  font-weight: 600; /* Bolder text for better readability */
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+.error-message {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  text-align: left;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+}
+
+.error-icon {
+  font-size: 1.2em;
+  margin-right: 8px;
+}
+
+.error-message strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #b91c1c;
+}
+
+.error-message small {
+  color: #7f1d1d;
+  font-style: italic;
+}
+
+.login-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.login-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 12px; /* Much smaller margin */
+  padding-top: 12px; /* Much smaller padding */
+  border-top: 1px solid rgba(229, 231, 235, 0.3); /* Very transparent border */
+}
+
+.login-footer p {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.register-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.register-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 16px;
+  }
+  
+  .login-card {
+    padding: 16px; /* Much smaller padding on mobile */
+    max-width: 300px; /* Much smaller on mobile */
+  }
+  
+  .login-header h1 {
+    font-size: 1.75rem;
+  }
+}

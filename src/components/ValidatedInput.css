@@ -1,0 +1,197 @@
+/* Validated Input Component Styles */
+
+.validated-input-container {
+  margin-bottom: 15px;
+}
+
+.validated-input-label {
+  display: block;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.required-indicator {
+  color: #dc3545;
+  margin-left: 4px;
+}
+
+.format-hint {
+  color: #6c757d;
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.validated-input {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+.validated-input:focus {
+  outline: none;
+  border-color: #fd7e14;
+  box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.1);
+}
+
+.validated-input.focused {
+  border-color: #fd7e14;
+}
+
+.validated-input.valid {
+  border-color: #e9ecef;
+  background-color: #fff;
+}
+
+.validated-input.invalid {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.validation-icon {
+  position: absolute;
+  right: 12px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.validation-icon.valid {
+  color: #6c757d;
+}
+
+.validation-icon.invalid {
+  color: #dc3545;
+}
+
+/* Validation Messages */
+.validation-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  color: #721c24;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.error-icon {
+  font-size: 14px;
+}
+
+.validation-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+  border-radius: 4px;
+  color: #0c5460;
+  font-size: 12px;
+}
+
+.suggestion-icon {
+  font-size: 14px;
+}
+
+.validation-help {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Animation for validation state changes */
+.validated-input {
+  transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.validation-error,
+.validation-suggestion {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .validated-input {
+    padding: 8px 35px 8px 10px;
+    font-size: 13px;
+  }
+  
+  .validated-input-label {
+    font-size: 13px;
+  }
+  
+  .format-hint {
+    font-size: 11px;
+  }
+  
+  .validation-error,
+  .validation-suggestion {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+/* Special styling for different validation types */
+.validated-input[data-rule="AADHAAR"] {
+  letter-spacing: 1px;
+  font-family: 'Courier New', monospace;
+}
+
+.validated-input[data-rule="PAN"] {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', monospace;
+}
+
+.validated-input[data-rule="GST"] {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Courier New', monospace;
+}
+
+/* Loading state for async validation */
+.validated-input.validating {
+  border-color: #ffc107;
+  background-image: linear-gradient(45deg, transparent 25%, rgba(255, 255, 255, 0.2) 25%, rgba(255, 255, 255, 0.2) 50%, transparent 50%, transparent 75%, rgba(255, 255, 255, 0.2) 75%);
+  background-size: 20px 20px;
+  animation: loading 1s linear infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}

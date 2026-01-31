@@ -1,0 +1,157 @@
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.notification {
+  min-width: 300px;
+  max-width: 500px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid;
+  pointer-events: auto;
+  transform: translateX(100%);
+  transition: all 0.3s ease-in-out;
+  opacity: 0;
+}
+
+.notification.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.notification.hide {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.notification.success {
+  border-left-color: #10b981;
+}
+
+.notification.error {
+  border-left-color: #ef4444;
+}
+
+.notification.warning {
+  border-left-color: #f59e0b;
+}
+
+.notification.info {
+  border-left-color: #3b82f6;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+}
+
+.notification-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.notification.success .notification-icon {
+  background-color: #10b981;
+}
+
+.notification.error .notification-icon {
+  background-color: #ef4444;
+}
+
+.notification.warning .notification-icon {
+  background-color: #f59e0b;
+}
+
+.notification.info .notification-icon {
+  background-color: #3b82f6;
+}
+
+.notification-message {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #374151;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.notification-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+/* Animation for multiple notifications */
+.notification:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.notification:nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.notification:nth-child(3) {
+  animation-delay: 200ms;
+}
+
+.notification:nth-child(4) {
+  animation-delay: 300ms;
+}
+
+.notification:nth-child(5) {
+  animation-delay: 400ms;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .notification-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+  
+  .notification {
+    min-width: auto;
+    max-width: none;
+  }
+  
+  .notification-content {
+    padding: 12px;
+  }
+  
+  .notification-message {
+    font-size: 13px;
+  }
+}

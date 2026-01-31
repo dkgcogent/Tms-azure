@@ -1,0 +1,396 @@
+/* Modern Form Components Styling */
+
+/* CSS Variables for Form Components */
+:root {
+  --form-border-radius: 12px;
+  --form-border-width: 2px;
+  --form-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --form-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --form-shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  --form-shadow-error: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Form Input Wrapper */
+.form-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1); /* Subtle transparent background */
+  border: var(--form-border-width) solid rgba(0, 0, 0, 0.2);
+  border-radius: var(--form-border-radius);
+  transition: var(--form-transition);
+  box-shadow: var(--form-shadow);
+}
+
+.form-input-wrapper:hover {
+  border-color: #d1d5db;
+}
+
+.form-input-wrapper.focused {
+  border-color: #6366f1;
+  box-shadow: var(--form-shadow-focus);
+}
+
+.form-input-wrapper.error {
+  border-color: #ef4444;
+  box-shadow: var(--form-shadow-error);
+}
+
+.form-input-wrapper.disabled {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Form Input */
+.form-input {
+  flex: 1;
+  padding: 16px 20px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000; /* Pure black text for visibility */
+  border-radius: var(--form-border-radius);
+}
+
+.form-input::placeholder {
+  color: #6b7280; /* Darker placeholder for better visibility */
+  font-weight: 400;
+}
+
+.form-input.with-icon {
+  padding-left: 52px;
+}
+
+.form-input:disabled {
+  cursor: not-allowed;
+}
+
+/* Form Input Icon */
+.form-input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: #6b7280;
+  pointer-events: none;
+}
+
+.form-input-wrapper.focused .form-input-icon {
+  color: #6366f1;
+}
+
+.form-input-wrapper.error .form-input-icon {
+  color: #ef4444;
+}
+
+/* Password Toggle */
+.form-input-toggle {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #6b7280;
+  padding: 4px;
+  border-radius: 6px;
+  transition: var(--form-transition);
+}
+
+.form-input-toggle:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+/* Form Textarea */
+.form-textarea {
+  flex: 1;
+  padding: 16px 20px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000; /* Pure black text for visibility */
+  border-radius: var(--form-border-radius);
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.form-textarea::placeholder {
+  color: #6b7280; /* Darker placeholder for better visibility */
+  font-weight: 400;
+}
+
+/* Form Select Wrapper */
+.form-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #ffffff; /* Solid white background for better visibility */
+  border: var(--form-border-width) solid rgba(0, 0, 0, 0.2);
+  border-radius: var(--form-border-radius);
+  transition: var(--form-transition);
+  box-shadow: var(--form-shadow);
+}
+
+.form-select-wrapper:hover {
+  border-color: #d1d5db;
+}
+
+.form-select-wrapper.focused {
+  border-color: #6366f1;
+  box-shadow: var(--form-shadow-focus);
+}
+
+.form-select-wrapper.error {
+  border-color: #ef4444;
+  box-shadow: var(--form-shadow-error);
+}
+
+.form-select-wrapper.disabled {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Form Select */
+.form-select {
+  flex: 1;
+  padding: 16px 20px;
+  padding-right: 48px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000000; /* Pure black text for visibility */
+  border-radius: var(--form-border-radius);
+  cursor: pointer;
+  appearance: none;
+}
+
+/* Ensure dropdown options are visible */
+.form-select option {
+  color: #000000 !important; /* Force black text for options */
+  background-color: #ffffff !important; /* Force white background */
+  font-weight: 500;
+  padding: 8px 12px;
+}
+
+.form-select option:hover {
+  background-color: #f3f4f6 !important;
+  color: #000000 !important;
+}
+
+.form-select option:checked {
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+.form-select:disabled {
+  cursor: not-allowed;
+}
+
+/* Select Arrow */
+.form-select-arrow {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #6b7280;
+  pointer-events: none;
+  transition: var(--form-transition);
+}
+
+.form-select-wrapper.focused .form-select-arrow {
+  color: #6366f1;
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Form Checkbox Wrapper */
+.form-checkbox-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.form-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+.form-checkbox {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.form-checkbox-custom {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  transition: var(--form-transition);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.form-checkbox-check {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  transition: var(--form-transition);
+}
+
+.form-checkbox:checked + .form-checkbox-custom {
+  background: #6366f1;
+  border-color: #6366f1;
+}
+
+.form-checkbox:checked + .form-checkbox-custom .form-checkbox-check {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.form-checkbox-label:hover .form-checkbox-custom {
+  border-color: #6366f1;
+}
+
+.form-checkbox-wrapper.disabled .form-checkbox-label {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-checkbox-text {
+  flex: 1;
+}
+
+/* Form Button */
+.form-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  border-radius: var(--form-border-radius);
+  transition: var(--form-transition);
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.form-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Button Sizes */
+.form-button-sm {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.form-button-md {
+  padding: 12px 24px;
+  font-size: 16px;
+}
+
+.form-button-lg {
+  padding: 16px 32px;
+  font-size: 18px;
+}
+
+/* Button Variants */
+.form-button-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+}
+
+.form-button-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px -3px rgba(99, 102, 241, 0.4);
+}
+
+.form-button-secondary {
+  background: white;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+}
+
+.form-button-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.form-button-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+}
+
+.form-button-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px -3px rgba(239, 68, 68, 0.4);
+}
+
+/* Button Loading State */
+.form-button.loading .form-button-text {
+  opacity: 0.7;
+}
+
+.form-button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-input,
+  .form-textarea,
+  .form-select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .form-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,789 @@
+/* Daily Vehicle Transaction Form Styles */
+
+/* 12-Hour Time Format Styles */
+.time-12hour {
+  /* Force 12-hour format display */
+  -webkit-locale: "en-US";
+  locale: "en-US";
+}
+
+/* Show AM/PM in time inputs */
+.time-12hour::-webkit-datetime-edit-ampm-field {
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* Ensure time picker shows 12-hour format */
+.time-12hour::-webkit-datetime-edit-hour-field,
+.time-12hour::-webkit-datetime-edit-minute-field {
+  color: #333;
+}
+
+/* Style the time input to look consistent */
+.time-12hour {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.daily-transaction-form-container {
+  padding: 30px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* KM Input with Image Upload Styles */
+.km-input-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.km-input-container input[type="number"] {
+  width: 80px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  transition: border-color 0.3s ease;
+  background: white;
+  box-sizing: border-box;
+}
+
+.km-input-container input[type="number"]:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.km-input-container input[type="number"].error {
+  border-color: #e74c3c;
+}
+
+/* Better spacing for form groups with KM inputs */
+.form-group:has(.km-input-container) {
+  margin-bottom: 25px;
+}
+
+.form-group:has(.km-input-container) label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* Style for DocumentUpload component inside KM container */
+.km-input-container .document-upload {
+  flex: 0 0 auto;
+  width: 120px;
+}
+
+.km-input-container .document-upload .upload-area {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+}
+
+.km-input-container .document-upload .upload-button {
+  height: 32px;
+  padding: 4px 8px;
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Improve time input field spacing */
+.form-group:has(.time-input-12hour) {
+  margin-bottom: 20px;
+}
+
+/* Better organization for KM and time fields */
+.km-time-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border: 1px solid #e9ecef;
+}
+
+.km-time-section h4 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.form-header {
+  margin-bottom: 30px;
+  text-align: center;
+  padding: 20px;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.form-header h1 {
+  margin: 0 0 10px 0;
+  color: #2d3748;
+  font-size: 2.8rem;
+  font-weight: 700;
+  text-shadow: none;
+  position: relative;
+  z-index: 2;
+}
+
+.form-header p {
+  margin: 0;
+  color: #4a5568;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-shadow: none;
+  position: relative;
+  z-index: 2;
+}
+
+.daily-transaction-form {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin-bottom: 30px;
+  border-top: 5px solid #3498db;
+}
+
+.daily-transaction-form h3 {
+  margin: 0 0 30px 0;
+  color: #2c3e50;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 20px 0;
+  border-bottom: 3px solid #3498db;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  margin: -30px -30px 30px -30px;
+  border-radius: 8px 8px 0 0;
+}
+
+.edit-mode-notice {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+}
+
+.edit-mode-notice p {
+  margin: 0;
+  color: #856404;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.cancel-edit-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.cancel-edit-btn:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+}
+
+/* GREY SECTION - Details from Master */
+.master-section {
+  border: 3px solid #6c757d;
+  border-radius: 12px;
+  padding: 25px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  position: relative;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.15);
+}
+
+.master-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #6c757d 0%, #adb5bd 100%);
+  border-radius: 8px 8px 0 0;
+}
+
+.master-section h4 {
+  margin: 0 0 25px 0;
+  color: #495057;
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 15px 20px;
+  background: #6c757d;
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* BLUE SECTION - Daily Transactions Details by Driver */
+.driver-section {
+  border: 3px solid #007bff;
+  border-radius: 12px;
+  padding: 25px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+}
+
+.driver-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+  border-radius: 8px 8px 0 0;
+}
+
+.driver-section h4 {
+  margin: 0 0 25px 0;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* YELLOW SECTION - System Calculation */
+.calculation-section {
+  border: 3px solid #ffc107;
+  border-radius: 12px;
+  padding: 25px;
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  position: relative;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
+}
+
+.calculation-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ffc107 0%, #e0a800 100%);
+  border-radius: 8px 8px 0 0;
+}
+
+.calculation-section h4 {
+  margin: 0 0 25px 0;
+  color: #212529;
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+}
+
+/* ORANGE SECTION - Remark & Trip Close by Supervisor */
+.supervisor-section {
+  border: 3px solid #fd7e14;
+  border-radius: 12px;
+  padding: 25px;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%);
+  position: relative;
+  box-shadow: 0 4px 12px rgba(253, 126, 20, 0.15);
+}
+
+.supervisor-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #fd7e14 0%, #e8590c 100%);
+  border-radius: 8px 8px 0 0;
+}
+
+.supervisor-section h4 {
+  margin: 0 0 25px 0;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #fd7e14 0%, #e8590c 100%);
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(253, 126, 20, 0.3);
+}
+
+/* Form Grid Layout */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  align-items: start;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 14px 18px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #495057;
+  background-color: white;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+  border-color: #e74c3c;
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+/* Readonly and calculated fields styling */
+.readonly-field {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  font-style: italic;
+}
+
+.calculated-field {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%) !important;
+  border: 2px solid #ffc107 !important;
+  font-weight: 700 !important;
+  color: #856404 !important;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.error-message::before {
+  content: "⚠ ";
+  margin-right: 5px;
+}
+
+/* Checkbox styling */
+.checkbox-label {
+  display: flex !important;
+  align-items: center !important;
+  flex-direction: row !important;
+  cursor: pointer;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #2c3e50 !important;
+  margin-bottom: 0 !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin-right: 12px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #fd7e14;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  padding: 15px 35px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.reset-btn {
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  color: white;
+  border: none;
+  padding: 15px 35px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.reset-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+}
+
+/* Transactions Table */
+.transactions-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  border-top: 5px solid #17a2b8;
+}
+
+.transactions-table-container h3 {
+  margin: 0 0 25px 0;
+  color: #2c3e50;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 15px 0;
+  border-bottom: 2px solid #17a2b8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .daily-transaction-form-container {
+    padding: 15px;
+  }
+  
+  .form-header h1 {
+    font-size: 2.2rem;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .daily-transaction-form {
+    padding: 20px;
+  }
+  
+  .form-sections {
+    gap: 25px;
+  }
+  
+  .master-section,
+  .driver-section,
+  .calculation-section,
+  .supervisor-section {
+    padding: 20px;
+  }
+  
+  .edit-mode-notice {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .submit-btn,
+  .reset-btn {
+    padding: 12px 25px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .form-header p {
+    font-size: 16px;
+  }
+  
+  .daily-transaction-form h3 {
+    font-size: 1.5rem;
+  }
+  
+  .master-section h4,
+  .driver-section h4,
+  .calculation-section h4,
+  .supervisor-section h4 {
+    font-size: 1.3rem;
+    padding: 12px 15px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .daily-transaction-form-container {
+    background: white;
+    padding: 0;
+  }
+  
+  .form-actions,
+  .transactions-table-container {
+    display: none;
+  }
+  
+  .daily-transaction-form {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+  
+  .form-sections {
+    gap: 20px;
+  }
+  
+  .master-section,
+  .driver-section,
+  .calculation-section,
+  .supervisor-section {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}
+
+/* Animation for form sections */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-section {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.form-section:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.form-section:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.form-section:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.form-section:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+/* Hover effects for sections */
+.master-section:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s ease;
+}
+
+.driver-section:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s ease;
+}
+
+.calculation-section:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s ease;
+}
+
+.supervisor-section:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s ease;
+}
+
+/* Focus indicators for accessibility */
+.form-group input:focus-visible,
+.form-group select:focus-visible,
+.form-group textarea:focus-visible {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+/* Loading state */
+.submit-btn:disabled::after {
+  content: "";
+  width: 16px;
+  height: 16px;
+  margin-left: 10px;
+  border: 2px solid transparent;
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Remove number input arrows/spinners */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.form-control[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.form-control[type="number"]::-webkit-outer-spin-button,
+.form-control[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+/* Vehicle and Driver Tags */
+.vehicle-tags,
+.driver-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.vehicle-tag,
+.driver-tag {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border: 2px solid #2196f3;
+  border-radius: 20px;
+  padding: 8px 15px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1565c0;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+}
+
+.vehicle-tag span,
+.driver-tag span {
+  margin-right: 8px;
+}
+
+.remove-tag-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.remove-tag-btn:hover {
+  background: #d32f2f;
+  transform: scale(1.1);
+}

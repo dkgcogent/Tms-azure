@@ -1,0 +1,293 @@
+/* Bank Details Component Styles */
+
+.bank-details-container {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 15px 0;
+}
+
+.bank-details-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.bank-details-title {
+  color: #495057;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bank-details-subtitle {
+  color: #6c757d;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.required-indicator {
+  color: #dc3545;
+  margin-left: 4px;
+}
+
+/* Grid Layout - 2 columns side by side */
+.bank-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+/* Responsive: single column on mobile */
+@media (max-width: 768px) {
+  .bank-details-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+.bank-field {
+  position: relative;
+}
+
+.bank-field.full-width {
+  grid-column: 1 / -1;
+}
+
+/* IFSC Field with Lookup Indicator */
+.ifsc-field-container {
+  position: relative;
+}
+
+.lookup-indicator {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #1976d2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  margin-top: 4px;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Lookup Status Messages */
+.lookup-status {
+  margin: 10px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: slideIn 0.3s ease;
+}
+
+.lookup-status.success {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #495057;
+}
+
+.lookup-status.error {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+.status-source {
+  font-size: 11px;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* Auto-filled Field Styling */
+.auto-filled .validated-input {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+  border-color: #ffc107;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.1);
+}
+
+.auto-filled-indicator {
+  color: #856404;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+/* Bank Textarea */
+.bank-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.3s ease;
+}
+
+.bank-textarea:focus {
+  outline: none;
+  border-color: #fd7e14;
+  box-shadow: 0 0 0 3px rgba(253, 126, 20, 0.1);
+}
+
+.bank-textarea.auto-filled {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+  border-color: #ffc107;
+}
+
+/* Bank Details Summary */
+.bank-details-summary {
+  background: #e8f5e8;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.summary-header {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.summary-label {
+  font-weight: 500;
+  color: #495057;
+  min-width: 80px;
+}
+
+.summary-value {
+  color: #495057;
+  font-weight: 600;
+  text-align: right;
+  flex: 1;
+}
+
+/* Auto-fill Legend */
+.auto-fill-legend {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #856404;
+}
+
+.legend-icon {
+  font-size: 14px;
+}
+
+.legend-text {
+  font-weight: 500;
+}
+
+/* Error State */
+.bank-details-grid.has-errors {
+  border-left: 4px solid #dc3545;
+  padding-left: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bank-details-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .bank-details-container {
+    padding: 15px;
+  }
+  
+  .summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  
+  .summary-value {
+    text-align: left;
+  }
+}
+
+/* Animation for status changes */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading state for IFSC lookup */
+.ifsc-field-container .validated-input.loading {
+  background-image: linear-gradient(45deg, transparent 25%, rgba(255, 255, 255, 0.2) 25%, rgba(255, 255, 255, 0.2) 50%, transparent 50%, transparent 75%, rgba(255, 255, 255, 0.2) 75%);
+  background-size: 20px 20px;
+  animation: loading 1s linear infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 20px 20px;
+  }
+}
+
+/* Form field styling for textarea */
+.form-field {
+  margin-bottom: 15px;
+}
+
+.form-field-label {
+  display: block;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 6px;
+  font-size: 14px;
+}

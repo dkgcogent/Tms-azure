@@ -1,0 +1,268 @@
+/* Document Action Modal Styles */
+.document-action-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10001;
+  backdrop-filter: blur(2px);
+}
+
+.document-action-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header */
+.document-action-modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.file-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.file-details {
+  flex: 1;
+}
+
+.file-title {
+  margin: 0 0 4px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #212529;
+  line-height: 1.2;
+}
+
+.file-name {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.close-button:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #495057;
+}
+
+/* Body */
+.document-action-modal-body {
+  padding: 24px;
+}
+
+.message-content {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.warning-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.message-text {
+  flex: 1;
+}
+
+.primary-message {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #212529;
+  line-height: 1.4;
+}
+
+.secondary-message {
+  margin: 0;
+  font-size: 1rem;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+/* Footer */
+.document-action-modal-footer {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-button:active {
+  transform: translateY(0);
+}
+
+.button-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.button-text {
+  font-weight: 600;
+  color: inherit;
+}
+
+.button-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  font-weight: 400;
+  margin-left: auto;
+}
+
+/* Download Button */
+.download-button {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border-color: #28a745;
+}
+
+.download-button:hover {
+  background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+  border-color: #1e7e34;
+}
+
+/* Open Button */
+.open-button {
+  background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+  color: white;
+  border-color: #007bff;
+}
+
+.open-button:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #520dc2 100%);
+  border-color: #0056b3;
+}
+
+/* Cancel Button */
+.cancel-button {
+  background: #f8f9fa;
+  color: #6c757d;
+  border-color: #dee2e6;
+}
+
+.cancel-button:hover {
+  background: #e9ecef;
+  color: #495057;
+  border-color: #adb5bd;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .document-action-modal {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .document-action-modal-header {
+    padding: 16px 20px 12px;
+  }
+  
+  .document-action-modal-body {
+    padding: 20px;
+  }
+  
+  .document-action-modal-footer {
+    padding: 12px 20px 20px;
+  }
+  
+  .file-title {
+    font-size: 1.1rem;
+  }
+  
+  .primary-message {
+    font-size: 1rem;
+  }
+  
+  .action-button {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+  
+  .button-subtitle {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-content {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .warning-icon {
+    align-self: center;
+  }
+}

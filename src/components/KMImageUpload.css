@@ -1,0 +1,171 @@
+.km-image-upload {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.km-file-input-hidden {
+  display: none;
+}
+
+.km-upload-area {
+  border: 2px dashed #3498db;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  background: #f8f9fa;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.km-upload-area:hover {
+  background: #e3f2fd;
+  border-color: #2980b9;
+  transform: translateY(-1px);
+}
+
+.km-upload-area.drag-over {
+  background: #e3f2fd;
+  border-color: #2980b9;
+  transform: scale(1.02);
+}
+
+.km-upload-area.has-file {
+  border-color: #27ae60;
+  background: #f0f8f0;
+  padding: 15px;
+  min-height: auto;
+}
+
+.km-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.km-upload-icon {
+  font-size: 32px;
+  color: #3498db;
+}
+
+.km-upload-text {
+  text-align: center;
+}
+
+.km-upload-primary {
+  color: #3498db;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.km-upload-secondary {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.km-upload-info {
+  color: #999;
+  font-size: 12px;
+}
+
+.km-file-selected {
+  width: 100%;
+}
+
+.km-file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+}
+
+.km-file-icon {
+  font-size: 24px;
+  color: #27ae60;
+}
+
+.km-file-details {
+  flex: 1;
+  text-align: left;
+}
+
+.km-file-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 2px;
+  word-break: break-all;
+}
+
+.km-file-size {
+  color: #666;
+  font-size: 12px;
+}
+
+.km-remove-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.km-remove-btn:hover {
+  background: #c0392b;
+}
+
+.km-preview {
+  text-align: center;
+}
+
+.km-preview-image {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  object-fit: cover;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .km-upload-area {
+    padding: 15px;
+    min-height: 100px;
+  }
+  
+  .km-upload-icon {
+    font-size: 28px;
+  }
+  
+  .km-upload-primary {
+    font-size: 14px;
+  }
+  
+  .km-upload-secondary {
+    font-size: 13px;
+  }
+  
+  .km-preview-image {
+    max-width: 150px;
+    max-height: 100px;
+  }
+}

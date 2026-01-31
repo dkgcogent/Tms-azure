@@ -1,0 +1,131 @@
+/* Modern FormLayout Component Styles */
+.form-layout-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.form-layout-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f3f4f6;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.form-layout-card:hover {
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Edit Notice Styling */
+.edit-notice {
+  margin-top: 24px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+  border: 1px solid #007bff;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideIn 0.3s ease-out;
+}
+
+.edit-notice-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-notice-icon {
+  font-size: 18px;
+}
+
+.edit-notice-text {
+  color: #0c5460;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.edit-notice-text strong {
+  color: #084c61;
+  font-weight: 600;
+}
+
+/* Form Content */
+.form-content {
+  padding: 40px;
+}
+
+.form-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  padding-top: 32px;
+  border-top: 2px solid #f3f4f6;
+}
+
+/* Animation for edit notice */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .form-fields-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-content {
+    padding: 24px;
+  }
+  
+  .form-fields-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+    padding-top: 24px;
+  }
+  
+  .edit-notice {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-content {
+    padding: 20px;
+  }
+  
+  .form-layout-card {
+    border-radius: 16px;
+    margin: 0 4px;
+  }
+}
