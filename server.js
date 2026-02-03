@@ -154,27 +154,47 @@ app.use('*', (req, res) => {
   });
 });
 
+// Export app for Vercel
+module.exports = app;
+
 // Initialize uploads directories and start server
 async function startServer() {
   try {
-    // Initialize uploads directories before starting server
-    await uploadsManager.initializeDirectories();
+    // Only initialize local directories if not using cloud storage
+    if (process.env.STORAGE_TYPE !== 'AZURE' && process.env.NODE_ENV !== 'production') {
+      try {
+        await uploadsManager.initializeDirectories();
+      } catch (dirError) {
+        console.warn('⚠️ Warning: Could not initialize local upload directories:', dirError.message);
+        // On Vercel this will fail, but we can continue if using Azure storage
+        if (process.env.STORAGE_TYPE !== 'AZURE') {
+          throw dirError;
+        }
+      }
+    }
 
-    // Start server
-    app.listen(PORT, () => {
-      console.log(`🚀 TMS Backend Server is running on port ${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`🗄️  Database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
-      console.log(`📁 Uploads directory: ${uploadsManager.getBaseUploadPath()}`);
-    });
+    // Start server (only if not running as a serverless function)
+    if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+      app.listen(PORT, () => {
+        console.log(`🚀 TMS Backend Server is running on port ${PORT}`);
+        console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+        console.log(`🗄️  Database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
+        console.log(`📁 Uploads directory: ${uploadsManager.getBaseUploadPath()}`);
+      });
+    }
   } catch (error) {
     console.error('❌ Failed to start server:', error);
-    process.exit(1);
+    // Don't exit on Vercel, as it might just be a transient error during build/init
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
   }
 }
 
-// Start the server
-startServer();
+// Start the server if not required as a module
+if (require.main === module) {
+  startServer();
+}
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
