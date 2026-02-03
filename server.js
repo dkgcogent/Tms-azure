@@ -123,13 +123,30 @@ app.use('/api/rates', ratesRoutes(pool));
 app.use('/api/vehicle-project-linking', vehicleProjectLinkingRoutes(pool));
 app.use('/api/vehicle-relationships', vehicleRelationshipsRoutes(pool));
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    message: 'TMS Backend Server is running',
-    timestamp: new Date().toISOString()
-  });
+// Health check endpoint with database verification
+app.get('/api/health', async (req, res) => {
+  try {
+    // Ping the database
+    const [rows] = await pool.query('SELECT 1 as connection');
+
+    res.json({
+      status: 'OK',
+      database: 'Connected',
+      message: 'TMS Backend Server and Database are running',
+      db_status: rows[0].connection === 1 ? 'Healthy' : 'Unexpected response',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Health Check Database Error:', error);
+    res.status(503).json({
+      status: 'Error',
+      database: 'Disconnected',
+      message: 'TMS Backend Server is up, but Database connection failed',
+      error: error.message,
+      code: error.code,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Error handling middleware
