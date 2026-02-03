@@ -251,7 +251,7 @@ const CustomerForm = () => {
     'Other': 'OTHER'
   };
 
-  
+
 
   // Handle adding new location group
   const addLocation = () => {
@@ -308,9 +308,9 @@ const CustomerForm = () => {
       CustomerSite: prev.CustomerSite.map((item, i) =>
         i === locationIndex
           ? {
-              ...item,
-              sites: item.sites.map((site, si) => (si === siteIndex ? value : site))
-            }
+            ...item,
+            sites: item.sites.map((site, si) => (si === siteIndex ? value : site))
+          }
           : item
       )
     }));
@@ -319,36 +319,36 @@ const CustomerForm = () => {
   const addArrayItem = (arrayName) => {
     const newItem = arrayName === 'AdditionalContacts'
       ? {
-          ContactType: 'Office Address',
-          Name: '',
-          Department: '',
-          Designation: '',
-          Location: '',
-          OfficeType: '',
-          Mobile: '',
-          Email: '',
-          DOB: '',
-          Address: {
-            house_flat_no: '',
-            street_locality: '',
-            city: '',
-            state: '',
-            pin_code: '',
-            country: 'India'
-          }
+        ContactType: 'Office Address',
+        Name: '',
+        Department: '',
+        Designation: '',
+        Location: '',
+        OfficeType: '',
+        Mobile: '',
+        Email: '',
+        DOB: '',
+        Address: {
+          house_flat_no: '',
+          street_locality: '',
+          city: '',
+          state: '',
+          pin_code: '',
+          country: 'India'
         }
+      }
       : getInitialState()[arrayName][0];
 
     setCustomerData(prev => ({
-        ...prev,
-        [arrayName]: [...prev[arrayName], newItem]
+      ...prev,
+      [arrayName]: [...prev[arrayName], newItem]
     }));
   };
 
   const removeArrayItem = (arrayName, index) => {
     setCustomerData(prev => ({
-        ...prev,
-        [arrayName]: prev[arrayName].filter((_, i) => i !== index)
+      ...prev,
+      [arrayName]: prev[arrayName].filter((_, i) => i !== index)
     }));
   };
 
@@ -891,7 +891,7 @@ const CustomerForm = () => {
     }
 
     // Create URL for server-stored image - use backend port 3004
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3004';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
     // Extract just the filename from the path
     let filename = imagePath;
@@ -1216,17 +1216,17 @@ const CustomerForm = () => {
 
     // 4. Primary Contact Validation
     if (customerData.PrimaryContact.CustomerMobileNo &&
-        !/^[6-9]\d{9}$/.test(customerData.PrimaryContact.CustomerMobileNo.replace(/\D/g, ''))) {
+      !/^[6-9]\d{9}$/.test(customerData.PrimaryContact.CustomerMobileNo.replace(/\D/g, ''))) {
       newErrors['PrimaryContact.CustomerMobileNo'] = 'Mobile number must be 10 digits starting with 6-9';
     }
 
     if (customerData.PrimaryContact.AlternateMobileNo &&
-        !/^[6-9]\d{9}$/.test(customerData.PrimaryContact.AlternateMobileNo.replace(/\D/g, ''))) {
+      !/^[6-9]\d{9}$/.test(customerData.PrimaryContact.AlternateMobileNo.replace(/\D/g, ''))) {
       newErrors['PrimaryContact.AlternateMobileNo'] = 'Alternate mobile number must be 10 digits starting with 6-9';
     }
 
     if (customerData.PrimaryContact.CustomerEmail &&
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerData.PrimaryContact.CustomerEmail)) {
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerData.PrimaryContact.CustomerEmail)) {
       newErrors['PrimaryContact.CustomerEmail'] = 'Please enter a valid email address';
     }
 
@@ -1304,12 +1304,12 @@ const CustomerForm = () => {
 
     // 7. Cognizant Contact Validation
     if (customerData.CustomerCogentContact.EmailID &&
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerData.CustomerCogentContact.EmailID)) {
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerData.CustomerCogentContact.EmailID)) {
       newErrors['CustomerCogentContact[EmailID]'] = 'Please enter a valid email address';
     }
 
     if (customerData.CustomerCogentContact.MobileNo &&
-        !/^[6-9]\d{9}$/.test(customerData.CustomerCogentContact.MobileNo.replace(/\D/g, ''))) {
+      !/^[6-9]\d{9}$/.test(customerData.CustomerCogentContact.MobileNo.replace(/\D/g, ''))) {
       newErrors['CustomerCogentContact[MobileNo]'] = 'Mobile number must be 10 digits starting with 6-9';
     }
 
@@ -1439,7 +1439,7 @@ const CustomerForm = () => {
 
           // For text inputs, select the content for easy replacement
           if (targetElement.tagName === 'INPUT' &&
-              (targetElement.type === 'text' || targetElement.type === 'number' || targetElement.type === 'email')) {
+            (targetElement.type === 'text' || targetElement.type === 'number' || targetElement.type === 'email')) {
             targetElement.select();
           }
         } else if (targetElement.type === 'radio') {
@@ -1601,34 +1601,34 @@ const CustomerForm = () => {
 
       // Use validatedData instead of customerData to ensure latest validated values
       for (const key in validatedData) {
-          if (validatedData[key] instanceof File) {
-              formData.append(key, validatedData[key], validatedData[key].name);
-          } else if (key === 'Locations') {
-              // Convert locations array to comma-separated string
-              const locationsString = validatedData.Locations
-                  .map(loc => loc.location)
-                  .filter(loc => loc.trim() !== '')
-                  .join(', ');
-              formData.append(key, locationsString);
-          } else if (key === 'CustomerSite') {
-              // Convert nested customer sites structure to formatted string
-              // Structure: [{ location: 'Delhi', sites: ['Dwarka Sec 21', 'Dwarka Sec 20'] }]
-              // Output: "Delhi - Dwarka Sec 21, Delhi - Dwarka Sec 20"
-              const sitesString = validatedData.CustomerSite
-                  .filter(locationGroup => locationGroup.location?.trim())
-                  .flatMap(locationGroup =>
-                      locationGroup.sites
-                          .filter(site => site?.trim())
-                          .map(site => `${locationGroup.location.trim()} - ${site.trim()}`)
-                  )
-                  .join(', ');
-              formData.append(key, sitesString);
-          } else if (Array.isArray(validatedData[key]) || (typeof validatedData[key] === 'object' && validatedData[key] !== null)) {
-              // Convert arrays and objects to JSON strings
-              formData.append(key, JSON.stringify(validatedData[key]));
-          } else {
-              formData.append(key, validatedData[key]);
-          }
+        if (validatedData[key] instanceof File) {
+          formData.append(key, validatedData[key], validatedData[key].name);
+        } else if (key === 'Locations') {
+          // Convert locations array to comma-separated string
+          const locationsString = validatedData.Locations
+            .map(loc => loc.location)
+            .filter(loc => loc.trim() !== '')
+            .join(', ');
+          formData.append(key, locationsString);
+        } else if (key === 'CustomerSite') {
+          // Convert nested customer sites structure to formatted string
+          // Structure: [{ location: 'Delhi', sites: ['Dwarka Sec 21', 'Dwarka Sec 20'] }]
+          // Output: "Delhi - Dwarka Sec 21, Delhi - Dwarka Sec 20"
+          const sitesString = validatedData.CustomerSite
+            .filter(locationGroup => locationGroup.location?.trim())
+            .flatMap(locationGroup =>
+              locationGroup.sites
+                .filter(site => site?.trim())
+                .map(site => `${locationGroup.location.trim()} - ${site.trim()}`)
+            )
+            .join(', ');
+          formData.append(key, sitesString);
+        } else if (Array.isArray(validatedData[key]) || (typeof validatedData[key] === 'object' && validatedData[key] !== null)) {
+          // Convert arrays and objects to JSON strings
+          formData.append(key, JSON.stringify(validatedData[key]));
+        } else {
+          formData.append(key, validatedData[key]);
+        }
       }
 
       setIsSubmitting(true);
@@ -1710,54 +1710,54 @@ const CustomerForm = () => {
 
     // Map customer data with proper date formatting
     for (const key in customer) {
-        if (Object.prototype.hasOwnProperty.call(editableCustomerData, key)) {
-            // Handle date fields specifically
-            if (key.includes('Date') || key.includes('date')) {
-                editableCustomerData[key] = formatDateForInput(customer[key]);
-            } else if (key === 'Locations') {
-                // Convert comma-separated string back to array
-                const locationsString = customer[key] || '';
-                editableCustomerData[key] = locationsString
-                    .split(',')
-                    .map(loc => ({ location: loc.trim() }))
-                    .filter(loc => loc.location !== '');
-                if (editableCustomerData[key].length === 0) {
-                    editableCustomerData[key] = [{ location: '' }];
-                }
-            } else if (key === 'CustomerSite') {
-                // Convert comma-separated string back to nested structure
-                // Input: "Delhi - Dwarka Sec 21, Delhi - Dwarka Sec 20, Mumbai - Andheri"
-                // Output: [{ location: 'Delhi', sites: ['Dwarka Sec 21', 'Dwarka Sec 20'] }, { location: 'Mumbai', sites: ['Andheri'] }]
-                const sitesString = customer[key] || '';
-                const locationMap = new Map();
+      if (Object.prototype.hasOwnProperty.call(editableCustomerData, key)) {
+        // Handle date fields specifically
+        if (key.includes('Date') || key.includes('date')) {
+          editableCustomerData[key] = formatDateForInput(customer[key]);
+        } else if (key === 'Locations') {
+          // Convert comma-separated string back to array
+          const locationsString = customer[key] || '';
+          editableCustomerData[key] = locationsString
+            .split(',')
+            .map(loc => ({ location: loc.trim() }))
+            .filter(loc => loc.location !== '');
+          if (editableCustomerData[key].length === 0) {
+            editableCustomerData[key] = [{ location: '' }];
+          }
+        } else if (key === 'CustomerSite') {
+          // Convert comma-separated string back to nested structure
+          // Input: "Delhi - Dwarka Sec 21, Delhi - Dwarka Sec 20, Mumbai - Andheri"
+          // Output: [{ location: 'Delhi', sites: ['Dwarka Sec 21', 'Dwarka Sec 20'] }, { location: 'Mumbai', sites: ['Andheri'] }]
+          const sitesString = customer[key] || '';
+          const locationMap = new Map();
 
-                sitesString.split(',').forEach(siteStr => {
-                    const parts = siteStr.trim().split(' - ');
-                    const location = parts[0]?.trim() || '';
-                    const site = parts[1]?.trim() || '';
+          sitesString.split(',').forEach(siteStr => {
+            const parts = siteStr.trim().split(' - ');
+            const location = parts[0]?.trim() || '';
+            const site = parts[1]?.trim() || '';
 
-                    if (location) {
-                        if (!locationMap.has(location)) {
-                            locationMap.set(location, []);
-                        }
-                        if (site) {
-                            locationMap.get(location).push(site);
-                        }
-                    }
-                });
-
-                editableCustomerData[key] = Array.from(locationMap.entries()).map(([location, sites]) => ({
-                    location,
-                    sites: sites.length > 0 ? sites : ['']
-                }));
-
-                if (editableCustomerData[key].length === 0) {
-                    editableCustomerData[key] = [{ location: '', sites: [''] }];
-                }
-            } else {
-                editableCustomerData[key] = customer[key] || '';
+            if (location) {
+              if (!locationMap.has(location)) {
+                locationMap.set(location, []);
+              }
+              if (site) {
+                locationMap.get(location).push(site);
+              }
             }
+          });
+
+          editableCustomerData[key] = Array.from(locationMap.entries()).map(([location, sites]) => ({
+            location,
+            sites: sites.length > 0 ? sites : ['']
+          }));
+
+          if (editableCustomerData[key].length === 0) {
+            editableCustomerData[key] = [{ location: '', sites: [''] }];
+          }
+        } else {
+          editableCustomerData[key] = customer[key] || '';
         }
+      }
     }
 
     // Map database address fields to frontend address fields
@@ -2043,7 +2043,7 @@ const CustomerForm = () => {
       }
 
       const queryString = queryParams.toString();
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3004';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       const exportUrl = `${API_BASE_URL}/api/export/customers${queryString ? `?${queryString}` : ''}`;
 
       console.log('📊 Export URL with filters:', exportUrl);
@@ -2430,100 +2430,100 @@ const CustomerForm = () => {
   };
 
   const renderFormField = (label, name, type = 'text', options = {}, required = false) => {
-      const { placeholder, values, readOnly } = options;
-      const isFile = type === 'file';
-      const isRadio = type === 'radio';
-      const isSelect = type === 'select';
-      const isTextarea = type === 'textarea';
-      const hasError = errors[name];
+    const { placeholder, values, readOnly } = options;
+    const isFile = type === 'file';
+    const isRadio = type === 'radio';
+    const isSelect = type === 'select';
+    const isTextarea = type === 'textarea';
+    const hasError = errors[name];
 
-      const id = `customer-${name}`;
+    const id = `customer-${name}`;
 
-      // Get the field value, handling nested objects like CustomerCogentContact[CustomerOwner]
-      let fieldValue = '';
-      if (name.includes('[') && name.includes(']')) {
-        const [objectName, propertyName] = name.split(/[\[\]]/);
-        fieldValue = customerData[objectName]?.[propertyName] || '';
-      } else {
-        fieldValue = customerData[name] || '';
-      }
+    // Get the field value, handling nested objects like CustomerCogentContact[CustomerOwner]
+    let fieldValue = '';
+    if (name.includes('[') && name.includes(']')) {
+      const [objectName, propertyName] = name.split(/[\[\]]/);
+      fieldValue = customerData[objectName]?.[propertyName] || '';
+    } else {
+      fieldValue = customerData[name] || '';
+    }
 
-      // Check for expiry status only on expiry date fields (fields ending with 'ExpiryDate')
-      const isExpiryField = name.endsWith('ExpiryDate');
-      const expiryStatus = (type === 'date' && isExpiryField && fieldValue) ? getExpiryStatus(name, fieldValue) : null;
+    // Check for expiry status only on expiry date fields (fields ending with 'ExpiryDate')
+    const isExpiryField = name.endsWith('ExpiryDate');
+    const expiryStatus = (type === 'date' && isExpiryField && fieldValue) ? getExpiryStatus(name, fieldValue) : null;
 
-      return (
-          <div className={`form-group ${options.fullWidth ? 'full-width' : ''} ${expiryStatus ? expiryStatus.className : ''} ${hasError ? 'has-error' : ''}`}>
-              <label htmlFor={id}>
-                  {label} {required && <span className="required-indicator">*</span>}
-                  {expiryStatus && (
-                    <span className={`expiry-indicator ${expiryStatus.status}`}>
-                      {expiryStatus.message}
-                    </span>
-                  )}
+    return (
+      <div className={`form-group ${options.fullWidth ? 'full-width' : ''} ${expiryStatus ? expiryStatus.className : ''} ${hasError ? 'has-error' : ''}`}>
+        <label htmlFor={id}>
+          {label} {required && <span className="required-indicator">*</span>}
+          {expiryStatus && (
+            <span className={`expiry-indicator ${expiryStatus.status}`}>
+              {expiryStatus.message}
+            </span>
+          )}
+        </label>
+        {isRadio ? (
+          <div className="radio-group">
+            {values.map(val => (
+              <label key={val}>
+                <input
+                  type="radio"
+                  id={`${id}-${val}`}
+                  name={name}
+                  value={val}
+                  checked={fieldValue === val}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                />
+                {val}
               </label>
-              {isRadio ? (
-                  <div className="radio-group">
-                      {values.map(val => (
-                          <label key={val}>
-                              <input
-                                  type="radio"
-                                  id={`${id}-${val}`}
-                                  name={name}
-                                  value={val}
-                                  checked={fieldValue === val}
-                                  onChange={handleInputChange}
-                                  onBlur={handleInputBlur}
-                              />
-                              {val}
-                          </label>
-                      ))}
-                  </div>
-              ) : isSelect ? (
-                  <select
-                      id={id}
-                      name={name}
-                      value={fieldValue}
-                      onChange={handleInputChange}
-                      onBlur={handleInputBlur}
-                      required={required}
-                      className={hasError ? 'error' : ''}
-                  >
-                      <option value="">Select {label}</option>
-                      {values.map(val => <option key={val} value={val}>{val}</option>)}
-                  </select>
-              ) : isTextarea ? (
-                  <textarea
-                      id={id}
-                      name={name}
-                      value={fieldValue}
-                      onChange={handleInputChange}
-                      onBlur={handleInputBlur}
-                      placeholder={placeholder}
-                      rows={3}
-                      className={hasError ? 'error' : ''}
-                  />
-              ) : (
-                  <input
-                      type={type}
-                      id={id}
-                      name={name}
-                      value={type !== 'file' ? fieldValue : undefined}
-                      onChange={handleInputChange}
-                      onBlur={type !== 'file' ? handleInputBlur : undefined}
-                      onKeyDown={handleKeyDown}
-                      placeholder={placeholder}
-                      required={required}
-                      readOnly={readOnly}
-                      className={`${hasError ? 'error' : ''} ${readOnly ? 'readonly' : ''} ${expiryStatus ? expiryStatus.className : ''}`}
-                  />
-              )}
-              {isFile && renderFilePreview(name, label)}
-              {hasError && <div className="error-message">{errors[name]}</div>}
+            ))}
           </div>
-      );
+        ) : isSelect ? (
+          <select
+            id={id}
+            name={name}
+            value={fieldValue}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            required={required}
+            className={hasError ? 'error' : ''}
+          >
+            <option value="">Select {label}</option>
+            {values.map(val => <option key={val} value={val}>{val}</option>)}
+          </select>
+        ) : isTextarea ? (
+          <textarea
+            id={id}
+            name={name}
+            value={fieldValue}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            placeholder={placeholder}
+            rows={3}
+            className={hasError ? 'error' : ''}
+          />
+        ) : (
+          <input
+            type={type}
+            id={id}
+            name={name}
+            value={type !== 'file' ? fieldValue : undefined}
+            onChange={handleInputChange}
+            onBlur={type !== 'file' ? handleInputBlur : undefined}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            required={required}
+            readOnly={readOnly}
+            className={`${hasError ? 'error' : ''} ${readOnly ? 'readonly' : ''} ${expiryStatus ? expiryStatus.className : ''}`}
+          />
+        )}
+        {isFile && renderFilePreview(name, label)}
+        {hasError && <div className="error-message">{errors[name]}</div>}
+      </div>
+    );
   };
-  
+
   const customerColumns = [
     {
       key: 'CustomerCode',
@@ -2593,557 +2593,559 @@ const CustomerForm = () => {
 
       <div className="customer-form">
         <form onSubmit={handleSubmit} noValidate>
-            <div className="form-sections">
-                {/* Section 1: Basic Information */}
-                <div className="form-section">
-                    <h4>📋 Basic Information</h4>
-                    <div className="form-grid">
-                        {renderFormField('Master Customer Name', 'MasterCustomerName', 'text', { placeholder: 'Enter master customer name' }, true)}
-                        {renderFormField('Company Name', 'Name', 'text', { placeholder: 'Enter company name' }, true)}
-                        {renderFormField('Customer Code', 'CustomerCode', 'text', { placeholder: 'Auto-generated', readOnly: true })}
-                        {renderFormField('Type of Services', 'TypeOfServices', 'select', { values: ['Transportation', 'Warehousing', 'Both', 'Logistics', 'Industrial Transport', 'Retail Distribution', 'Other'] }, true)}
-                        {renderFormField('Service Code', 'ServiceCode', 'text', { placeholder: 'Auto-selected', readOnly: true })}
-                        {renderMultipleCustomerSites()}
-                    </div>
+          <div className="form-sections">
+            {/* Section 1: Basic Information */}
+            <div className="form-section">
+              <h4>📋 Basic Information</h4>
+              <div className="form-grid">
+                {renderFormField('Master Customer Name', 'MasterCustomerName', 'text', { placeholder: 'Enter master customer name' }, true)}
+                {renderFormField('Company Name', 'Name', 'text', { placeholder: 'Enter company name' }, true)}
+                {renderFormField('Customer Code', 'CustomerCode', 'text', { placeholder: 'Auto-generated', readOnly: true })}
+                {renderFormField('Type of Services', 'TypeOfServices', 'select', { values: ['Transportation', 'Warehousing', 'Both', 'Logistics', 'Industrial Transport', 'Retail Distribution', 'Other'] }, true)}
+                {renderFormField('Service Code', 'ServiceCode', 'text', { placeholder: 'Auto-selected', readOnly: true })}
+                {renderMultipleCustomerSites()}
+              </div>
+            </div>
+
+            {/* Section 2: Agreement & Terms */}
+            <div className="form-section">
+              <h4>📜 Agreement & Terms</h4>
+              <div className="form-grid">
+                {renderFormField('Agreement', 'Agreement', 'radio', { values: ['Yes', 'No'] })}
+
+
+
+                {/* Agreement File Upload */}
+                <div className="form-group">
+                  <DocumentUpload
+                    label="Agreement File"
+                    name="AgreementFile"
+                    value={customerData.AgreementFile}
+                    onChange={(file) => {
+                      setCustomerData(prev => ({ ...prev, AgreementFile: file }));
+                    }}
+                    onDelete={handleFileDelete}
+                    existingFileUrl={editingCustomer?.AgreementFileUrl}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    entityType="customers"
+                    entityId={editingCustomer?.CustomerID}
+                    isEditing={!!editingCustomer}
+                  />
                 </div>
 
-                {/* Section 2: Agreement & Terms */}
-                <div className="form-section">
-                    <h4>📜 Agreement & Terms</h4>
-                    <div className="form-grid">
-                        {renderFormField('Agreement', 'Agreement', 'radio', { values: ['Yes', 'No'] })}
+                {renderFormField('Agreement Date', 'AgreementDate', 'date')}
+                {renderFormField('Agreement Tenure (in Years)', 'AgreementTenure', 'number', { placeholder: 'e.g., 2' })}
+                {renderFormField('Agreement Expiry Date', 'AgreementExpiryDate', 'date')}
+                {renderFormField('Customer Notice Period (in Days)', 'CustomerNoticePeriod', 'number', { placeholder: 'e.g., 30' })}
+                {renderFormField('Cogent Notice Period (in Days)', 'CogentNoticePeriod', 'number', { placeholder: 'e.g., 30' })}
+                {renderFormField('Credit Period (in Days)', 'CreditPeriod', 'number', { placeholder: 'e.g., 45' })}
+                {renderFormField('Customer Insurance', 'Insurance', 'radio', { values: ['Yes', 'No'] })}
+                {renderFormField('Minimum Insurance value (in Rs)', 'MinimumInsuranceValue', 'number', {
+                  placeholder: 'Enter amount', onKeyDown: (e) => {
+                    if (e.key === 'e' || e.key === 'E') {
+                      e.preventDefault();
+                    }
+                  }
+                })}
+                {renderFormField('Cogent Debit Clause', 'CogentDebitClause', 'radio', { values: ['Yes', 'No'] })}
+                {renderFormField('Cogent Debit Limit', 'CogentDebitLimit', 'number', { placeholder: 'Enter limit' })}
+                {renderFormField('BG (Bank Guarantee)', 'BG', 'radio', { values: ['Yes', 'No'] })}
 
-
-
-                        {/* Agreement File Upload */}
-                        <div className="form-group">
-                            <DocumentUpload
-                                label="Agreement File"
-                                name="AgreementFile"
-                                value={customerData.AgreementFile}
-                                onChange={(file) => {
-                                    setCustomerData(prev => ({ ...prev, AgreementFile: file }));
-                                }}
-                                onDelete={handleFileDelete}
-                                existingFileUrl={editingCustomer?.AgreementFileUrl}
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                entityType="customers"
-                                entityId={editingCustomer?.CustomerID}
-                                isEditing={!!editingCustomer}
-                            />
-                        </div>
-
-                        {renderFormField('Agreement Date', 'AgreementDate', 'date')}
-                        {renderFormField('Agreement Tenure (in Years)', 'AgreementTenure', 'number', { placeholder: 'e.g., 2' })}
-                        {renderFormField('Agreement Expiry Date', 'AgreementExpiryDate', 'date')}
-                        {renderFormField('Customer Notice Period (in Days)', 'CustomerNoticePeriod', 'number', { placeholder: 'e.g., 30' })}
-                        {renderFormField('Cogent Notice Period (in Days)', 'CogentNoticePeriod', 'number', { placeholder: 'e.g., 30' })}
-                        {renderFormField('Credit Period (in Days)', 'CreditPeriod', 'number', { placeholder: 'e.g., 45' })}
-                        {renderFormField('Customer Insurance', 'Insurance', 'radio', { values: ['Yes', 'No'] })}
-                        {renderFormField('Minimum Insurance value (in Rs)', 'MinimumInsuranceValue', 'number', { placeholder: 'Enter amount', onKeyDown: (e) => {
-                          if (e.key === 'e' || e.key === 'E') {
-                            e.preventDefault();
-                          }
-                        } })}
-                        {renderFormField('Cogent Debit Clause', 'CogentDebitClause', 'radio', { values: ['Yes', 'No'] })}
-                        {renderFormField('Cogent Debit Limit', 'CogentDebitLimit', 'number', { placeholder: 'Enter limit' })}
-                        {renderFormField('BG (Bank Guarantee)', 'BG', 'radio', { values: ['Yes', 'No'] })}
-
-                        {/* BG File Upload */}
-                        <div className="form-group">
-                            <DocumentUpload
-                                label="Bank Guarantee File"
-                                name="BGFile"
-                                value={customerData.BGFile}
-                                onChange={(file) => {
-                                    setCustomerData(prev => ({ ...prev, BGFile: file }));
-                                }}
-                                onDelete={handleFileDelete}
-                                existingFileUrl={editingCustomer?.BGFileUrl}
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                entityType="customers"
-                                entityId={editingCustomer?.CustomerID}
-                                isEditing={!!editingCustomer}
-                            />
-                        </div>
-
-                        {renderFormField('BG Amount', 'BGAmount', 'number', { placeholder: 'Enter amount' })}
-                        {renderFormField('BG Date', 'BGDate', 'date')}
-                        {renderFormField('BG Expiry Date', 'BGExpiryDate', 'date')}
-                        {renderFormField('BG Bank', 'BGBank', 'text', { placeholder: 'Enter bank name' })}
-                        {renderFormField('BG Receiving by Customer', 'BGReceivingByCustomer', 'text', { placeholder: 'Receiver name' })}
-
-                        {/* BG Receiving File Upload */}
-                        <div className="form-group">
-                            <DocumentUpload
-                                label="BG Receiving File"
-                                name="BGReceivingFile"
-                                value={customerData.BGReceivingFile}
-                                onChange={(file) => {
-
-                                    setCustomerData(prev => ({ ...prev, BGReceivingFile: file }));
-                                }}
-                                onDelete={handleFileDelete}
-                                existingFileUrl={editingCustomer?.BGReceivingFileUrl}
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                entityType="customers"
-                                entityId={editingCustomer?.CustomerID}
-                                isEditing={!!editingCustomer}
-                            />
-                        </div>
-                    </div>
+                {/* BG File Upload */}
+                <div className="form-group">
+                  <DocumentUpload
+                    label="Bank Guarantee File"
+                    name="BGFile"
+                    value={customerData.BGFile}
+                    onChange={(file) => {
+                      setCustomerData(prev => ({ ...prev, BGFile: file }));
+                    }}
+                    onDelete={handleFileDelete}
+                    existingFileUrl={editingCustomer?.BGFileUrl}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    entityType="customers"
+                    entityId={editingCustomer?.CustomerID}
+                    isEditing={!!editingCustomer}
+                  />
                 </div>
 
-                {/* Section 3: Purchase Order */}
-                <div className="form-section">
-                    <h4>📦 Purchase Order</h4>
-                    <div className="form-grid">
-                        {renderFormField('PO', 'PO', 'text', { placeholder: 'Enter PO number' })}
+                {renderFormField('BG Amount', 'BGAmount', 'number', { placeholder: 'Enter amount' })}
+                {renderFormField('BG Date', 'BGDate', 'date')}
+                {renderFormField('BG Expiry Date', 'BGExpiryDate', 'date')}
+                {renderFormField('BG Bank', 'BGBank', 'text', { placeholder: 'Enter bank name' })}
+                {renderFormField('BG Receiving by Customer', 'BGReceivingByCustomer', 'text', { placeholder: 'Receiver name' })}
 
-                        {/* PO File Upload */}
-                        <div className="form-group">
-                            <DocumentUpload
-                                label="Purchase Order File"
-                                name="POFile"
-                                value={customerData.POFile}
-                                onChange={(file) => {
+                {/* BG Receiving File Upload */}
+                <div className="form-group">
+                  <DocumentUpload
+                    label="BG Receiving File"
+                    name="BGReceivingFile"
+                    value={customerData.BGReceivingFile}
+                    onChange={(file) => {
 
-                                    setCustomerData(prev => ({ ...prev, POFile: file }));
-                                }}
-                                onDelete={handleFileDelete}
-                                existingFileUrl={editingCustomer?.POFileUrl}
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                entityType="customers"
-                                entityId={editingCustomer?.CustomerID}
-                                isEditing={!!editingCustomer}
-                            />
-                        </div>
-
-                        {renderFormField('PO Value', 'POValue', 'number', { placeholder: 'Enter PO value' })}
-                        {renderFormField('PO Date', 'PODate', 'date')}
-                        {renderFormField('PO Tenure', 'POTenure', 'text', { placeholder: 'e.g., 1 year' })}
-                        {renderFormField('PO Expiry Date', 'POExpiryDate', 'date')}
-                    </div>
+                      setCustomerData(prev => ({ ...prev, BGReceivingFile: file }));
+                    }}
+                    onDelete={handleFileDelete}
+                    existingFileUrl={editingCustomer?.BGReceivingFileUrl}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    entityType="customers"
+                    entityId={editingCustomer?.CustomerID}
+                    isEditing={!!editingCustomer}
+                  />
                 </div>
-                
-                {/* Section 4: Commercials & Billing */}
-                <div className="form-section">
-                    <h4>💰 Commercials & Billing</h4>
-                    <div className="form-grid">
-                        <div className="form-group">
-                            <DocumentUpload
-                                label="Rates Annexure"
-                                name="RatesAnnexureFile"
-                                value={customerData.RatesAnnexureFile}
-                                onChange={(file) => {
+              </div>
+            </div>
 
-                                    setCustomerData(prev => ({ ...prev, RatesAnnexureFile: file }));
-                                }}
-                                onDelete={handleFileDelete}
-                                existingFileUrl={editingCustomer?.RatesAnnexureFileUrl}
-                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                                entityType="customers"
-                                entityId={editingCustomer?.CustomerID}
-                                isEditing={!!editingCustomer}
-                            />
-                        </div>
-                        {renderFormField('Rates', 'Rates', 'text', { placeholder: 'e.g., As per annexure' })}
-                        {renderFormField('Yearly Escalation Clause', 'YearlyEscalationClause', 'radio', { values: ['Yes', 'No'] })}
-                        <ValidatedInput
-                          name="GSTNo"
-                          value={customerData.GSTNo}
-                          onChange={handleInputChange}
-                          validationRule="GST"
-                          required={false}
-                          label="GST No."
-                          placeholder="Enter GST number (optional)"
-                          showFormatHint={true}
-                          autoFormat={true}
+            {/* Section 3: Purchase Order */}
+            <div className="form-section">
+              <h4>📦 Purchase Order</h4>
+              <div className="form-grid">
+                {renderFormField('PO', 'PO', 'text', { placeholder: 'Enter PO number' })}
+
+                {/* PO File Upload */}
+                <div className="form-group">
+                  <DocumentUpload
+                    label="Purchase Order File"
+                    name="POFile"
+                    value={customerData.POFile}
+                    onChange={(file) => {
+
+                      setCustomerData(prev => ({ ...prev, POFile: file }));
+                    }}
+                    onDelete={handleFileDelete}
+                    existingFileUrl={editingCustomer?.POFileUrl}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    entityType="customers"
+                    entityId={editingCustomer?.CustomerID}
+                    isEditing={!!editingCustomer}
+                  />
+                </div>
+
+                {renderFormField('PO Value', 'POValue', 'number', { placeholder: 'Enter PO value' })}
+                {renderFormField('PO Date', 'PODate', 'date')}
+                {renderFormField('PO Tenure', 'POTenure', 'text', { placeholder: 'e.g., 1 year' })}
+                {renderFormField('PO Expiry Date', 'POExpiryDate', 'date')}
+              </div>
+            </div>
+
+            {/* Section 4: Commercials & Billing */}
+            <div className="form-section">
+              <h4>💰 Commercials & Billing</h4>
+              <div className="form-grid">
+                <div className="form-group">
+                  <DocumentUpload
+                    label="Rates Annexure"
+                    name="RatesAnnexureFile"
+                    value={customerData.RatesAnnexureFile}
+                    onChange={(file) => {
+
+                      setCustomerData(prev => ({ ...prev, RatesAnnexureFile: file }));
+                    }}
+                    onDelete={handleFileDelete}
+                    existingFileUrl={editingCustomer?.RatesAnnexureFileUrl}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                    entityType="customers"
+                    entityId={editingCustomer?.CustomerID}
+                    isEditing={!!editingCustomer}
+                  />
+                </div>
+                {renderFormField('Rates', 'Rates', 'text', { placeholder: 'e.g., As per annexure' })}
+                {renderFormField('Yearly Escalation Clause', 'YearlyEscalationClause', 'radio', { values: ['Yes', 'No'] })}
+                <ValidatedInput
+                  name="GSTNo"
+                  value={customerData.GSTNo}
+                  onChange={handleInputChange}
+                  validationRule="GST"
+                  required={false}
+                  label="GST No."
+                  placeholder="Enter GST number (optional)"
+                  showFormatHint={true}
+                  autoFormat={true}
+                />
+                {renderFormField('Type of Billing', 'TypeOfBilling', 'select', { values: ['RCM', 'GST', 'Exempt'] }, true)}
+                {/* Conditional GST Rate field based on Type of Billing */}
+                {customerData.TypeOfBilling === 'RCM' || customerData.TypeOfBilling === 'Exempt' ? (
+                  // Read-only field with value 0 for RCM and Exempt
+                  renderFormField('GST Rate (%)', 'GSTRate', 'number', { readOnly: true, placeholder: '0' })
+                ) : customerData.TypeOfBilling === 'GST' ? (
+                  // Dropdown with GST rate options for GST billing type
+                  renderFormField('GST Rate (%)', 'GSTRate', 'select', { values: ['0', '5', '12', '18', '28'] }, true)
+                ) : (
+                  // Default number input when no billing type is selected
+                  renderFormField('GST Rate (%)', 'GSTRate', 'number', { placeholder: 'e.g., 18' })
+                )}
+                {renderFormField('Billing Tenure', 'BillingTenure', 'select', { values: ['Monthly', 'Specific Dates'] }, false)}
+                {/* Conditional date fields for Specific Dates billing tenure */}
+                {customerData.BillingTenure === 'Specific Dates' && (
+                  <>
+                    {renderFormField('Billing From Date', 'BillingFromDate', 'date', { placeholder: 'Select from date' }, true)}
+                    {renderFormField('Billing To Date', 'BillingToDate', 'date', { placeholder: 'Select to date' }, true)}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Section 5: MIS & Reports */}
+            <div className="form-section">
+              <h4>📊 MIS & Reports</h4>
+              <div className="form-grid">
+                <div className="form-group">
+                  <DocumentUpload
+                    label="MIS Format"
+                    name="MISFormatFile"
+                    value={customerData.MISFormatFile}
+                    onChange={(file) => {
+
+                      setCustomerData(prev => ({ ...prev, MISFormatFile: file }));
+                    }}
+                    onDelete={handleFileDelete}
+                    existingFileUrl={editingCustomer?.MISFormatFileUrl}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                    entityType="customers"
+                    entityId={editingCustomer?.CustomerID}
+                    isEditing={!!editingCustomer}
+                  />
+                </div>
+                <div className="form-group">
+                  <DocumentUpload
+                    label="KPI / SLA"
+                    name="KPISLAFile"
+                    value={customerData.KPISLAFile}
+                    onChange={(file) => {
+
+                      setCustomerData(prev => ({ ...prev, KPISLAFile: file }));
+                    }}
+                    onDelete={handleFileDelete}
+                    existingFileUrl={editingCustomer?.KPISLAFileUrl}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                    entityType="customers"
+                    entityId={editingCustomer?.CustomerID}
+                    isEditing={!!editingCustomer}
+                  />
+                </div>
+                <div className="form-group">
+                  <DocumentUpload
+                    label="Performance Report"
+                    name="PerformanceReportFile"
+                    value={customerData.PerformanceReportFile}
+                    onChange={(file) => {
+
+                      setCustomerData(prev => ({ ...prev, PerformanceReportFile: file }));
+                    }}
+                    onDelete={handleFileDelete}
+                    existingFileUrl={editingCustomer?.PerformanceReportFileUrl}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                    entityType="customers"
+                    entityId={editingCustomer?.CustomerID}
+                    isEditing={!!editingCustomer}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section 6: Contact Management */}
+            <div className="form-section">
+              <h4>👥 Contact Management</h4>
+
+              {/* Primary Contact Information */}
+              <div className="form-subsection">
+                <h5>📞 Primary Contact Information</h5>
+                <div className="form-grid">
+                  <ValidatedInput
+                    name="CustomerMobileNo"
+                    value={customerData.PrimaryContact.CustomerMobileNo}
+                    onChange={handlePrimaryContactChange}
+                    validationRule="MOBILE"
+                    required={false}
+                    label="Primary Mobile No"
+                    placeholder="Enter mobile number"
+                    showFormatHint={true}
+                    autoFormat={true}
+                  />
+                  <ValidatedInput
+                    name="AlternateMobileNo"
+                    value={customerData.PrimaryContact.AlternateMobileNo}
+                    onChange={handlePrimaryContactChange}
+                    validationRule="MOBILE"
+                    required={false}
+                    label="Alternate Mobile No"
+                    placeholder="Enter alternate mobile number"
+                    showFormatHint={true}
+                    autoFormat={true}
+                  />
+                  <ValidatedInput
+                    name="CustomerEmail"
+                    value={customerData.PrimaryContact.CustomerEmail}
+                    onChange={handlePrimaryContactChange}
+                    validationRule="EMAIL"
+                    required={false}
+                    label="Primary Email"
+                    placeholder="Enter email address"
+                    showFormatHint={false}
+                    autoFormat={false}
+                  />
+                  <div className={`form-group ${errors['PrimaryContact.CustomerContactPerson'] ? 'has-error' : ''}`}>
+                    <label htmlFor="CustomerContactPerson">Primary Contact Person</label>
+                    <input
+                      type="text"
+                      id="CustomerContactPerson"
+                      name="CustomerContactPerson"
+                      value={customerData.PrimaryContact.CustomerContactPerson}
+                      onChange={handlePrimaryContactChange}
+                      onBlur={handlePrimaryContactBlur}
+                      placeholder="Enter contact person name"
+                      className={errors['PrimaryContact.CustomerContactPerson'] ? 'error' : ''}
+                    />
+                    {errors['PrimaryContact.CustomerContactPerson'] && (
+                      <div className="error-message">{errors['PrimaryContact.CustomerContactPerson']}</div>
+                    )}
+                  </div>
+                  <div className={`form-group ${errors['PrimaryContact.CustomerGroup'] ? 'has-error' : ''}`}>
+                    <label htmlFor="CustomerGroup">Customer Group</label>
+                    <input
+                      type="text"
+                      id="CustomerGroup"
+                      name="CustomerGroup"
+                      value={customerData.PrimaryContact.CustomerGroup}
+                      onChange={handlePrimaryContactChange}
+                      onBlur={handlePrimaryContactBlur}
+                      placeholder="Enter customer group"
+                      className={errors['PrimaryContact.CustomerGroup'] ? 'error' : ''}
+                    />
+                    {errors['PrimaryContact.CustomerGroup'] && (
+                      <div className="error-message">{errors['PrimaryContact.CustomerGroup']}</div>
+                    )}
+                  </div>
+
+                  {/* Enhanced Customer Address with Pin Code Lookup */}
+                  <div className="form-group full-width">
+                    <AddressForm
+                      addressData={getAddressData()}
+                      onAddressChange={handleAddressChange}
+                      errors={errors}
+                      required={true}
+                      prefix="customer"
+                      title="Primary Address"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Contacts (Office Addresses & Key Contacts) */}
+            <div className="form-subsection">
+              <h5>🏢 Additional Contacts</h5>
+              {customerData.AdditionalContacts.map((contact, index) => (
+                <div key={index} className="contact-card">
+                  <div className="contact-header">
+                    <h6>Contact #{index + 1}</h6>
+                    {customerData.AdditionalContacts.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeArrayItem('AdditionalContacts', index)}
+                        className="remove-contact-btn"
+                        title="Remove contact"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label htmlFor={`AdditionalContacts[${index}][ContactType]`}>Contact Type</label>
+                      <select
+                        id={`AdditionalContacts[${index}][ContactType]`}
+                        name="ContactType"
+                        value={contact.ContactType}
+                        onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
+                      >
+                        <option value="Office Address">Office Address</option>
+                        <option value="Key Contact">Key Contact</option>
+                      </select>
+                    </div>
+
+                    <div className={`form-group ${errors[`AdditionalContacts[${index}].Name`] ? 'has-error' : ''}`}>
+                      <label htmlFor={`AdditionalContacts[${index}][Name]`}>Name/Contact Person</label>
+                      <input
+                        type="text"
+                        id={`AdditionalContacts[${index}][Name]`}
+                        name="Name"
+                        value={contact.Name}
+                        onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
+                        onBlur={(e) => handleAdditionalContactBlur(e, index)}
+                        placeholder="Enter name"
+                        className={errors[`AdditionalContacts[${index}].Name`] ? 'error' : ''}
+                      />
+                      {errors[`AdditionalContacts[${index}].Name`] && (
+                        <div className="error-message">{errors[`AdditionalContacts[${index}].Name`]}</div>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor={`AdditionalContacts[${index}][Department]`}>Department</label>
+                      <input
+                        type="text"
+                        id={`AdditionalContacts[${index}][Department]`}
+                        name="Department"
+                        value={contact.Department}
+                        onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
+                        placeholder="Enter department"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor={`AdditionalContacts[${index}][Designation]`}>Designation</label>
+                      <input
+                        type="text"
+                        id={`AdditionalContacts[${index}][Designation]`}
+                        name="Designation"
+                        value={contact.Designation}
+                        onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
+                        placeholder="Enter designation"
+                      />
+                    </div>
+
+                    {contact.ContactType === 'Key Contact' && (
+                      <div className="form-group">
+                        <label htmlFor={`AdditionalContacts[${index}][Location]`}>Location</label>
+                        <input
+                          type="text"
+                          id={`AdditionalContacts[${index}][Location]`}
+                          name="Location"
+                          value={contact.Location}
+                          onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
+                          placeholder="Enter location"
                         />
-                        {renderFormField('Type of Billing', 'TypeOfBilling', 'select', { values: ['RCM', 'GST', 'Exempt'] }, true)}
-                        {/* Conditional GST Rate field based on Type of Billing */}
-                        {customerData.TypeOfBilling === 'RCM' || customerData.TypeOfBilling === 'Exempt' ? (
-                          // Read-only field with value 0 for RCM and Exempt
-                          renderFormField('GST Rate (%)', 'GSTRate', 'number', { readOnly: true, placeholder: '0' })
-                        ) : customerData.TypeOfBilling === 'GST' ? (
-                          // Dropdown with GST rate options for GST billing type
-                          renderFormField('GST Rate (%)', 'GSTRate', 'select', { values: ['0', '5', '12', '18', '28'] }, true)
-                        ) : (
-                          // Default number input when no billing type is selected
-                          renderFormField('GST Rate (%)', 'GSTRate', 'number', { placeholder: 'e.g., 18' })
-                        )}
-                        {renderFormField('Billing Tenure', 'BillingTenure', 'select', { values: ['Monthly', 'Specific Dates'] }, false)}
-                        {/* Conditional date fields for Specific Dates billing tenure */}
-                        {customerData.BillingTenure === 'Specific Dates' && (
+                      </div>
+                    )}
+
+                    <div className="form-group">
+                      <label htmlFor={`AdditionalContacts[${index}][OfficeType]`}>Office Type</label>
+                      <select
+                        id={`AdditionalContacts[${index}][OfficeType]`}
+                        name="OfficeType"
+                        value={contact.OfficeType}
+                        onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
+                      >
+                        <option value="">Select Office Type</option>
+                        {contact.ContactType === 'Office Address' ? (
                           <>
-                            {renderFormField('Billing From Date', 'BillingFromDate', 'date', { placeholder: 'Select from date' }, true)}
-                            {renderFormField('Billing To Date', 'BillingToDate', 'date', { placeholder: 'Select to date' }, true)}
+                            <option value="Registered Office">Registered Office</option>
+                            <option value="Corporate Office">Corporate Office</option>
+                            <option value="Regional Office">Regional Office</option>
+                            <option value="Branch Office">Branch Office</option>
+                            <option value="Warehouse">Warehouse</option>
+                            <option value="Site Office">Site Office</option>
+                            <option value="Other">Other</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="HO">HO</option>
+                            <option value="RO">RO</option>
+                            <option value="Branch">Branch</option>
+                            <option value="WH">WH</option>
+                            <option value="Others">Others</option>
                           </>
                         )}
+                      </select>
                     </div>
+
+                    <ValidatedInput
+                      name="Mobile"
+                      value={contact.Mobile}
+                      onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
+                      validationRule="MOBILE"
+                      required={false}
+                      label="Mobile No"
+                      placeholder="Enter mobile number"
+                      showFormatHint={true}
+                      autoFormat={true}
+                    />
+
+                    <ValidatedInput
+                      name="Email"
+                      value={contact.Email}
+                      onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
+                      validationRule="EMAIL"
+                      required={false}
+                      label="Email"
+                      placeholder="Enter email address"
+                      showFormatHint={false}
+                      autoFormat={false}
+                    />
+
+                    <div className={`form-group ${errors[`AdditionalContacts[${index}].DOB`] ? 'has-error' : ''}`}>
+                      <label htmlFor={`AdditionalContacts[${index}][DOB]`}>Date of Birth</label>
+                      <input
+                        type="date"
+                        id={`AdditionalContacts[${index}][DOB]`}
+                        name="DOB"
+                        value={contact.DOB}
+                        onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
+                        onBlur={(e) => handleAdditionalContactBlur(e, index)}
+                        className={errors[`AdditionalContacts[${index}].DOB`] ? 'error' : ''}
+                      />
+                      {errors[`AdditionalContacts[${index}].DOB`] && (
+                        <div className="error-message">{errors[`AdditionalContacts[${index}].DOB`]}</div>
+                      )}
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label>Address</label>
+                      <AddressForm
+                        addressData={contact.Address || {
+                          house_flat_no: '',
+                          street_locality: '',
+                          city: '',
+                          state: '',
+                          pin_code: '',
+                          country: 'India'
+                        }}
+                        onAddressChange={(addressData) => {
+                          console.log('🏠 AddressForm onChange called for contact', index, ':', addressData);
+                          const updatedContacts = [...customerData.AdditionalContacts];
+                          updatedContacts[index] = {
+                            ...updatedContacts[index],
+                            Address: addressData
+                          };
+                          console.log('🏠 Updated contacts array:', updatedContacts);
+                          setCustomerData(prev => ({
+                            ...prev,
+                            AdditionalContacts: updatedContacts
+                          }));
+                        }}
+                        errors={errors}
+                        required={false}
+                        title="Contact Address"
+                      />
+                    </div>
+                  </div>
                 </div>
-
-                {/* Section 5: MIS & Reports */}
-                <div className="form-section">
-                    <h4>📊 MIS & Reports</h4>
-                    <div className="form-grid">
-                        <div className="form-group">
-                            <DocumentUpload
-                                label="MIS Format"
-                                name="MISFormatFile"
-                                value={customerData.MISFormatFile}
-                                onChange={(file) => {
-
-                                    setCustomerData(prev => ({ ...prev, MISFormatFile: file }));
-                                }}
-                                onDelete={handleFileDelete}
-                                existingFileUrl={editingCustomer?.MISFormatFileUrl}
-                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                                entityType="customers"
-                                entityId={editingCustomer?.CustomerID}
-                                isEditing={!!editingCustomer}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <DocumentUpload
-                                label="KPI / SLA"
-                                name="KPISLAFile"
-                                value={customerData.KPISLAFile}
-                                onChange={(file) => {
-
-                                    setCustomerData(prev => ({ ...prev, KPISLAFile: file }));
-                                }}
-                                onDelete={handleFileDelete}
-                                existingFileUrl={editingCustomer?.KPISLAFileUrl}
-                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                                entityType="customers"
-                                entityId={editingCustomer?.CustomerID}
-                                isEditing={!!editingCustomer}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <DocumentUpload
-                                label="Performance Report"
-                                name="PerformanceReportFile"
-                                value={customerData.PerformanceReportFile}
-                                onChange={(file) => {
-
-                                    setCustomerData(prev => ({ ...prev, PerformanceReportFile: file }));
-                                }}
-                                onDelete={handleFileDelete}
-                                existingFileUrl={editingCustomer?.PerformanceReportFileUrl}
-                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                                entityType="customers"
-                                entityId={editingCustomer?.CustomerID}
-                                isEditing={!!editingCustomer}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Section 6: Contact Management */}
-                <div className="form-section">
-                    <h4>👥 Contact Management</h4>
-
-                    {/* Primary Contact Information */}
-                    <div className="form-subsection">
-                        <h5>📞 Primary Contact Information</h5>
-                        <div className="form-grid">
-                            <ValidatedInput
-                              name="CustomerMobileNo"
-                              value={customerData.PrimaryContact.CustomerMobileNo}
-                              onChange={handlePrimaryContactChange}
-                              validationRule="MOBILE"
-                              required={false}
-                              label="Primary Mobile No"
-                              placeholder="Enter mobile number"
-                              showFormatHint={true}
-                              autoFormat={true}
-                            />
-                            <ValidatedInput
-                              name="AlternateMobileNo"
-                              value={customerData.PrimaryContact.AlternateMobileNo}
-                              onChange={handlePrimaryContactChange}
-                              validationRule="MOBILE"
-                              required={false}
-                              label="Alternate Mobile No"
-                              placeholder="Enter alternate mobile number"
-                              showFormatHint={true}
-                              autoFormat={true}
-                            />
-                            <ValidatedInput
-                              name="CustomerEmail"
-                              value={customerData.PrimaryContact.CustomerEmail}
-                              onChange={handlePrimaryContactChange}
-                              validationRule="EMAIL"
-                              required={false}
-                              label="Primary Email"
-                              placeholder="Enter email address"
-                              showFormatHint={false}
-                              autoFormat={false}
-                            />
-                            <div className={`form-group ${errors['PrimaryContact.CustomerContactPerson'] ? 'has-error' : ''}`}>
-                                <label htmlFor="CustomerContactPerson">Primary Contact Person</label>
-                                <input
-                                    type="text"
-                                    id="CustomerContactPerson"
-                                    name="CustomerContactPerson"
-                                    value={customerData.PrimaryContact.CustomerContactPerson}
-                                    onChange={handlePrimaryContactChange}
-                                    onBlur={handlePrimaryContactBlur}
-                                    placeholder="Enter contact person name"
-                                    className={errors['PrimaryContact.CustomerContactPerson'] ? 'error' : ''}
-                                />
-                                {errors['PrimaryContact.CustomerContactPerson'] && (
-                                    <div className="error-message">{errors['PrimaryContact.CustomerContactPerson']}</div>
-                                )}
-                            </div>
-                            <div className={`form-group ${errors['PrimaryContact.CustomerGroup'] ? 'has-error' : ''}`}>
-                                <label htmlFor="CustomerGroup">Customer Group</label>
-                                <input
-                                    type="text"
-                                    id="CustomerGroup"
-                                    name="CustomerGroup"
-                                    value={customerData.PrimaryContact.CustomerGroup}
-                                    onChange={handlePrimaryContactChange}
-                                    onBlur={handlePrimaryContactBlur}
-                                    placeholder="Enter customer group"
-                                    className={errors['PrimaryContact.CustomerGroup'] ? 'error' : ''}
-                                />
-                                {errors['PrimaryContact.CustomerGroup'] && (
-                                    <div className="error-message">{errors['PrimaryContact.CustomerGroup']}</div>
-                                )}
-                            </div>
-
-                            {/* Enhanced Customer Address with Pin Code Lookup */}
-                            <div className="form-group full-width">
-                                <AddressForm
-                                    addressData={getAddressData()}
-                                    onAddressChange={handleAddressChange}
-                                    errors={errors}
-                                    required={true}
-                                    prefix="customer"
-                                    title="Primary Address"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                    {/* Additional Contacts (Office Addresses & Key Contacts) */}
-                    <div className="form-subsection">
-                        <h5>🏢 Additional Contacts</h5>
-                        {customerData.AdditionalContacts.map((contact, index) => (
-                            <div key={index} className="contact-card">
-                                <div className="contact-header">
-                                    <h6>Contact #{index + 1}</h6>
-                                    {customerData.AdditionalContacts.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => removeArrayItem('AdditionalContacts', index)}
-                                            className="remove-contact-btn"
-                                            title="Remove contact"
-                                        >
-                                            ×
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="form-grid">
-                                    <div className="form-group">
-                                        <label htmlFor={`AdditionalContacts[${index}][ContactType]`}>Contact Type</label>
-                                        <select
-                                            id={`AdditionalContacts[${index}][ContactType]`}
-                                            name="ContactType"
-                                            value={contact.ContactType}
-                                            onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
-                                        >
-                                            <option value="Office Address">Office Address</option>
-                                            <option value="Key Contact">Key Contact</option>
-                                        </select>
-                                    </div>
-
-                                    <div className={`form-group ${errors[`AdditionalContacts[${index}].Name`] ? 'has-error' : ''}`}>
-                                        <label htmlFor={`AdditionalContacts[${index}][Name]`}>Name/Contact Person</label>
-                                        <input
-                                            type="text"
-                                            id={`AdditionalContacts[${index}][Name]`}
-                                            name="Name"
-                                            value={contact.Name}
-                                            onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
-                                            onBlur={(e) => handleAdditionalContactBlur(e, index)}
-                                            placeholder="Enter name"
-                                            className={errors[`AdditionalContacts[${index}].Name`] ? 'error' : ''}
-                                        />
-                                        {errors[`AdditionalContacts[${index}].Name`] && (
-                                            <div className="error-message">{errors[`AdditionalContacts[${index}].Name`]}</div>
-                                        )}
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label htmlFor={`AdditionalContacts[${index}][Department]`}>Department</label>
-                                        <input
-                                            type="text"
-                                            id={`AdditionalContacts[${index}][Department]`}
-                                            name="Department"
-                                            value={contact.Department}
-                                            onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
-                                            placeholder="Enter department"
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label htmlFor={`AdditionalContacts[${index}][Designation]`}>Designation</label>
-                                        <input
-                                            type="text"
-                                            id={`AdditionalContacts[${index}][Designation]`}
-                                            name="Designation"
-                                            value={contact.Designation}
-                                            onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
-                                            placeholder="Enter designation"
-                                        />
-                                    </div>
-
-                                    {contact.ContactType === 'Key Contact' && (
-                                        <div className="form-group">
-                                            <label htmlFor={`AdditionalContacts[${index}][Location]`}>Location</label>
-                                            <input
-                                                type="text"
-                                                id={`AdditionalContacts[${index}][Location]`}
-                                                name="Location"
-                                                value={contact.Location}
-                                                onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
-                                                placeholder="Enter location"
-                                            />
-                                        </div>
-                                    )}
-
-                                    <div className="form-group">
-                                        <label htmlFor={`AdditionalContacts[${index}][OfficeType]`}>Office Type</label>
-                                        <select
-                                            id={`AdditionalContacts[${index}][OfficeType]`}
-                                            name="OfficeType"
-                                            value={contact.OfficeType}
-                                            onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
-                                        >
-                                            <option value="">Select Office Type</option>
-                                            {contact.ContactType === 'Office Address' ? (
-                                                <>
-                                                    <option value="Registered Office">Registered Office</option>
-                                                    <option value="Corporate Office">Corporate Office</option>
-                                                    <option value="Regional Office">Regional Office</option>
-                                                    <option value="Branch Office">Branch Office</option>
-                                                    <option value="Warehouse">Warehouse</option>
-                                                    <option value="Site Office">Site Office</option>
-                                                    <option value="Other">Other</option>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <option value="HO">HO</option>
-                                                    <option value="RO">RO</option>
-                                                    <option value="Branch">Branch</option>
-                                                    <option value="WH">WH</option>
-                                                    <option value="Others">Others</option>
-                                                </>
-                                            )}
-                                        </select>
-                                    </div>
-
-                                    <ValidatedInput
-                                      name="Mobile"
-                                      value={contact.Mobile}
-                                      onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
-                                      validationRule="MOBILE"
-                                      required={false}
-                                      label="Mobile No"
-                                      placeholder="Enter mobile number"
-                                      showFormatHint={true}
-                                      autoFormat={true}
-                                    />
-
-                                    <ValidatedInput
-                                      name="Email"
-                                      value={contact.Email}
-                                      onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
-                                      validationRule="EMAIL"
-                                      required={false}
-                                      label="Email"
-                                      placeholder="Enter email address"
-                                      showFormatHint={false}
-                                      autoFormat={false}
-                                    />
-
-                                    <div className={`form-group ${errors[`AdditionalContacts[${index}].DOB`] ? 'has-error' : ''}`}>
-                                        <label htmlFor={`AdditionalContacts[${index}][DOB]`}>Date of Birth</label>
-                                        <input
-                                            type="date"
-                                            id={`AdditionalContacts[${index}][DOB]`}
-                                            name="DOB"
-                                            value={contact.DOB}
-                                            onChange={(e) => handleArrayInputChange(e, index, 'AdditionalContacts')}
-                                            onBlur={(e) => handleAdditionalContactBlur(e, index)}
-                                            className={errors[`AdditionalContacts[${index}].DOB`] ? 'error' : ''}
-                                        />
-                                        {errors[`AdditionalContacts[${index}].DOB`] && (
-                                            <div className="error-message">{errors[`AdditionalContacts[${index}].DOB`]}</div>
-                                        )}
-                                    </div>
-
-                                    <div className="form-group full-width">
-                                        <label>Address</label>
-                                        <AddressForm
-                                            addressData={contact.Address || {
-                                                house_flat_no: '',
-                                                street_locality: '',
-                                                city: '',
-                                                state: '',
-                                                pin_code: '',
-                                                country: 'India'
-                                            }}
-                                            onAddressChange={(addressData) => {
-                                                console.log('🏠 AddressForm onChange called for contact', index, ':', addressData);
-                                                const updatedContacts = [...customerData.AdditionalContacts];
-                                                updatedContacts[index] = {
-                                                    ...updatedContacts[index],
-                                                    Address: addressData
-                                                };
-                                                console.log('🏠 Updated contacts array:', updatedContacts);
-                                                setCustomerData(prev => ({
-                                                    ...prev,
-                                                    AdditionalContacts: updatedContacts
-                                                }));
-                                            }}
-                                            errors={errors}
-                                            required={false}
-                                            title="Contact Address"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                        <button type="button" onClick={() => addArrayItem('AdditionalContacts')} className="add-input-btn">
-                            + Add Contact
-                        </button>
-                    </div>
-
-                <div className="form-section">
-                    <h4>7. Cogent Contact</h4>
-                    <div className="form-grid">
-                        {renderFormField('Customer Owner', 'CustomerCogentContact[CustomerOwner]', 'text', { placeholder: 'Enter name' })}
-                        {renderFormField('Project Head', 'CustomerCogentContact[ProjectHead]', 'text', { placeholder: 'Enter name' })}
-                        {renderFormField('Ops Head', 'CustomerCogentContact[OpsHead]', 'text', { placeholder: 'Enter name' })}
-                        {renderFormField('Ops Manager', 'CustomerCogentContact[OpsManager]', 'text', { placeholder: 'Enter name' })}
-                        {renderFormField('Supervisor', 'CustomerCogentContact[Supervisor]', 'text', { placeholder: 'Enter name' })}
-                        {renderFormField('Email ID', 'CustomerCogentContact[EmailID]', 'email', { placeholder: 'e.g., contact@example.com' })}
-                        {renderFormField('Mobile No.', 'CustomerCogentContact[MobileNo]', 'text', { placeholder: 'e.g., 9876543210' })}
-                    </div>
-                </div>
+              ))}
+              <button type="button" onClick={() => addArrayItem('AdditionalContacts')} className="add-input-btn">
+                + Add Contact
+              </button>
             </div>
 
-            <div className="form-actions">
-                <button type="submit" disabled={isSubmitting} className="submit-btn">
-                    {isSubmitting ? 'Processing...' : editingCustomer ? 'Update Customer' : 'Add Customer'}
-                </button>
+            <div className="form-section">
+              <h4>7. Cogent Contact</h4>
+              <div className="form-grid">
+                {renderFormField('Customer Owner', 'CustomerCogentContact[CustomerOwner]', 'text', { placeholder: 'Enter name' })}
+                {renderFormField('Project Head', 'CustomerCogentContact[ProjectHead]', 'text', { placeholder: 'Enter name' })}
+                {renderFormField('Ops Head', 'CustomerCogentContact[OpsHead]', 'text', { placeholder: 'Enter name' })}
+                {renderFormField('Ops Manager', 'CustomerCogentContact[OpsManager]', 'text', { placeholder: 'Enter name' })}
+                {renderFormField('Supervisor', 'CustomerCogentContact[Supervisor]', 'text', { placeholder: 'Enter name' })}
+                {renderFormField('Email ID', 'CustomerCogentContact[EmailID]', 'email', { placeholder: 'e.g., contact@example.com' })}
+                {renderFormField('Mobile No.', 'CustomerCogentContact[MobileNo]', 'text', { placeholder: 'e.g., 9876543210' })}
+              </div>
             </div>
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" disabled={isSubmitting} className="submit-btn">
+              {isSubmitting ? 'Processing...' : editingCustomer ? 'Update Customer' : 'Add Customer'}
+            </button>
+          </div>
         </form>
       </div>
 
@@ -3289,7 +3291,7 @@ const CustomerForm = () => {
         onClose={closeErrorModal}
         errorSummary={errorSummary}
         onGoToField={goToField}
-        onTryAgain={() => handleSubmit({ preventDefault: () => {} })}
+        onTryAgain={() => handleSubmit({ preventDefault: () => { } })}
       />
 
       {/* PDF Preview Modal */}

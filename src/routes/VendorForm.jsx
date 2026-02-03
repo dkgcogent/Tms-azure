@@ -403,7 +403,7 @@ const VendorForm = () => {
     }
 
     // Create URL for server-stored image - use backend port 3004
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3004';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
     // Extract just the filename from the path
     let filename = imagePath;
@@ -498,7 +498,7 @@ const VendorForm = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="document-link"
-                onClick={() => {}}
+                onClick={() => { }}
               >
                 View Document
               </a>
@@ -536,13 +536,13 @@ const VendorForm = () => {
     if (!vendorData.vendor_name.trim()) {
       newErrors.vendor_name = 'Vendor name is required';
     }
-    
+
     if (!vendorData.vendor_mobile_no.trim()) {
       newErrors.vendor_mobile_no = 'Mobile number is required';
     } else if (!patterns.mobile.test(vendorData.vendor_mobile_no.trim())) {
       newErrors.vendor_mobile_no = 'Enter valid 10-digit mobile number starting with 6-9';
     }
-    
+
     // Address validation - More lenient, only validate if provided
     // Only validate pin code format if it's provided
     if (vendorData.pin_code.trim() && !/^\d{6}$/.test(vendorData.pin_code.trim())) {
@@ -551,10 +551,10 @@ const VendorForm = () => {
 
     // Basic address validation - at least city should be provided if any address field is filled
     const hasAnyAddressField = vendorData.house_flat_no.trim() ||
-                              vendorData.street_locality.trim() ||
-                              vendorData.city.trim() ||
-                              vendorData.state.trim() ||
-                              vendorData.pin_code.trim();
+      vendorData.street_locality.trim() ||
+      vendorData.city.trim() ||
+      vendorData.state.trim() ||
+      vendorData.pin_code.trim();
 
     if (hasAnyAddressField) {
       if (!vendorData.city.trim()) {
@@ -721,7 +721,7 @@ const VendorForm = () => {
 
       // Create FormData for file uploads
       const formData = new FormData();
-      
+
       // Prepare vendor data using validated data
       const vendorPayload = {
         vendor_name: validatedData.vendor_name?.trim() || vendorData.vendor_name.trim(),
@@ -758,7 +758,7 @@ const VendorForm = () => {
         bank_city: bankDetails.city.trim() || null,
         bank_state: bankDetails.state.trim() || null,
       };
-      
+
       // Add vendor data as JSON string (for backends expecting nested JSON)
       formData.append('vendorData', JSON.stringify(vendorPayload));
 
@@ -955,9 +955,9 @@ const VendorForm = () => {
   };
 
   const vendorColumns = [
-    { 
-      key: 'vendor_name', 
-      label: 'Vendor Name', 
+    {
+      key: 'vendor_name',
+      label: 'Vendor Name',
       sortable: true,
       minWidth: '150px'
     },
@@ -984,16 +984,16 @@ const VendorForm = () => {
       sortable: true,
       minWidth: '130px'
     },
-    { 
-      key: 'vendor_company_name', 
-      label: 'Company Name', 
+    {
+      key: 'vendor_company_name',
+      label: 'Company Name',
       sortable: true,
       minWidth: '150px',
       render: (value) => value || '-'
     },
-    { 
-      key: 'vendor_company_gst', 
-      label: 'GST No.', 
+    {
+      key: 'vendor_company_gst',
+      label: 'GST No.',
       sortable: true,
       minWidth: '150px',
       render: (value) => value || '-'
@@ -1003,13 +1003,13 @@ const VendorForm = () => {
       label: 'Photo',
       sortable: false,
       minWidth: '80px',
-      render: (value, row) => value ? 
-        <div className="photo-indicator">📷</div> : 
+      render: (value, row) => value ?
+        <div className="photo-indicator">📷</div> :
         <div className="no-photo-indicator">-</div>
     },
-    { 
-      key: 'vendor_address', 
-      label: 'Address', 
+    {
+      key: 'vendor_address',
+      label: 'Address',
       sortable: false,
       minWidth: '200px',
       render: (value) => value ? (value.length > 40 ? value.substring(0, 40) + '...' : value) : '-'
@@ -1049,7 +1049,7 @@ const VendorForm = () => {
               <h3 className="form-section-title">📋 Basic Information</h3>
             </div>
             <div className="form-fields-grid">
-              
+
               {/* Vendor Name - Required */}
               <div className="form-field">
                 <label className="form-field-label">
@@ -1153,7 +1153,7 @@ const VendorForm = () => {
               <h3 className="form-section-title">📄 Personal Documents</h3>
             </div>
             <div className="form-fields-grid">
-              
+
               {/* Vendor Aadhar - Enhanced Validation */}
               <ValidatedInput
                 name="vendor_aadhar"
@@ -1215,7 +1215,7 @@ const VendorForm = () => {
               <h3 className="form-section-title">🏢 Company Information</h3>
             </div>
             <div className="form-fields-grid">
-              
+
               {/* Vendor Company Name */}
               <div className="form-field">
                 <label className="form-field-label">
@@ -1278,7 +1278,8 @@ const VendorForm = () => {
                     country: vendorData.address_of_company_country,
                   }}
                   onAddressChange={(newAddress) => {
-                    setVendorData(prev => ({...prev, 
+                    setVendorData(prev => ({
+                      ...prev,
                       address_of_company_house_flat_no: newAddress.house_flat_no,
                       address_of_company_street_locality: newAddress.street_locality,
                       address_of_company_city: newAddress.city,
@@ -1518,7 +1519,7 @@ const VendorForm = () => {
         onClose={closeErrorModal}
         errorSummary={errorSummary}
         onGoToField={goToField}
-        onTryAgain={() => handleSubmit({ preventDefault: () => {} })}
+        onTryAgain={() => handleSubmit({ preventDefault: () => { } })}
       />
     </div>
   );

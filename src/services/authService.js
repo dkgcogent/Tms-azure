@@ -1,6 +1,6 @@
 // Authentication Service for JWT handling
 
-const API_BASE_URL = 'http://localhost:3004/api';
+const API_BASE_URL = '/api';
 
 class AuthService {
   // Get JWT token from localStorage
@@ -23,7 +23,7 @@ class AuthService {
   isAuthenticated() {
     const token = this.getToken();
     if (!token) return false;
-    
+
     try {
       // Check if token is expired
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -110,7 +110,7 @@ class AuthService {
   // Make authenticated API request
   async authenticatedRequest(url, options = {}) {
     const token = this.getToken();
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }

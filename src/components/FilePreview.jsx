@@ -8,7 +8,7 @@ import './FilePreview.css';
  */
 const FilePreview = ({
   file,
-  baseUrl = 'http://localhost:3004',
+  baseUrl = '',
   showActions = true,
   showModal = true,
   className = '',
@@ -17,24 +17,24 @@ const FilePreview = ({
   maxPreviewSize = { width: 200, height: 150 }
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
-  
+
   if (!file) return null;
-  
+
   const previewData = createFilePreviewData(file, { baseUrl, showActions });
-  
+
   if (!previewData) return null;
-  
+
   const { fileName, fileType, previewUrl, icon, size, actions } = previewData;
-  
+
   const renderImagePreview = () => (
     <div className="file-preview-image">
       <img
         src={previewUrl}
         alt={fileName}
         className="preview-image clickable-preview"
-        style={{ 
-          maxWidth: maxPreviewSize.width, 
-          maxHeight: maxPreviewSize.height, 
+        style={{
+          maxWidth: maxPreviewSize.width,
+          maxHeight: maxPreviewSize.height,
           objectFit: 'contain',
           cursor: showModal ? 'pointer' : 'default'
         }}
@@ -43,7 +43,7 @@ const FilePreview = ({
       />
     </div>
   );
-  
+
   const renderPDFPreview = () => (
     <div className="file-preview-pdf">
       <div className="pdf-preview-container">
@@ -56,7 +56,7 @@ const FilePreview = ({
       </div>
     </div>
   );
-  
+
   const renderDocumentPreview = () => (
     <div className="file-preview-document">
       <div className="document-preview-container">
@@ -69,7 +69,7 @@ const FilePreview = ({
       </div>
     </div>
   );
-  
+
   const renderPreview = () => {
     switch (fileType) {
       case 'image':
@@ -80,10 +80,10 @@ const FilePreview = ({
         return renderDocumentPreview();
     }
   };
-  
+
   const renderActions = () => {
     if (!showActions) return null;
-    
+
     return (
       <div className="file-preview-actions">
         {fileType === 'pdf' && (
@@ -106,7 +106,7 @@ const FilePreview = ({
             </button>
           </>
         )}
-        
+
         {fileType === 'document' && (
           <>
             <button
@@ -127,7 +127,7 @@ const FilePreview = ({
             </button>
           </>
         )}
-        
+
         {fileType === 'image' && (
           <button
             type="button"
@@ -138,7 +138,7 @@ const FilePreview = ({
             📥 Download
           </button>
         )}
-        
+
         {onRemove && (
           <button
             type="button"
@@ -152,28 +152,28 @@ const FilePreview = ({
       </div>
     );
   };
-  
+
   return (
     <div className={`file-preview ${className}`} style={style}>
       <div className="file-preview-content">
         {renderPreview()}
         {renderActions()}
       </div>
-      
+
       {/* Modal for full-size image viewing */}
       {modalOpen && fileType === 'image' && showModal && (
-        <div 
-          className="file-preview-modal-overlay" 
+        <div
+          className="file-preview-modal-overlay"
           onClick={() => setModalOpen(false)}
         >
-          <div 
-            className="file-preview-modal-content" 
+          <div
+            className="file-preview-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="file-preview-modal-header">
               <h3>Image Preview</h3>
-              <button 
-                className="modal-close-btn" 
+              <button
+                className="modal-close-btn"
                 onClick={() => setModalOpen(false)}
               >
                 ✕

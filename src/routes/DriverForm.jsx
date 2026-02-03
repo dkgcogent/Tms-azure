@@ -277,7 +277,7 @@ const DriverForm = () => {
     if (imagePath.startsWith('http')) return imagePath;
 
     // Create URL for server-stored image - use backend port 3004
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3004';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
     // Extract just the filename from the path
     let filename = imagePath;
@@ -853,134 +853,134 @@ const DriverForm = () => {
                 </select>
               </div>
 
-            {/* Driver Name */}
-            {driverData.DriverSameAsVendor === 'Same as Vendor' ? (
-              <div className="form-field">
-                <label className="form-field-label">
-                  Vendor <span className="required-indicator">*</span>
-                </label>
-                <SearchableDropdown
-                  name="vendor_id"
-                  value={driverData.vendor_id}
-                  onChange={async (e) => {
-                    const { value } = e.target;
+              {/* Driver Name */}
+              {driverData.DriverSameAsVendor === 'Same as Vendor' ? (
+                <div className="form-field">
+                  <label className="form-field-label">
+                    Vendor <span className="required-indicator">*</span>
+                  </label>
+                  <SearchableDropdown
+                    name="vendor_id"
+                    value={driverData.vendor_id}
+                    onChange={async (e) => {
+                      const { value } = e.target;
 
-                    if (!value) {
-                      // If no vendor selected, just update vendor_id
-                      setDriverData(prev => ({ ...prev, vendor_id: '' }));
-                      return;
-                    }
+                      if (!value) {
+                        // If no vendor selected, just update vendor_id
+                        setDriverData(prev => ({ ...prev, vendor_id: '' }));
+                        return;
+                      }
 
-                    try {
-                      // Fetch complete vendor data including all fields and file URLs
-                      const response = await vendorAPI.getById(value);
-                      const vendorData = response.data;
+                      try {
+                        // Fetch complete vendor data including all fields and file URLs
+                        const response = await vendorAPI.getById(value);
+                        const vendorData = response.data;
 
-                      // Map vendor fields to driver fields
-                      setDriverData(prev => ({
-                        ...prev,
-                        vendor_id: value,
-                        // Basic Information
-                        DriverName: vendorData.vendor_name || vendorData.VendorName || '',
-                        DriverMobileNo: vendorData.vendor_mobile_no || vendorData.VendorMobileNo || '',
-                        DriverAlternateNo: vendorData.vendor_alternate_no || vendorData.VendorAlternateNo || '',
-                        // Address Fields
-                        house_flat_no: vendorData.house_flat_no || vendorData.HouseFlatNo || '',
-                        street_locality: vendorData.street_locality || vendorData.StreetLocality || '',
-                        city: vendorData.city || vendorData.City || '',
-                        state: vendorData.state || vendorData.State || '',
-                        pin_code: vendorData.pin_code || vendorData.PinCode || '',
-                        country: vendorData.country || vendorData.Country || 'India',
-                        // Construct full address for backward compatibility
-                        DriverAddress: `${vendorData.house_flat_no || vendorData.HouseFlatNo || ''}, ${vendorData.street_locality || vendorData.StreetLocality || ''}, ${vendorData.city || vendorData.City || ''}, ${vendorData.state || vendorData.State || ''}, ${vendorData.pin_code || vendorData.PinCode || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim(),
-                        // Photo URL - Map vendor photo to driver photo
-                        DriverPhoto_url: vendorData.vendor_photo_url || null,
-                      }));
-
-                      apiHelpers.showSuccess('Vendor details auto-filled successfully!');
-
-                    } catch (error) {
-                      console.error('❌ Error fetching vendor data:', error);
-                      apiHelpers.showError(error, 'Failed to fetch vendor details');
-
-                      // Fallback to basic vendor data from the list
-                      const selectedVendor = vendors.find(v => v.VendorID == value);
-                      if (selectedVendor) {
+                        // Map vendor fields to driver fields
                         setDriverData(prev => ({
                           ...prev,
                           vendor_id: value,
-                          DriverName: selectedVendor.VendorName || '',
-                          DriverMobileNo: selectedVendor.VendorMobileNo || '',
-                          DriverAddress: selectedVendor.VendorAddress || '',
+                          // Basic Information
+                          DriverName: vendorData.vendor_name || vendorData.VendorName || '',
+                          DriverMobileNo: vendorData.vendor_mobile_no || vendorData.VendorMobileNo || '',
+                          DriverAlternateNo: vendorData.vendor_alternate_no || vendorData.VendorAlternateNo || '',
+                          // Address Fields
+                          house_flat_no: vendorData.house_flat_no || vendorData.HouseFlatNo || '',
+                          street_locality: vendorData.street_locality || vendorData.StreetLocality || '',
+                          city: vendorData.city || vendorData.City || '',
+                          state: vendorData.state || vendorData.State || '',
+                          pin_code: vendorData.pin_code || vendorData.PinCode || '',
+                          country: vendorData.country || vendorData.Country || 'India',
+                          // Construct full address for backward compatibility
+                          DriverAddress: `${vendorData.house_flat_no || vendorData.HouseFlatNo || ''}, ${vendorData.street_locality || vendorData.StreetLocality || ''}, ${vendorData.city || vendorData.City || ''}, ${vendorData.state || vendorData.State || ''}, ${vendorData.pin_code || vendorData.PinCode || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim(),
+                          // Photo URL - Map vendor photo to driver photo
+                          DriverPhoto_url: vendorData.vendor_photo_url || null,
                         }));
+
+                        apiHelpers.showSuccess('Vendor details auto-filled successfully!');
+
+                      } catch (error) {
+                        console.error('❌ Error fetching vendor data:', error);
+                        apiHelpers.showError(error, 'Failed to fetch vendor details');
+
+                        // Fallback to basic vendor data from the list
+                        const selectedVendor = vendors.find(v => v.VendorID == value);
+                        if (selectedVendor) {
+                          setDriverData(prev => ({
+                            ...prev,
+                            vendor_id: value,
+                            DriverName: selectedVendor.VendorName || '',
+                            DriverMobileNo: selectedVendor.VendorMobileNo || '',
+                            DriverAddress: selectedVendor.VendorAddress || '',
+                          }));
+                        }
                       }
-                    }
-                  }}
-                  options={vendors}
-                  valueKey="VendorID"
-                  labelKey="VendorName"
-                  placeholder="Select a vendor"
-                  required
-                  error={errors.vendor_id}
-                />
-              </div>
-            ) : (
-              <div className="form-field">
-                <label className="form-field-label">
-                  Driver Name <span className="required-indicator">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="DriverName"
-                  value={driverData.DriverName}
-                  onChange={handleInputChange}
-                  placeholder="Enter driver name"
-                  required
-                  className={`form-input ${errors.DriverName ? 'error' : ''}`}
-                />
-                {errors.DriverName && <div className="form-field-error">{errors.DriverName}</div>}
-              </div>
-            )}
+                    }}
+                    options={vendors}
+                    valueKey="VendorID"
+                    labelKey="VendorName"
+                    placeholder="Select a vendor"
+                    required
+                    error={errors.vendor_id}
+                  />
+                </div>
+              ) : (
+                <div className="form-field">
+                  <label className="form-field-label">
+                    Driver Name <span className="required-indicator">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="DriverName"
+                    value={driverData.DriverName}
+                    onChange={handleInputChange}
+                    placeholder="Enter driver name"
+                    required
+                    className={`form-input ${errors.DriverName ? 'error' : ''}`}
+                  />
+                  {errors.DriverName && <div className="form-field-error">{errors.DriverName}</div>}
+                </div>
+              )}
 
-            {/* Mobile Number - Enhanced Validation */}
-            <ValidatedInput
-              name="DriverMobileNo"
-              value={driverData.DriverMobileNo}
-              onChange={handleInputChange}
-              validationRule="MOBILE"
-              required={false}
-              label="Mobile Number"
-              placeholder="Enter mobile number"
-              showFormatHint={true}
-              autoFormat={true}
-            />
+              {/* Mobile Number - Enhanced Validation */}
+              <ValidatedInput
+                name="DriverMobileNo"
+                value={driverData.DriverMobileNo}
+                onChange={handleInputChange}
+                validationRule="MOBILE"
+                required={false}
+                label="Mobile Number"
+                placeholder="Enter mobile number"
+                showFormatHint={true}
+                autoFormat={true}
+              />
 
-            {/* Driver Alternate No / Family No - Enhanced Validation */}
-            <ValidatedInput
-              name="DriverAlternateNo"
-              value={driverData.DriverAlternateNo}
-              onChange={handleInputChange}
-              validationRule="MOBILE"
-              required={false}
-              label="Driver Alternate No. / Family No."
-              placeholder="Enter alternate/family contact number"
-              showFormatHint={true}
-              autoFormat={true}
-            />
+              {/* Driver Alternate No / Family No - Enhanced Validation */}
+              <ValidatedInput
+                name="DriverAlternateNo"
+                value={driverData.DriverAlternateNo}
+                onChange={handleInputChange}
+                validationRule="MOBILE"
+                required={false}
+                label="Driver Alternate No. / Family No."
+                placeholder="Enter alternate/family contact number"
+                showFormatHint={true}
+                autoFormat={true}
+              />
 
-            {/* Driver Photo - Following Vendor Form Pattern */}
-            <DocumentUpload
-              label="Driver Photo"
-              name="DriverPhoto"
-              value={files.DriverPhoto}
-              onChange={createFileChangeHandler('DriverPhoto')}
-              onDelete={() => handleFileDelete('DriverPhoto')}
-              accept="image/*,.pdf,.doc,.docx"
-              required={false}
-              existingFileUrl={driverData.DriverPhoto_url || null}
-              isEditing={!!editingDriver}
-              entityType="drivers"
-            />
+              {/* Driver Photo - Following Vendor Form Pattern */}
+              <DocumentUpload
+                label="Driver Photo"
+                name="DriverPhoto"
+                value={files.DriverPhoto}
+                onChange={createFileChangeHandler('DriverPhoto')}
+                onDelete={() => handleFileDelete('DriverPhoto')}
+                accept="image/*,.pdf,.doc,.docx"
+                required={false}
+                existingFileUrl={driverData.DriverPhoto_url || null}
+                isEditing={!!editingDriver}
+                entityType="drivers"
+              />
             </div>
           </div>
 
@@ -988,75 +988,75 @@ const DriverForm = () => {
           <div className="form-section">
             <h4>📋 License & Medical Information</h4>
             <div className="form-fields-grid">
-            {/* Licence Number */}
-            <div className="form-field">
-              <label className="form-field-label">
-                Licence Number <span className="required-indicator">*</span>
-              </label>
-              <input
-                type="text"
-                name="DriverLicenceNo"
-                value={driverData.DriverLicenceNo}
-                onChange={handleInputChange}
-                placeholder="Enter licence number"
-                required
-                className={`form-input ${errors.DriverLicenceNo ? 'error' : ''}`}
-              />
-              {errors.DriverLicenceNo && <div className="form-field-error">{errors.DriverLicenceNo}</div>}
-            </div>
+              {/* Licence Number */}
+              <div className="form-field">
+                <label className="form-field-label">
+                  Licence Number <span className="required-indicator">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="DriverLicenceNo"
+                  value={driverData.DriverLicenceNo}
+                  onChange={handleInputChange}
+                  placeholder="Enter licence number"
+                  required
+                  className={`form-input ${errors.DriverLicenceNo ? 'error' : ''}`}
+                />
+                {errors.DriverLicenceNo && <div className="form-field-error">{errors.DriverLicenceNo}</div>}
+              </div>
 
-            {/* Licence Issue Date */}
-            <div className="form-field">
-              <label className="form-field-label">Licence Issue Date (Optional)</label>
-              <input
-                type="date"
-                name="DriverLicenceIssueDate"
-                value={driverData.DriverLicenceIssueDate}
-                onChange={handleInputChange}
-                max={new Date().toISOString().split('T')[0]}
-                className="form-input"
-              />
-            </div>
+              {/* Licence Issue Date */}
+              <div className="form-field">
+                <label className="form-field-label">Licence Issue Date (Optional)</label>
+                <input
+                  type="date"
+                  name="DriverLicenceIssueDate"
+                  value={driverData.DriverLicenceIssueDate}
+                  onChange={handleInputChange}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="form-input"
+                />
+              </div>
 
-            {/* Licence Expiry Date */}
-            <div className="form-field">
-              <label className="form-field-label">Licence Expiry Date (Optional)</label>
-              <input
-                type="date"
-                name="DriverLicenceExpiryDate"
-                value={driverData.DriverLicenceExpiryDate}
-                onChange={handleInputChange}
-                min={driverData.DriverLicenceIssueDate}
-                className="form-input"
-              />
-            </div>
+              {/* Licence Expiry Date */}
+              <div className="form-field">
+                <label className="form-field-label">Licence Expiry Date (Optional)</label>
+                <input
+                  type="date"
+                  name="DriverLicenceExpiryDate"
+                  value={driverData.DriverLicenceExpiryDate}
+                  onChange={handleInputChange}
+                  min={driverData.DriverLicenceIssueDate}
+                  className="form-input"
+                />
+              </div>
 
-            {/* Medical Date */}
-            <div className="form-field">
-              <label className="form-field-label">Medical Date (Optional)</label>
-              <input
-                type="date"
-                name="DriverMedicalDate"
-                value={driverData.DriverMedicalDate}
-                onChange={handleInputChange}
-                className="form-input"
-              />
-            </div>
+              {/* Medical Date */}
+              <div className="form-field">
+                <label className="form-field-label">Medical Date (Optional)</label>
+                <input
+                  type="date"
+                  name="DriverMedicalDate"
+                  value={driverData.DriverMedicalDate}
+                  onChange={handleInputChange}
+                  className="form-input"
+                />
+              </div>
 
-            {/* Driver Total Experience */}
-            <div className="form-field">
-              <label className="form-field-label">Driver Total Experience (Years) (Optional)</label>
-              <input
-                type="number"
-                name="DriverTotalExperience"
-                value={driverData.DriverTotalExperience}
-                onChange={handleInputChange}
-                placeholder="Enter total experience in years"
-                min="0"
-                max="50"
-                className="form-input"
-              />
-            </div>
+              {/* Driver Total Experience */}
+              <div className="form-field">
+                <label className="form-field-label">Driver Total Experience (Years) (Optional)</label>
+                <input
+                  type="number"
+                  name="DriverTotalExperience"
+                  value={driverData.DriverTotalExperience}
+                  onChange={handleInputChange}
+                  placeholder="Enter total experience in years"
+                  min="0"
+                  max="50"
+                  className="form-input"
+                />
+              </div>
             </div>
           </div>
 
@@ -1064,18 +1064,18 @@ const DriverForm = () => {
           <div className="form-section">
             <h4>📍 Address Information</h4>
             <div className="form-fields-grid">
-            {/* Address */}
-            {/* Enhanced Address Form with PIN Code Lookup */}
-            <div className="form-field form-field-full-width">
-              <AddressForm
-                addressData={getAddressData()}
-                onAddressChange={handleAddressChange}
-                errors={errors}
-                required={false}
-                prefix="driver"
-                title="Driver Address"
-              />
-            </div>
+              {/* Address */}
+              {/* Enhanced Address Form with PIN Code Lookup */}
+              <div className="form-field form-field-full-width">
+                <AddressForm
+                  addressData={getAddressData()}
+                  onAddressChange={handleAddressChange}
+                  errors={errors}
+                  required={false}
+                  prefix="driver"
+                  title="Driver Address"
+                />
+              </div>
             </div>
           </div>
 
@@ -1170,7 +1170,7 @@ const DriverForm = () => {
         onClose={closeErrorModal}
         errorSummary={errorSummary}
         onGoToField={goToField}
-        onTryAgain={() => handleSubmit({ preventDefault: () => {} })}
+        onTryAgain={() => handleSubmit({ preventDefault: () => { } })}
       />
     </div>
   );

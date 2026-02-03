@@ -339,7 +339,7 @@ const DailyVehicleTransactionForm = () => {
   // Now using unified calculation below for both Fixed and Adhoc/Replacement
   useEffect(() => {
     if ((masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') &&
-        transactionData.ArrivalTimeAtHub && transactionData.OutTimeFromHub) {
+      transactionData.ArrivalTimeAtHub && transactionData.OutTimeFromHub) {
 
       try {
         // Convert 12-hour format to 24-hour format for calculation
@@ -2101,12 +2101,12 @@ const DailyVehicleTransactionForm = () => {
     // Replacement driver validation - optional but conditional
     // Skip validation if the values are "NA" (default values)
     if (transactionData.ReplacementDriverName &&
-        transactionData.ReplacementDriverName.trim() !== '' &&
-        transactionData.ReplacementDriverName.trim().toLowerCase() !== 'na') {
+      transactionData.ReplacementDriverName.trim() !== '' &&
+      transactionData.ReplacementDriverName.trim().toLowerCase() !== 'na') {
       // If replacement driver name is provided (and not "NA"), number is required
       if (!transactionData.ReplacementDriverNo ||
-          transactionData.ReplacementDriverNo.trim() === '' ||
-          transactionData.ReplacementDriverNo.trim().toLowerCase() === 'na') {
+        transactionData.ReplacementDriverNo.trim() === '' ||
+        transactionData.ReplacementDriverNo.trim().toLowerCase() === 'na') {
         newErrors.ReplacementDriverNo = 'Replacement driver number is required when driver name is provided';
       } else if (transactionData.ReplacementDriverNo.length !== 10) {
         newErrors.ReplacementDriverNo = 'Replacement driver number must be exactly 10 digits';
@@ -2303,7 +2303,7 @@ const DailyVehicleTransactionForm = () => {
 
         console.log('🔧 FIXED TRANSACTION PAYLOAD - TripNo field:', payload.TripNo);
         console.log('🔧 FIXED TRANSACTION PAYLOAD - Source TripNo:', transactionData.TripNo);
-        console.log('🔧 FIXED TRANSACTION PAYLOAD - Full payload TripNo:', JSON.stringify({TripNo: payload.TripNo}));
+        console.log('🔧 FIXED TRANSACTION PAYLOAD - Full payload TripNo:', JSON.stringify({ TripNo: payload.TripNo }));
       } else if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
         // Adhoc/Replacement transactions use manual entry fields - ordered to match frontend form
         payload = {
@@ -2370,11 +2370,11 @@ const DailyVehicleTransactionForm = () => {
 
       // Check if there are any file uploads (following Vendor Form pattern)
       const hasFiles = files.DriverAadharDoc instanceof File ||
-                      files.DriverLicenceDoc instanceof File ||
-                      files.TollExpensesDoc instanceof File ||
-                      files.ParkingChargesDoc instanceof File ||
-                      files.OpeningKMImage instanceof File ||
-                      files.ClosingKMImage instanceof File;
+        files.DriverLicenceDoc instanceof File ||
+        files.TollExpensesDoc instanceof File ||
+        files.ParkingChargesDoc instanceof File ||
+        files.OpeningKMImage instanceof File ||
+        files.ClosingKMImage instanceof File;
 
       if (hasFiles) {
         // Use FormData for file uploads
@@ -2631,563 +2631,563 @@ const DailyVehicleTransactionForm = () => {
       setEditingTransaction(row);
       console.log('🔧 EDIT START - editingTransaction set to:', row);
 
-    // Try to fetch full record by ID for complete data (some list fields are trimmed)
-    let full = row;
-    console.log('🔧 EDIT API - Starting API fetch for transaction ID:', row?.TransactionID);
+      // Try to fetch full record by ID for complete data (some list fields are trimmed)
+      let full = row;
+      console.log('🔧 EDIT API - Starting API fetch for transaction ID:', row?.TransactionID);
 
-    if (row?.TransactionID) {
-      console.log('🔧 EDIT API - Fetching transaction with type:', row.TripType);
-      // Use TransactionID directly since we fixed the ID mapping
-      const transactionIdToFetch = row.TransactionID;
-      console.log('🔧 EDIT API - Using transaction ID for fetch:', transactionIdToFetch);
+      if (row?.TransactionID) {
+        console.log('🔧 EDIT API - Fetching transaction with type:', row.TripType);
+        // Use TransactionID directly since we fixed the ID mapping
+        const transactionIdToFetch = row.TransactionID;
+        console.log('🔧 EDIT API - Using transaction ID for fetch:', transactionIdToFetch);
 
-      try {
-        console.log('🔧 EDIT API - Making API call to vehicleTransactionAPI.getById...');
-        const resp = await vehicleTransactionAPI.getById(transactionIdToFetch, row.TripType);
-        console.log('🔧 EDIT API - Raw API response:', resp);
+        try {
+          console.log('🔧 EDIT API - Making API call to vehicleTransactionAPI.getById...');
+          const resp = await vehicleTransactionAPI.getById(transactionIdToFetch, row.TripType);
+          console.log('🔧 EDIT API - Raw API response:', resp);
 
-        full = resp.data || resp || row;
-        console.log('✅ EDIT API - Processed full transaction data:', full);
-        console.log('✅ EDIT API - Key fields in full object:', {
-          TransactionID: full.TransactionID,
-          CustomerID: full.CustomerID,
-          ProjectID: full.ProjectID,
-          TripType: full.TripType,
-          TripNo: full.TripNo,
-          Location: full.Location,
-          ProjectLocation: full.ProjectLocation,
-          CustomerLocation: full.CustomerLocation
-        });
+          full = resp.data || resp || row;
+          console.log('✅ EDIT API - Processed full transaction data:', full);
+          console.log('✅ EDIT API - Key fields in full object:', {
+            TransactionID: full.TransactionID,
+            CustomerID: full.CustomerID,
+            ProjectID: full.ProjectID,
+            TripType: full.TripType,
+            TripNo: full.TripNo,
+            Location: full.Location,
+            ProjectLocation: full.ProjectLocation,
+            CustomerLocation: full.CustomerLocation
+          });
 
-        // CRITICAL LOCATION DEBUG - Check if ProjectLocation is in API response
-        console.log('🚨 LOCATION API DEBUG - full.ProjectLocation value:', full.ProjectLocation);
-        console.log('🚨 LOCATION API DEBUG - full.ProjectLocation type:', typeof full.ProjectLocation);
-        console.log('🚨 LOCATION API DEBUG - Is ProjectLocation truthy?', !!full.ProjectLocation);
-        console.log('✅ EDIT API - Replacement driver data from API:', {
-          ReplacementDriverName: full.ReplacementDriverName,
-          ReplacementDriverNo: full.ReplacementDriverNo
-        });
-        console.log('✅ EDIT API - Document data from API:', {
-          DriverAadharDoc: full.DriverAadharDoc,
-          DriverLicenceDoc: full.DriverLicenceDoc,
-          TollExpensesDoc: full.TollExpensesDoc,
-          ParkingChargesDoc: full.ParkingChargesDoc
-        });
-      } catch (e) {
-        console.error('🔧 EDIT API - API fetch failed:', e);
-        console.warn('🔧 EDIT API - Falling back to row data due to fetch error');
-        full = row;
-      }
-    } else {
-      console.warn('🔧 EDIT API - No TransactionID found, using row data directly');
-    }
-
-    // Determine transaction type first
-    const isAdhocOrReplacement = full.TripType === 'Adhoc' || full.TripType === 'Replacement';
-    console.log('🔧 EDIT STATE - Transaction type determined:', full.TripType, 'isAdhocOrReplacement:', isAdhocOrReplacement);
-
-    // Parse VehicleIDs and DriverIDs first
-    let parsedVehicleIds = [];
-    let parsedDriverIds = [];
-
-    if (!isAdhocOrReplacement) {
-      try {
-        parsedVehicleIds = full.VehicleIDs ? (Array.isArray(full.VehicleIDs) ? full.VehicleIDs : JSON.parse(full.VehicleIDs)) : [];
-        parsedDriverIds = full.DriverIDs ? (Array.isArray(full.DriverIDs) ? full.DriverIDs : JSON.parse(full.DriverIDs)) : [];
-      } catch (e) {
-        console.warn('Failed to parse VehicleIDs/DriverIDs:', e);
-      }
-    }
-
-    // Fetch related master entities so all display fields can populate
-    let rel = {};
-
-    try {
-      const promises = [];
-      // Always fetch customer and project
-      console.log('🔧 Edit: Fetching customer and project with IDs:', { CustomerID: full.CustomerID, ProjectID: full.ProjectID });
-      if (full.CustomerID) promises.push(customerAPI.getById(full.CustomerID)); else promises.push(Promise.resolve(null));
-      if (full.ProjectID) promises.push(projectAPI.getById(full.ProjectID)); else promises.push(Promise.resolve(null));
-
-      // Only fetch vehicle/driver/vendor for Fixed transactions
-      if (!isAdhocOrReplacement) {
-        // For Fixed transactions, use the first vehicle from VehicleIDs array
-        const firstVehicleId = parsedVehicleIds.length > 0 ? parsedVehicleIds[0] : null;
-        const firstDriverId = parsedDriverIds.length > 0 ? parsedDriverIds[0] : null;
-
-        if (firstVehicleId) promises.push(vehicleAPI.getById(firstVehicleId)); else promises.push(Promise.resolve(null));
-        if (firstDriverId) promises.push(driverAPI.getById(firstDriverId)); else promises.push(Promise.resolve(null));
-        if (full.VendorID) promises.push(vendorAPI.getById(full.VendorID)); else promises.push(Promise.resolve(null));
-
-        const [custResp, projResp, vehResp, drvResp, venResp] = await Promise.all(promises);
-        rel.customer = custResp?.data || custResp || null;
-        rel.project = projResp?.data || projResp || null;
-        console.log('🔧 Edit: Project API response:', projResp);
-        console.log('🔧 Edit: Processed project data:', rel.project);
-        rel.vehicle = vehResp?.data || vehResp || null;
-        rel.driver = drvResp?.data || drvResp || null;
-        rel.vendor = venResp?.data || venResp || null;
+          // CRITICAL LOCATION DEBUG - Check if ProjectLocation is in API response
+          console.log('🚨 LOCATION API DEBUG - full.ProjectLocation value:', full.ProjectLocation);
+          console.log('🚨 LOCATION API DEBUG - full.ProjectLocation type:', typeof full.ProjectLocation);
+          console.log('🚨 LOCATION API DEBUG - Is ProjectLocation truthy?', !!full.ProjectLocation);
+          console.log('✅ EDIT API - Replacement driver data from API:', {
+            ReplacementDriverName: full.ReplacementDriverName,
+            ReplacementDriverNo: full.ReplacementDriverNo
+          });
+          console.log('✅ EDIT API - Document data from API:', {
+            DriverAadharDoc: full.DriverAadharDoc,
+            DriverLicenceDoc: full.DriverLicenceDoc,
+            TollExpensesDoc: full.TollExpensesDoc,
+            ParkingChargesDoc: full.ParkingChargesDoc
+          });
+        } catch (e) {
+          console.error('🔧 EDIT API - API fetch failed:', e);
+          console.warn('🔧 EDIT API - Falling back to row data due to fetch error');
+          full = row;
+        }
       } else {
-        // For Adhoc/Replacement, only fetch customer and project
-        const [custResp, projResp] = await Promise.all(promises);
-        rel.customer = custResp?.data || custResp || null;
-        rel.project = projResp?.data || projResp || null;
-        console.log('🔧 Edit: ADHOC/REPLACEMENT - Project API response:', projResp);
-        console.log('🔧 Edit: ADHOC/REPLACEMENT - Processed project data:', rel.project);
-        rel.vehicle = null;
-        rel.driver = null;
-        rel.vendor = null;
+        console.warn('🔧 EDIT API - No TransactionID found, using row data directly');
       }
-    } catch (e) {
-      console.warn('Edit: related fetches failed', e);
-    }
 
-    // Capture IDs for submission (only keep CustomerID, ProjectID, VendorID as single values)
-    const newCustomerID = full.CustomerID || row.CustomerID || prev.CustomerID || '';
-    console.log('🔧 Edit: Setting CustomerID in ids:', newCustomerID, 'from full.CustomerID:', full.CustomerID, 'row.CustomerID:', row.CustomerID);
-    console.log('🔧 Edit: CustomerID type:', typeof newCustomerID, 'is numeric:', !isNaN(newCustomerID));
+      // Determine transaction type first
+      const isAdhocOrReplacement = full.TripType === 'Adhoc' || full.TripType === 'Replacement';
+      console.log('🔧 EDIT STATE - Transaction type determined:', full.TripType, 'isAdhocOrReplacement:', isAdhocOrReplacement);
 
-    setIds(prev => ({
-      ...prev,
-      CustomerID: newCustomerID,
-      ProjectID: full.ProjectID || row.ProjectID || prev.ProjectID || '',
-      VendorID: full.VendorID || row.VendorID || prev.VendorID || ''
-    }));
+      // Parse VehicleIDs and DriverIDs first
+      let parsedVehicleIds = [];
+      let parsedDriverIds = [];
 
-    // Store the original CustomerID for fallback during submission
-    if (full.CustomerID || row.CustomerID) {
-      console.log('🔧 Edit: Storing original CustomerID for fallback:', full.CustomerID || row.CustomerID);
-      // We'll use this in the submission logic
-    }
+      if (!isAdhocOrReplacement) {
+        try {
+          parsedVehicleIds = full.VehicleIDs ? (Array.isArray(full.VehicleIDs) ? full.VehicleIDs : JSON.parse(full.VehicleIDs)) : [];
+          parsedDriverIds = full.DriverIDs ? (Array.isArray(full.DriverIDs) ? full.DriverIDs : JSON.parse(full.DriverIDs)) : [];
+        } catch (e) {
+          console.warn('Failed to parse VehicleIDs/DriverIDs:', e);
+        }
+      }
 
-    // Handle vehicles from VehicleIDs JSON field (Fixed transactions only)
-    let vehicleIds = [];
-    let vehicleTags = [];
+      // Fetch related master entities so all display fields can populate
+      let rel = {};
 
-    if (!isAdhocOrReplacement && full.VehicleIDs) {
-      // Parse JSON array of vehicle IDs
       try {
-        vehicleIds = Array.isArray(full.VehicleIDs) ? full.VehicleIDs : JSON.parse(full.VehicleIDs);
-        // Fetch details for all vehicles
-        for (const vId of vehicleIds) {
-          try {
-            const vResp = await vehicleAPI.getById(vId);
-            const vehicle = vResp?.data || vResp;
-            if (vehicle) {
-              vehicleTags.push({
-                id: vId,
-                registrationNo: vehicle.VehicleRegistrationNo || 'Unknown',
-                type: vehicle.VehicleType || 'Unknown'
-              });
-            }
-          } catch (e) {
-            console.warn('Failed to fetch vehicle details for ID:', vId);
-          }
+        const promises = [];
+        // Always fetch customer and project
+        console.log('🔧 Edit: Fetching customer and project with IDs:', { CustomerID: full.CustomerID, ProjectID: full.ProjectID });
+        if (full.CustomerID) promises.push(customerAPI.getById(full.CustomerID)); else promises.push(Promise.resolve(null));
+        if (full.ProjectID) promises.push(projectAPI.getById(full.ProjectID)); else promises.push(Promise.resolve(null));
+
+        // Only fetch vehicle/driver/vendor for Fixed transactions
+        if (!isAdhocOrReplacement) {
+          // For Fixed transactions, use the first vehicle from VehicleIDs array
+          const firstVehicleId = parsedVehicleIds.length > 0 ? parsedVehicleIds[0] : null;
+          const firstDriverId = parsedDriverIds.length > 0 ? parsedDriverIds[0] : null;
+
+          if (firstVehicleId) promises.push(vehicleAPI.getById(firstVehicleId)); else promises.push(Promise.resolve(null));
+          if (firstDriverId) promises.push(driverAPI.getById(firstDriverId)); else promises.push(Promise.resolve(null));
+          if (full.VendorID) promises.push(vendorAPI.getById(full.VendorID)); else promises.push(Promise.resolve(null));
+
+          const [custResp, projResp, vehResp, drvResp, venResp] = await Promise.all(promises);
+          rel.customer = custResp?.data || custResp || null;
+          rel.project = projResp?.data || projResp || null;
+          console.log('🔧 Edit: Project API response:', projResp);
+          console.log('🔧 Edit: Processed project data:', rel.project);
+          rel.vehicle = vehResp?.data || vehResp || null;
+          rel.driver = drvResp?.data || drvResp || null;
+          rel.vendor = venResp?.data || venResp || null;
+        } else {
+          // For Adhoc/Replacement, only fetch customer and project
+          const [custResp, projResp] = await Promise.all(promises);
+          rel.customer = custResp?.data || custResp || null;
+          rel.project = projResp?.data || projResp || null;
+          console.log('🔧 Edit: ADHOC/REPLACEMENT - Project API response:', projResp);
+          console.log('🔧 Edit: ADHOC/REPLACEMENT - Processed project data:', rel.project);
+          rel.vehicle = null;
+          rel.driver = null;
+          rel.vendor = null;
         }
       } catch (e) {
-        console.warn('Failed to parse VehicleIDs JSON:', e);
+        console.warn('Edit: related fetches failed', e);
       }
-    }
 
-    // Handle drivers from DriverIDs JSON field (Fixed transactions only)
-    let driverTags = [];
+      // Capture IDs for submission (only keep CustomerID, ProjectID, VendorID as single values)
+      const newCustomerID = full.CustomerID || row.CustomerID || prev.CustomerID || '';
+      console.log('🔧 Edit: Setting CustomerID in ids:', newCustomerID, 'from full.CustomerID:', full.CustomerID, 'row.CustomerID:', row.CustomerID);
+      console.log('🔧 Edit: CustomerID type:', typeof newCustomerID, 'is numeric:', !isNaN(newCustomerID));
 
-    if (!isAdhocOrReplacement && full.DriverIDs) {
-      // Parse JSON array of driver IDs
-      try {
-        const driverIds = Array.isArray(full.DriverIDs) ? full.DriverIDs : JSON.parse(full.DriverIDs);
-        // Fetch details for all drivers
-        for (const dId of driverIds) {
-          try {
-            const dResp = await driverAPI.getById(dId);
-            const driver = dResp?.data || dResp;
-            if (driver) {
-              driverTags.push({
-                id: dId,
-                name: driver.DriverName || 'Unknown',
-                mobile: driver.DriverMobileNo || 'N/A'
-              });
+      setIds(prev => ({
+        ...prev,
+        CustomerID: newCustomerID,
+        ProjectID: full.ProjectID || row.ProjectID || prev.ProjectID || '',
+        VendorID: full.VendorID || row.VendorID || prev.VendorID || ''
+      }));
+
+      // Store the original CustomerID for fallback during submission
+      if (full.CustomerID || row.CustomerID) {
+        console.log('🔧 Edit: Storing original CustomerID for fallback:', full.CustomerID || row.CustomerID);
+        // We'll use this in the submission logic
+      }
+
+      // Handle vehicles from VehicleIDs JSON field (Fixed transactions only)
+      let vehicleIds = [];
+      let vehicleTags = [];
+
+      if (!isAdhocOrReplacement && full.VehicleIDs) {
+        // Parse JSON array of vehicle IDs
+        try {
+          vehicleIds = Array.isArray(full.VehicleIDs) ? full.VehicleIDs : JSON.parse(full.VehicleIDs);
+          // Fetch details for all vehicles
+          for (const vId of vehicleIds) {
+            try {
+              const vResp = await vehicleAPI.getById(vId);
+              const vehicle = vResp?.data || vResp;
+              if (vehicle) {
+                vehicleTags.push({
+                  id: vId,
+                  registrationNo: vehicle.VehicleRegistrationNo || 'Unknown',
+                  type: vehicle.VehicleType || 'Unknown'
+                });
+              }
+            } catch (e) {
+              console.warn('Failed to fetch vehicle details for ID:', vId);
             }
-          } catch (e) {
-            console.warn('Failed to fetch driver details for ID:', dId);
           }
+        } catch (e) {
+          console.warn('Failed to parse VehicleIDs JSON:', e);
         }
-      } catch (e) {
-        console.warn('Failed to parse DriverIDs JSON:', e);
       }
-    }
 
-    // Populate master section (display fields)
-    console.log('🔧 Edit: Setting master data for transaction type:', full.TripType);
-    console.log('🔧 Edit: Full transaction data:', full);
-    console.log('🔧 Edit: Related data:', rel);
+      // Handle drivers from DriverIDs JSON field (Fixed transactions only)
+      let driverTags = [];
 
-    // Update parsedVehicleIds and parsedDriverIds for multi-select - only use JSON array fields
-    if (full.VehicleIDs) {
-      try {
-        parsedVehicleIds = Array.isArray(full.VehicleIDs) ? full.VehicleIDs : JSON.parse(full.VehicleIDs);
-      } catch (e) {
-        console.warn('Failed to parse VehicleIDs:', e);
-        parsedVehicleIds = [];
+      if (!isAdhocOrReplacement && full.DriverIDs) {
+        // Parse JSON array of driver IDs
+        try {
+          const driverIds = Array.isArray(full.DriverIDs) ? full.DriverIDs : JSON.parse(full.DriverIDs);
+          // Fetch details for all drivers
+          for (const dId of driverIds) {
+            try {
+              const dResp = await driverAPI.getById(dId);
+              const driver = dResp?.data || dResp;
+              if (driver) {
+                driverTags.push({
+                  id: dId,
+                  name: driver.DriverName || 'Unknown',
+                  mobile: driver.DriverMobileNo || 'N/A'
+                });
+              }
+            } catch (e) {
+              console.warn('Failed to fetch driver details for ID:', dId);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to parse DriverIDs JSON:', e);
+        }
       }
-    }
-    if (full.DriverIDs) {
-      try {
-        parsedDriverIds = Array.isArray(full.DriverIDs) ? full.DriverIDs : JSON.parse(full.DriverIDs);
-      } catch (e) {
-        console.warn('Failed to parse DriverIDs:', e);
-        parsedDriverIds = [];
+
+      // Populate master section (display fields)
+      console.log('🔧 Edit: Setting master data for transaction type:', full.TripType);
+      console.log('🔧 Edit: Full transaction data:', full);
+      console.log('🔧 Edit: Related data:', rel);
+
+      // Update parsedVehicleIds and parsedDriverIds for multi-select - only use JSON array fields
+      if (full.VehicleIDs) {
+        try {
+          parsedVehicleIds = Array.isArray(full.VehicleIDs) ? full.VehicleIDs : JSON.parse(full.VehicleIDs);
+        } catch (e) {
+          console.warn('Failed to parse VehicleIDs:', e);
+          parsedVehicleIds = [];
+        }
       }
-    }
-    console.log('🔧 Edit: VehicleType from database:', full.VehicleType);
-    console.log('🔧 Edit: VehicleType from related vehicle:', rel.vehicle?.VehicleType);
+      if (full.DriverIDs) {
+        try {
+          parsedDriverIds = Array.isArray(full.DriverIDs) ? full.DriverIDs : JSON.parse(full.DriverIDs);
+        } catch (e) {
+          console.warn('Failed to parse DriverIDs:', e);
+          parsedDriverIds = [];
+        }
+      }
+      console.log('🔧 Edit: VehicleType from database:', full.VehicleType);
+      console.log('🔧 Edit: VehicleType from related vehicle:', rel.vehicle?.VehicleType);
 
-    console.log('🔧 Edit: Setting vendor - full.VendorID:', full.VendorID, 'rel.vendor?.VendorID:', rel.vendor?.VendorID);
-    console.log('🔧 Edit: TotalDutyHours from database:', full.TotalDutyHours);
-    console.log('🔧 Edit: Document fields from database:', {
-      DriverAadharDoc: full.DriverAadharDoc,
-      DriverLicenceDoc: full.DriverLicenceDoc,
-      TollExpensesDoc: full.TollExpensesDoc,
-      ParkingChargesDoc: full.ParkingChargesDoc
-    });
-    console.log('🔧 Edit: Transaction type for section rendering:', full.TripType);
-    console.log('🔧 Edit: Will show Fixed sections:', full.TripType === 'Fixed');
-
-    const newMasterData = {
-      Customer: full.CustomerID || '',
-      CompanyName: rel.customer?.Name || rel.customer?.MasterCustomerName || full.CompanyName || '',
-      GSTNo: rel.customer?.GSTNo || full.CustomerGSTNo || full.GSTNo || '',
-      Project: rel.project?.ProjectName || full.ProjectName || '',
-      Location: (() => {
-        // PRIORITY ORDER: ProjectLocation first, then fallbacks
-        const location = full.ProjectLocation || rel.project?.Location || rel.customer?.Locations || full.CustomerLocation || full.Location || '';
-        console.log('🔧 LOCATION DEBUG - ProjectLocation from API:', full.ProjectLocation);
-        console.log('🔧 LOCATION DEBUG - full.Location from API:', full.Location);
-        console.log('🔧 LOCATION DEBUG - rel.project?.Location:', rel.project?.Location);
-        console.log('🔧 LOCATION DEBUG - rel.customer?.Locations:', rel.customer?.Locations);
-        console.log('🔧 LOCATION DEBUG - full.CustomerLocation:', full.CustomerLocation);
-        console.log('🔧 LOCATION DEBUG - Final location value:', location);
-        return location;
-      })(),
-      CustSite: rel.customer?.CustomerSite || full.CustomerSite || '',
-      VehiclePlacementType: rel.project?.PlacementType || full.VehiclePlacementType || 'Fixed',
-      VehicleType: full.VehicleType || rel.vehicle?.VehicleType || '', // Use database value first
-      VehicleNo: parsedVehicleIds, // Always use parsed VehicleIDs array
-      VendorName: rel.vendor?.VendorName || full.VendorName || '',
-      VendorCode: rel.vendor?.VendorCode || full.VendorCode || '',
-      TypeOfTransaction: full.TripType || 'Fixed'
-    };
-
-    console.log('🔧 EDIT STATE - Setting masterData to:', newMasterData);
-    console.log('🔧 EDIT STATE - About to set masterData.Location to:', newMasterData.Location);
-    console.log('🔧 EDIT STATE - About to set masterData.TypeOfTransaction to:', newMasterData.TypeOfTransaction);
-    console.log('🔧 VEHICLE DEBUG - parsedVehicleIds:', parsedVehicleIds);
-    console.log('🔧 VEHICLE DEBUG - newMasterData.VehicleNo:', newMasterData.VehicleNo);
-
-    // ADDITIONAL LOCATION DEBUGGING
-    console.log('🔧 LOCATION FINAL DEBUG - API Response full.ProjectLocation:', full.ProjectLocation);
-    console.log('🔧 LOCATION FINAL DEBUG - Related project location:', rel.project?.Location);
-    console.log('🔧 LOCATION FINAL DEBUG - Related customer locations:', rel.customer?.Locations);
-    console.log('🔧 LOCATION FINAL DEBUG - Final masterData.Location:', newMasterData.Location);
-
-    setMasterData(newMasterData);
-
-    // VERIFY STATE WAS SET CORRECTLY
-    console.log('🔧 EDIT STATE - masterData state has been updated');
-    console.log('🔧 EDIT STATE - Expected Location in form field:', newMasterData.Location);
-    console.log('🔧 EDIT STATE - Form field should now show Location:', newMasterData.Location);
-
-    console.log('🔧 EDIT STATE - masterData.TypeOfTransaction set to:', full.TripType || 'Fixed');
-    console.log('🔧 EDIT STATE - This will determine which form sections are shown');
-    console.log('🔧 EDIT STATE - Expected sections for', full.TripType, ':', {
-      'Fixed': 'Blue (driver), Yellow (calculation), Orange (supervisor) sections',
-      'Adhoc': 'ADHOC/REPLACEMENT section only',
-      'Replacement': 'ADHOC/REPLACEMENT section only'
-    }[full.TripType] || 'Unknown transaction type');
-
-    console.log('🔧 Edit: masterData.VendorName set to:', full.VendorID || rel.vendor?.VendorID || '');
-
-    // Store the VendorID for later use after vendors are loaded
-    if (full.VendorID) {
-      console.log('🔧 Edit: Storing VendorID for later selection:', full.VendorID);
-      // We'll trigger vendor selection after vendors are loaded in useEffect
-    }
-    setSelectedDrivers(parsedDriverIds); // Always use parsed DriverIDs array
-
-    // Set driver tags for display
-    setSelectedDrivers(driverTags);
-
-    // Populate transaction section
-    console.log('🔧 Edit: Populating transaction data...');
-    console.log('🔧 Edit: Transaction fields from DB:', {
-      DriverID: full.DriverID,
-      DriverMobileNo: full.DriverMobileNo,
-      TransactionDate: full.TransactionDate,
-      ArrivalTimeAtHub: full.ArrivalTimeAtHub,
-      TotalDeliveries: full.TotalDeliveries,
-      TripNo: full.TripNo,
-      VehicleNumber: full.VehicleNumber
-    });
-
-    // Populate transaction data based on transaction type
-    console.log('🔧 EDIT STATE - About to populate transactionData, isAdhocOrReplacement:', isAdhocOrReplacement);
-
-    if (isAdhocOrReplacement) {
-      // For Adhoc/Replacement transactions, populate all fields
-      console.log('🔧 EDIT STATE - Setting Adhoc/Replacement transactionData');
-      setTransactionData(prev => ({
-        ...prev,
-        DriverID: rel.driver?.DriverID || full.DriverID || '',
-        DriverMobileNo: rel.driver?.DriverMobileNo || full.DriverMobileNo || '',
-        TripNumber: full.TripNumber || '',
-        Date: formatDateForInput(full.TransactionDate) || getCurrentDate(),
-        ArrivalTimeAtHub: full.ArrivalTimeAtHub || '',
-        InTimeByCust: full.InTimeByCust || '',
-        OutTimeFromHub: full.OutTimeFromHub || '',
-
-        // NEW: 6 Time Fields (Mandatory - Chronological Order)
-        VehicleReportingAtHub: full.VehicleReportingAtHub || '',
-        VehicleEntryInHub: full.VehicleEntryInHub || '',
-        VehicleOutFromHubForDelivery: full.VehicleOutFromHubForDelivery || '',
-        VehicleReturnAtHub: full.VehicleReturnAtHub || '',
-        VehicleEnteredAtHubReturn: full.VehicleEnteredAtHubReturn || '',
-        VehicleOutFromHubFinal: full.VehicleOutFromHubFinal || '',
-
-        OpeningKM: full.OpeningKM || '',
-        ClosingKM: full.ClosingKM || '',
-        ReturnReportingTime: full.ReturnReportingTime || '',
-        TotalDutyHours: full.TotalDutyHours || '',
-        TripClose: !!full.TripClose,
-        Remarks: full.Remarks || '',
-        // Adhoc/Replacement specific fields
-        TripNo: full.TripNo || '',
-        VehicleNumber: full.VehicleNumber || '',
-        VehicleType: full.VehicleType || '',
-        VendorName: full.VendorName || '',
-        VendorNumber: full.VendorNumber || '',
-        DriverName: full.DriverName || '',
-        DriverNumber: full.DriverNumber || '',
-        DriverAadharNumber: full.DriverAadharNumber || '',
-        DriverLicenceNumber: full.DriverLicenceNumber || '',
-
-        // Document fields removed - handled by files state and _url fields
-        TotalShipmentsForDeliveries: full.TotalShipmentsForDeliveries || '',
-        TotalShipmentDeliveriesAttempted: full.TotalShipmentDeliveriesAttempted || '',
-        TotalShipmentDeliveriesDone: full.TotalShipmentDeliveriesDone || '',
-        VFreightFix: full.VFreightFix || '',
-        FixKm: full.FixKm || '',
-        VFreightVariable: full.VFreightVariable || '',
-        TollExpenses: full.TollExpenses || '',
-        ParkingCharges: full.ParkingCharges || '',
-        LoadingCharges: full.LoadingCharges || '',
-        UnloadingCharges: full.UnloadingCharges || '',
-        OtherCharges: full.OtherCharges || '',
-        OtherChargesRemarks: full.OtherChargesRemarks || '',
-        AdvanceRequestNo: full.AdvanceRequestNo || '',
-        AdvanceToPaid: full.AdvanceToPaid || '',
-        AdvanceApprovedAmount: full.AdvanceApprovedAmount || '',
-        AdvanceApprovedBy: full.AdvanceApprovedBy || '',
-        AdvancePaidAmount: full.AdvancePaidAmount || '',
-        AdvancePaidMode: full.AdvancePaidMode || '',
-        AdvancePaidDate: formatDateForInput(full.AdvancePaidDate) || '',
-        AdvancePaidBy: full.AdvancePaidBy || '',
-        EmployeeDetailsAdvance: full.EmployeeDetailsAdvance || '',
-        BalancePaidAmount: full.BalancePaidAmount || '',
-        BalancePaidDate: formatDateForInput(full.BalancePaidDate) || '',
-        BalancePaidBy: full.BalancePaidBy || '',
-        EmployeeDetailsBalance: full.EmployeeDetailsBalance || ''
-      }));
-    } else {
-      // For Fixed transactions, populate ALL fields including financial fields
-      console.log('🔧 FIXED EDIT - About to populate TripNo with:', full.TripNo);
-      console.log('🔧 FIXED EDIT - About to populate Location with:', full.ProjectLocation);
-      setTransactionData(prev => ({
-        ...prev,
-        DriverID: parsedDriverIds.length > 0 ? parsedDriverIds[0] : '',
-        DriverMobileNo: rel.driver?.DriverMobileNo || '',
-        TripNo: full.TripNo || '',
-        ReplacementDriverName: full.ReplacementDriverName || '',
-        ReplacementDriverNo: full.ReplacementDriverNo || '',
-        Date: formatDateForInput(full.TransactionDate) || getCurrentDate(),
-        Shift: full.Shift || '',
-        ArrivalTimeAtHub: full.ArrivalTimeAtHub || '',
-        InTimeByCust: full.InTimeByCust || '',
-        OutTimeFromHub: full.OutTimeFromHub || '',
-        ReturnReportingTime: full.ReturnReportingTime || '',
-
-        // NEW: 6 Time Fields (Mandatory - Chronological Order)
-        VehicleReportingAtHub: full.VehicleReportingAtHub || '',
-        VehicleEntryInHub: full.VehicleEntryInHub || '',
-        VehicleOutFromHubForDelivery: full.VehicleOutFromHubForDelivery || '',
-        VehicleReturnAtHub: full.VehicleReturnAtHub || '',
-        VehicleEnteredAtHubReturn: full.VehicleEnteredAtHubReturn || '',
-        VehicleOutFromHubFinal: full.VehicleOutFromHubFinal || '',
-
-        OpeningKM: full.OpeningKM || '',
-        ClosingKM: full.ClosingKM || '',
-        TotalDeliveries: full.TotalDeliveries || '',
-        TotalDeliveriesAttempted: full.TotalDeliveriesAttempted || '',
-        TotalDeliveriesDone: full.TotalDeliveriesDone || '',
-        TotalDutyHours: full.TotalDutyHours || '',
-        TripClose: !!full.TripClose,
-        Remarks: full.Remarks || '',
-
-        // Financial and additional fields for Fixed transactions
-        VFreightFix: full.VFreightFix || '',
-        FixKm: full.FixKm || '',
-        VFreightVariable: full.VFreightVariable || '',
-        TollExpenses: full.TollExpenses || '',
-        ParkingCharges: full.ParkingCharges || '',
-        LoadingCharges: full.LoadingCharges || '',
-        UnloadingCharges: full.UnloadingCharges || '',
-        OtherCharges: full.OtherCharges || '',
-        OtherChargesRemarks: full.OtherChargesRemarks || '',
-        HandlingCharges: full.HandlingCharges || '',
-        OutTimeFrom: full.OutTimeFrom || '',
-        TotalFreight: full.TotalFreight || '',
-
-        // Vehicle and vendor fields
-        VehicleType: full.VehicleType || '',
-        VehicleNumber: full.VehicleNumber || '',
-        VendorName: full.VendorName || '',
-        VendorNumber: full.VendorNumber || '',
-        DriverName: full.DriverName || '',
-        DriverNumber: full.DriverNumber || '',
-        DriverAadharNumber: full.DriverAadharNumber || '',
-        DriverLicenceNumber: full.DriverLicenceNumber || '',
-
-        // Company and customer site fields (Location is handled in masterData, not transactionData)
-        CompanyName: full.CompanyName || '',
-        GSTNo: full.GSTNo || '',
-        CustomerSite: full.CustomerSite || '',
-
-        // Shipment fields
-        TotalShipmentsForDeliveries: full.TotalShipmentsForDeliveries || '',
-        TotalShipmentDeliveriesAttempted: full.TotalShipmentDeliveriesAttempted || '',
-        TotalShipmentDeliveriesDone: full.TotalShipmentDeliveriesDone || '',
-
-        // Advance payment fields
-        AdvanceRequestNo: full.AdvanceRequestNo || '',
-        AdvanceToPaid: full.AdvanceToPaid || '',
-        AdvanceApprovedAmount: full.AdvanceApprovedAmount || '',
-        AdvanceApprovedBy: full.AdvanceApprovedBy || '',
-        AdvancePaidAmount: full.AdvancePaidAmount || '',
-        AdvancePaidMode: full.AdvancePaidMode || '',
-        AdvancePaidDate: full.AdvancePaidDate || '',
-        AdvancePaidBy: full.AdvancePaidBy || '',
-        EmployeeDetailsAdvance: full.EmployeeDetailsAdvance || '',
-
-        // Balance payment fields
-        BalanceToBePaid: full.BalanceToBePaid || '',
-        BalancePaidAmount: full.BalancePaidAmount || '',
-        Variance: full.Variance || '',
-        BalancePaidDate: full.BalancePaidDate || '',
-        BalancePaidBy: full.BalancePaidBy || '',
-        EmployeeDetailsBalance: full.EmployeeDetailsBalance || '',
-
-        // Financial calculations
-        Revenue: full.Revenue || '',
-        Margin: full.Margin || '',
-        MarginPercentage: full.MarginPercentage || '',
-
-        // Document fields removed - handled by files state and _url fields
-      }));
-
-      console.log('🔧 FIXED EDIT - TransactionData populated with documents:', {
+      console.log('🔧 Edit: Setting vendor - full.VendorID:', full.VendorID, 'rel.vendor?.VendorID:', rel.vendor?.VendorID);
+      console.log('🔧 Edit: TotalDutyHours from database:', full.TotalDutyHours);
+      console.log('🔧 Edit: Document fields from database:', {
         DriverAadharDoc: full.DriverAadharDoc,
         DriverLicenceDoc: full.DriverLicenceDoc,
         TollExpensesDoc: full.TollExpensesDoc,
-        ParkingChargesDoc: full.ParkingChargesDoc,
-        ReplacementDriverName: full.ReplacementDriverName,
-        ReplacementDriverNo: full.ReplacementDriverNo
+        ParkingChargesDoc: full.ParkingChargesDoc
       });
-      console.log('🔧 FIXED EDIT - Document fields should now be available in transactionData state');
-      console.log('🔧 Edit: Key fields populated:', {
-        ProjectID: full.ProjectID,
+      console.log('🔧 Edit: Transaction type for section rendering:', full.TripType);
+      console.log('🔧 Edit: Will show Fixed sections:', full.TripType === 'Fixed');
+
+      const newMasterData = {
+        Customer: full.CustomerID || '',
+        CompanyName: rel.customer?.Name || rel.customer?.MasterCustomerName || full.CompanyName || '',
+        GSTNo: rel.customer?.GSTNo || full.CustomerGSTNo || full.GSTNo || '',
+        Project: rel.project?.ProjectName || full.ProjectName || '',
+        Location: (() => {
+          // PRIORITY ORDER: ProjectLocation first, then fallbacks
+          const location = full.ProjectLocation || rel.project?.Location || rel.customer?.Locations || full.CustomerLocation || full.Location || '';
+          console.log('🔧 LOCATION DEBUG - ProjectLocation from API:', full.ProjectLocation);
+          console.log('🔧 LOCATION DEBUG - full.Location from API:', full.Location);
+          console.log('🔧 LOCATION DEBUG - rel.project?.Location:', rel.project?.Location);
+          console.log('🔧 LOCATION DEBUG - rel.customer?.Locations:', rel.customer?.Locations);
+          console.log('🔧 LOCATION DEBUG - full.CustomerLocation:', full.CustomerLocation);
+          console.log('🔧 LOCATION DEBUG - Final location value:', location);
+          return location;
+        })(),
+        CustSite: rel.customer?.CustomerSite || full.CustomerSite || '',
+        VehiclePlacementType: rel.project?.PlacementType || full.VehiclePlacementType || 'Fixed',
+        VehicleType: full.VehicleType || rel.vehicle?.VehicleType || '', // Use database value first
+        VehicleNo: parsedVehicleIds, // Always use parsed VehicleIDs array
+        VendorName: rel.vendor?.VendorName || full.VendorName || '',
+        VendorCode: rel.vendor?.VendorCode || full.VendorCode || '',
+        TypeOfTransaction: full.TripType || 'Fixed'
+      };
+
+      console.log('🔧 EDIT STATE - Setting masterData to:', newMasterData);
+      console.log('🔧 EDIT STATE - About to set masterData.Location to:', newMasterData.Location);
+      console.log('🔧 EDIT STATE - About to set masterData.TypeOfTransaction to:', newMasterData.TypeOfTransaction);
+      console.log('🔧 VEHICLE DEBUG - parsedVehicleIds:', parsedVehicleIds);
+      console.log('🔧 VEHICLE DEBUG - newMasterData.VehicleNo:', newMasterData.VehicleNo);
+
+      // ADDITIONAL LOCATION DEBUGGING
+      console.log('🔧 LOCATION FINAL DEBUG - API Response full.ProjectLocation:', full.ProjectLocation);
+      console.log('🔧 LOCATION FINAL DEBUG - Related project location:', rel.project?.Location);
+      console.log('🔧 LOCATION FINAL DEBUG - Related customer locations:', rel.customer?.Locations);
+      console.log('🔧 LOCATION FINAL DEBUG - Final masterData.Location:', newMasterData.Location);
+
+      setMasterData(newMasterData);
+
+      // VERIFY STATE WAS SET CORRECTLY
+      console.log('🔧 EDIT STATE - masterData state has been updated');
+      console.log('🔧 EDIT STATE - Expected Location in form field:', newMasterData.Location);
+      console.log('🔧 EDIT STATE - Form field should now show Location:', newMasterData.Location);
+
+      console.log('🔧 EDIT STATE - masterData.TypeOfTransaction set to:', full.TripType || 'Fixed');
+      console.log('🔧 EDIT STATE - This will determine which form sections are shown');
+      console.log('🔧 EDIT STATE - Expected sections for', full.TripType, ':', {
+        'Fixed': 'Blue (driver), Yellow (calculation), Orange (supervisor) sections',
+        'Adhoc': 'ADHOC/REPLACEMENT section only',
+        'Replacement': 'ADHOC/REPLACEMENT section only'
+      }[full.TripType] || 'Unknown transaction type');
+
+      console.log('🔧 Edit: masterData.VendorName set to:', full.VendorID || rel.vendor?.VendorID || '');
+
+      // Store the VendorID for later use after vendors are loaded
+      if (full.VendorID) {
+        console.log('🔧 Edit: Storing VendorID for later selection:', full.VendorID);
+        // We'll trigger vendor selection after vendors are loaded in useEffect
+      }
+      setSelectedDrivers(parsedDriverIds); // Always use parsed DriverIDs array
+
+      // Set driver tags for display
+      setSelectedDrivers(driverTags);
+
+      // Populate transaction section
+      console.log('🔧 Edit: Populating transaction data...');
+      console.log('🔧 Edit: Transaction fields from DB:', {
+        DriverID: full.DriverID,
+        DriverMobileNo: full.DriverMobileNo,
+        TransactionDate: full.TransactionDate,
+        ArrivalTimeAtHub: full.ArrivalTimeAtHub,
+        TotalDeliveries: full.TotalDeliveries,
         TripNo: full.TripNo,
-        CustomerID: full.CustomerID,
-        TransactionDate: full.TransactionDate
+        VehicleNumber: full.VehicleNumber
       });
 
-      // CRITICAL DEBUG: Check if transactionData.TripNo is actually set
-      console.log('🚨 CRITICAL DEBUG - transactionData.TripNo after setting:', full.TripNo);
-      console.log('🚨 CRITICAL DEBUG - masterData.Location after setting:', newMasterData.Location);
-      console.log('🚨 CRITICAL DEBUG - masterData.TypeOfTransaction after setting:', newMasterData.TypeOfTransaction);
-      console.log('🔧 Edit: ALL AVAILABLE FIELDS in full object:', Object.keys(full));
-      console.log('🔧 Edit: Project data fetched:', rel.project);
-      console.log('🔧 Edit: Project data keys:', rel.project ? Object.keys(rel.project) : 'No project data');
-      console.log('🔧 Edit: Location data sources:', {
-        'full.Location': full.Location,
-        'full.CustomerLocation': full.CustomerLocation,
-        'full.ProjectLocation': full.ProjectLocation,
-        'rel.customer?.Locations': rel.customer?.Locations,
-        'rel.project?.Location': rel.project?.Location,
-        'rel.project (full object)': rel.project,
-        'final_location_used': rel.project?.Location || rel.customer?.Locations || full.Location || full.CustomerLocation || full.ProjectLocation || ''
+      // Populate transaction data based on transaction type
+      console.log('🔧 EDIT STATE - About to populate transactionData, isAdhocOrReplacement:', isAdhocOrReplacement);
+
+      if (isAdhocOrReplacement) {
+        // For Adhoc/Replacement transactions, populate all fields
+        console.log('🔧 EDIT STATE - Setting Adhoc/Replacement transactionData');
+        setTransactionData(prev => ({
+          ...prev,
+          DriverID: rel.driver?.DriverID || full.DriverID || '',
+          DriverMobileNo: rel.driver?.DriverMobileNo || full.DriverMobileNo || '',
+          TripNumber: full.TripNumber || '',
+          Date: formatDateForInput(full.TransactionDate) || getCurrentDate(),
+          ArrivalTimeAtHub: full.ArrivalTimeAtHub || '',
+          InTimeByCust: full.InTimeByCust || '',
+          OutTimeFromHub: full.OutTimeFromHub || '',
+
+          // NEW: 6 Time Fields (Mandatory - Chronological Order)
+          VehicleReportingAtHub: full.VehicleReportingAtHub || '',
+          VehicleEntryInHub: full.VehicleEntryInHub || '',
+          VehicleOutFromHubForDelivery: full.VehicleOutFromHubForDelivery || '',
+          VehicleReturnAtHub: full.VehicleReturnAtHub || '',
+          VehicleEnteredAtHubReturn: full.VehicleEnteredAtHubReturn || '',
+          VehicleOutFromHubFinal: full.VehicleOutFromHubFinal || '',
+
+          OpeningKM: full.OpeningKM || '',
+          ClosingKM: full.ClosingKM || '',
+          ReturnReportingTime: full.ReturnReportingTime || '',
+          TotalDutyHours: full.TotalDutyHours || '',
+          TripClose: !!full.TripClose,
+          Remarks: full.Remarks || '',
+          // Adhoc/Replacement specific fields
+          TripNo: full.TripNo || '',
+          VehicleNumber: full.VehicleNumber || '',
+          VehicleType: full.VehicleType || '',
+          VendorName: full.VendorName || '',
+          VendorNumber: full.VendorNumber || '',
+          DriverName: full.DriverName || '',
+          DriverNumber: full.DriverNumber || '',
+          DriverAadharNumber: full.DriverAadharNumber || '',
+          DriverLicenceNumber: full.DriverLicenceNumber || '',
+
+          // Document fields removed - handled by files state and _url fields
+          TotalShipmentsForDeliveries: full.TotalShipmentsForDeliveries || '',
+          TotalShipmentDeliveriesAttempted: full.TotalShipmentDeliveriesAttempted || '',
+          TotalShipmentDeliveriesDone: full.TotalShipmentDeliveriesDone || '',
+          VFreightFix: full.VFreightFix || '',
+          FixKm: full.FixKm || '',
+          VFreightVariable: full.VFreightVariable || '',
+          TollExpenses: full.TollExpenses || '',
+          ParkingCharges: full.ParkingCharges || '',
+          LoadingCharges: full.LoadingCharges || '',
+          UnloadingCharges: full.UnloadingCharges || '',
+          OtherCharges: full.OtherCharges || '',
+          OtherChargesRemarks: full.OtherChargesRemarks || '',
+          AdvanceRequestNo: full.AdvanceRequestNo || '',
+          AdvanceToPaid: full.AdvanceToPaid || '',
+          AdvanceApprovedAmount: full.AdvanceApprovedAmount || '',
+          AdvanceApprovedBy: full.AdvanceApprovedBy || '',
+          AdvancePaidAmount: full.AdvancePaidAmount || '',
+          AdvancePaidMode: full.AdvancePaidMode || '',
+          AdvancePaidDate: formatDateForInput(full.AdvancePaidDate) || '',
+          AdvancePaidBy: full.AdvancePaidBy || '',
+          EmployeeDetailsAdvance: full.EmployeeDetailsAdvance || '',
+          BalancePaidAmount: full.BalancePaidAmount || '',
+          BalancePaidDate: formatDateForInput(full.BalancePaidDate) || '',
+          BalancePaidBy: full.BalancePaidBy || '',
+          EmployeeDetailsBalance: full.EmployeeDetailsBalance || ''
+        }));
+      } else {
+        // For Fixed transactions, populate ALL fields including financial fields
+        console.log('🔧 FIXED EDIT - About to populate TripNo with:', full.TripNo);
+        console.log('🔧 FIXED EDIT - About to populate Location with:', full.ProjectLocation);
+        setTransactionData(prev => ({
+          ...prev,
+          DriverID: parsedDriverIds.length > 0 ? parsedDriverIds[0] : '',
+          DriverMobileNo: rel.driver?.DriverMobileNo || '',
+          TripNo: full.TripNo || '',
+          ReplacementDriverName: full.ReplacementDriverName || '',
+          ReplacementDriverNo: full.ReplacementDriverNo || '',
+          Date: formatDateForInput(full.TransactionDate) || getCurrentDate(),
+          Shift: full.Shift || '',
+          ArrivalTimeAtHub: full.ArrivalTimeAtHub || '',
+          InTimeByCust: full.InTimeByCust || '',
+          OutTimeFromHub: full.OutTimeFromHub || '',
+          ReturnReportingTime: full.ReturnReportingTime || '',
+
+          // NEW: 6 Time Fields (Mandatory - Chronological Order)
+          VehicleReportingAtHub: full.VehicleReportingAtHub || '',
+          VehicleEntryInHub: full.VehicleEntryInHub || '',
+          VehicleOutFromHubForDelivery: full.VehicleOutFromHubForDelivery || '',
+          VehicleReturnAtHub: full.VehicleReturnAtHub || '',
+          VehicleEnteredAtHubReturn: full.VehicleEnteredAtHubReturn || '',
+          VehicleOutFromHubFinal: full.VehicleOutFromHubFinal || '',
+
+          OpeningKM: full.OpeningKM || '',
+          ClosingKM: full.ClosingKM || '',
+          TotalDeliveries: full.TotalDeliveries || '',
+          TotalDeliveriesAttempted: full.TotalDeliveriesAttempted || '',
+          TotalDeliveriesDone: full.TotalDeliveriesDone || '',
+          TotalDutyHours: full.TotalDutyHours || '',
+          TripClose: !!full.TripClose,
+          Remarks: full.Remarks || '',
+
+          // Financial and additional fields for Fixed transactions
+          VFreightFix: full.VFreightFix || '',
+          FixKm: full.FixKm || '',
+          VFreightVariable: full.VFreightVariable || '',
+          TollExpenses: full.TollExpenses || '',
+          ParkingCharges: full.ParkingCharges || '',
+          LoadingCharges: full.LoadingCharges || '',
+          UnloadingCharges: full.UnloadingCharges || '',
+          OtherCharges: full.OtherCharges || '',
+          OtherChargesRemarks: full.OtherChargesRemarks || '',
+          HandlingCharges: full.HandlingCharges || '',
+          OutTimeFrom: full.OutTimeFrom || '',
+          TotalFreight: full.TotalFreight || '',
+
+          // Vehicle and vendor fields
+          VehicleType: full.VehicleType || '',
+          VehicleNumber: full.VehicleNumber || '',
+          VendorName: full.VendorName || '',
+          VendorNumber: full.VendorNumber || '',
+          DriverName: full.DriverName || '',
+          DriverNumber: full.DriverNumber || '',
+          DriverAadharNumber: full.DriverAadharNumber || '',
+          DriverLicenceNumber: full.DriverLicenceNumber || '',
+
+          // Company and customer site fields (Location is handled in masterData, not transactionData)
+          CompanyName: full.CompanyName || '',
+          GSTNo: full.GSTNo || '',
+          CustomerSite: full.CustomerSite || '',
+
+          // Shipment fields
+          TotalShipmentsForDeliveries: full.TotalShipmentsForDeliveries || '',
+          TotalShipmentDeliveriesAttempted: full.TotalShipmentDeliveriesAttempted || '',
+          TotalShipmentDeliveriesDone: full.TotalShipmentDeliveriesDone || '',
+
+          // Advance payment fields
+          AdvanceRequestNo: full.AdvanceRequestNo || '',
+          AdvanceToPaid: full.AdvanceToPaid || '',
+          AdvanceApprovedAmount: full.AdvanceApprovedAmount || '',
+          AdvanceApprovedBy: full.AdvanceApprovedBy || '',
+          AdvancePaidAmount: full.AdvancePaidAmount || '',
+          AdvancePaidMode: full.AdvancePaidMode || '',
+          AdvancePaidDate: full.AdvancePaidDate || '',
+          AdvancePaidBy: full.AdvancePaidBy || '',
+          EmployeeDetailsAdvance: full.EmployeeDetailsAdvance || '',
+
+          // Balance payment fields
+          BalanceToBePaid: full.BalanceToBePaid || '',
+          BalancePaidAmount: full.BalancePaidAmount || '',
+          Variance: full.Variance || '',
+          BalancePaidDate: full.BalancePaidDate || '',
+          BalancePaidBy: full.BalancePaidBy || '',
+          EmployeeDetailsBalance: full.EmployeeDetailsBalance || '',
+
+          // Financial calculations
+          Revenue: full.Revenue || '',
+          Margin: full.Margin || '',
+          MarginPercentage: full.MarginPercentage || '',
+
+          // Document fields removed - handled by files state and _url fields
+        }));
+
+        console.log('🔧 FIXED EDIT - TransactionData populated with documents:', {
+          DriverAadharDoc: full.DriverAadharDoc,
+          DriverLicenceDoc: full.DriverLicenceDoc,
+          TollExpensesDoc: full.TollExpensesDoc,
+          ParkingChargesDoc: full.ParkingChargesDoc,
+          ReplacementDriverName: full.ReplacementDriverName,
+          ReplacementDriverNo: full.ReplacementDriverNo
+        });
+        console.log('🔧 FIXED EDIT - Document fields should now be available in transactionData state');
+        console.log('🔧 Edit: Key fields populated:', {
+          ProjectID: full.ProjectID,
+          TripNo: full.TripNo,
+          CustomerID: full.CustomerID,
+          TransactionDate: full.TransactionDate
+        });
+
+        // CRITICAL DEBUG: Check if transactionData.TripNo is actually set
+        console.log('🚨 CRITICAL DEBUG - transactionData.TripNo after setting:', full.TripNo);
+        console.log('🚨 CRITICAL DEBUG - masterData.Location after setting:', newMasterData.Location);
+        console.log('🚨 CRITICAL DEBUG - masterData.TypeOfTransaction after setting:', newMasterData.TypeOfTransaction);
+        console.log('🔧 Edit: ALL AVAILABLE FIELDS in full object:', Object.keys(full));
+        console.log('🔧 Edit: Project data fetched:', rel.project);
+        console.log('🔧 Edit: Project data keys:', rel.project ? Object.keys(rel.project) : 'No project data');
+        console.log('🔧 Edit: Location data sources:', {
+          'full.Location': full.Location,
+          'full.CustomerLocation': full.CustomerLocation,
+          'full.ProjectLocation': full.ProjectLocation,
+          'rel.customer?.Locations': rel.customer?.Locations,
+          'rel.project?.Location': rel.project?.Location,
+          'rel.project (full object)': rel.project,
+          'final_location_used': rel.project?.Location || rel.customer?.Locations || full.Location || full.CustomerLocation || full.ProjectLocation || ''
+        });
+      }
+
+      // Populate calculation section
+      console.log('🔧 Edit: Setting calculatedData - TotalDutyHours:', full.TotalDutyHours);
+      setCalculatedData(prev => ({
+        ...prev,
+        TotalKM: full.TotalKM || prev.TotalKM || ((full.ClosingKM && full.OpeningKM) ? (Number(full.ClosingKM) - Number(full.OpeningKM)) : ''),
+        VFreightFix: full.VFreightFix ?? prev.VFreightFix ?? '',
+        TollExpenses: full.TollExpenses ?? prev.TollExpenses ?? '',
+        ParkingCharges: full.ParkingCharges ?? prev.ParkingCharges ?? '',
+        HandlingCharges: full.HandlingCharges ?? prev.HandlingCharges ?? '',
+        OutTimeFromHUB: full.OutTimeFrom ?? prev.OutTimeFromHUB ?? '',
+        TotalDutyHours: full.TotalDutyHours ?? prev.TotalDutyHours ?? ''
+      }));
+
+      // Populate supervisor section
+      console.log('🔧 Edit: Setting supervisor data - Remarks:', full.Remarks, 'TripClose:', full.TripClose, 'Status:', full.Status);
+      // Fix: Use simple boolean conversion of TripClose field from database
+      const tripCloseValue = !!full.TripClose;
+      console.log('🔧 Edit: Calculated TripClose value:', tripCloseValue);
+      setSupervisorData(prev => ({
+        ...prev,
+        Remarks: full.Remarks || prev.Remarks || '',
+        TripClose: tripCloseValue
+      }));
+
+      // Also update transactionData.TripClose to sync both checkboxes
+      setTransactionData(prev => ({
+        ...prev,
+        TripClose: tripCloseValue
+      }));
+
+      // Hide project dropdown by default when editing; user can change customer to re-evaluate
+      setIsProjectDropdownVisible(false);
+
+      // Trigger customer selection logic to load projects and set correct values
+      if (full.CustomerID) {
+        console.log('🔄 Edit: Triggering customer selection for CustomerID:', full.CustomerID);
+        // Use different handlers based on transaction type
+        setTimeout(() => {
+          if (isAdhocOrReplacement) {
+            // For ADHOC/Replacement, use handleCompanySelect to load projects
+            handleCompanySelect({ target: { value: full.CustomerID } });
+          } else {
+            // For Fixed transactions, use handleMasterDataChange
+            handleMasterDataChange({ target: { name: 'Customer', value: full.CustomerID } });
+          }
+        }, 100);
+      }
+
+      // Reset files state for new uploads (following Vendor Form pattern)
+      setFiles({
+        DriverAadharDoc: null,
+        DriverLicenceDoc: null,
+        TollExpensesDoc: null,
+        ParkingChargesDoc: null,
+        OpeningKMImage: null,
+        ClosingKMImage: null
       });
-    }
 
-    // Populate calculation section
-    console.log('🔧 Edit: Setting calculatedData - TotalDutyHours:', full.TotalDutyHours);
-    setCalculatedData(prev => ({
-      ...prev,
-      TotalKM: full.TotalKM || prev.TotalKM || ((full.ClosingKM && full.OpeningKM) ? (Number(full.ClosingKM) - Number(full.OpeningKM)) : ''),
-      VFreightFix: full.VFreightFix ?? prev.VFreightFix ?? '',
-      TollExpenses: full.TollExpenses ?? prev.TollExpenses ?? '',
-      ParkingCharges: full.ParkingCharges ?? prev.ParkingCharges ?? '',
-      HandlingCharges: full.HandlingCharges ?? prev.HandlingCharges ?? '',
-      OutTimeFromHUB: full.OutTimeFrom ?? prev.OutTimeFromHUB ?? '',
-      TotalDutyHours: full.TotalDutyHours ?? prev.TotalDutyHours ?? ''
-    }));
-
-    // Populate supervisor section
-    console.log('🔧 Edit: Setting supervisor data - Remarks:', full.Remarks, 'TripClose:', full.TripClose, 'Status:', full.Status);
-    // Fix: Use simple boolean conversion of TripClose field from database
-    const tripCloseValue = !!full.TripClose;
-    console.log('🔧 Edit: Calculated TripClose value:', tripCloseValue);
-    setSupervisorData(prev => ({
-      ...prev,
-      Remarks: full.Remarks || prev.Remarks || '',
-      TripClose: tripCloseValue
-    }));
-
-    // Also update transactionData.TripClose to sync both checkboxes
-    setTransactionData(prev => ({
-      ...prev,
-      TripClose: tripCloseValue
-    }));
-
-    // Hide project dropdown by default when editing; user can change customer to re-evaluate
-    setIsProjectDropdownVisible(false);
-
-    // Trigger customer selection logic to load projects and set correct values
-    if (full.CustomerID) {
-      console.log('🔄 Edit: Triggering customer selection for CustomerID:', full.CustomerID);
-      // Use different handlers based on transaction type
-      setTimeout(() => {
-        if (isAdhocOrReplacement) {
-          // For ADHOC/Replacement, use handleCompanySelect to load projects
-          handleCompanySelect({ target: { value: full.CustomerID } });
-        } else {
-          // For Fixed transactions, use handleMasterDataChange
-          handleMasterDataChange({ target: { name: 'Customer', value: full.CustomerID } });
-        }
-      }, 100);
-    }
-
-    // Reset files state for new uploads (following Vendor Form pattern)
-    setFiles({
-      DriverAadharDoc: null,
-      DriverLicenceDoc: null,
-      TollExpensesDoc: null,
-      ParkingChargesDoc: null,
-      OpeningKMImage: null,
-      ClosingKMImage: null
-    });
-
-    // Scroll to top of the page to show the form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    console.log('🔧 EDIT COMPLETE - Edit process completed successfully');
+      // Scroll to top of the page to show the form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      console.log('🔧 EDIT COMPLETE - Edit process completed successfully');
 
     } catch (error) {
       console.error('🔧 EDIT ERROR - Error during edit process:', error);
@@ -3272,7 +3272,7 @@ const DailyVehicleTransactionForm = () => {
       console.log('📊 Exporting all transactions to Excel...');
 
       // Create download link for all transactions
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3004';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       const exportUrl = `${API_BASE_URL}/api/daily-vehicle-transactions/export/all`;
 
       // Show loading message
@@ -3326,7 +3326,8 @@ const DailyVehicleTransactionForm = () => {
 
   const transactionColumns = [
     { key: 'SerialNumber', label: 'S.No.', sortable: true, width: '60px' },
-    { key: 'TripType', label: 'Type', sortable: true, width: '80px', render: (value) => {
+    {
+      key: 'TripType', label: 'Type', sortable: true, width: '80px', render: (value) => {
         const typeColors = {
           'Fixed': '🟢 Fixed',
           'Adhoc': '🟡 Adhoc',
@@ -3340,7 +3341,8 @@ const DailyVehicleTransactionForm = () => {
     { key: 'DisplayVehicle', label: 'Vehicle', sortable: true, width: '120px', render: (value, row) => value || row.VehicleRegistrationNo || row.VehicleNumber || '-' },
     { key: 'DisplayDriver', label: 'Driver', sortable: true, width: '120px', render: (value, row) => value || row.DriverName || '-' },
     { key: 'TotalKM', label: 'KM', sortable: true, width: '80px', render: (value) => (value ? `${value}` : '-') },
-    { key: 'Status', label: 'Status', sortable: true, width: '80px', render: (value, row) => {
+    {
+      key: 'Status', label: 'Status', sortable: true, width: '80px', render: (value, row) => {
         const txt = value || 'Pending';
         const isClosed = row.TripClose === 1 || row.TripClose === true;
         return isClosed ? '🔒 Closed' : (txt === 'Completed' ? '✅ Done' : '⏳ ' + txt);
@@ -3582,144 +3584,144 @@ const DailyVehicleTransactionForm = () => {
             <div className="form-section driver-section">
 
 
-            <div className="form-grid">
-              {/* Driver Selection - Multiple for Fixed, Single for Adhoc/Replacement */}
-              {masterData.TypeOfTransaction === 'Fixed' ? (
-                <>
-                  <div className="form-group">
-                    <label>Driver Name *</label>
-                    <input
-                      type="text"
-                      name="DriverName"
-                      value={transactionData.DriverID ?
-                        drivers.find(d => d.DriverID == transactionData.DriverID)?.DriverName || ""
-                        : ""
-                      }
-                      className="readonly-field"
-                      readOnly
-                      placeholder="Auto-populated from selected vehicle"
-                    />
-                  </div>
+              <div className="form-grid">
+                {/* Driver Selection - Multiple for Fixed, Single for Adhoc/Replacement */}
+                {masterData.TypeOfTransaction === 'Fixed' ? (
+                  <>
+                    <div className="form-group">
+                      <label>Driver Name *</label>
+                      <input
+                        type="text"
+                        name="DriverName"
+                        value={transactionData.DriverID ?
+                          drivers.find(d => d.DriverID == transactionData.DriverID)?.DriverName || ""
+                          : ""
+                        }
+                        className="readonly-field"
+                        readOnly
+                        placeholder="Auto-populated from selected vehicle"
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label>Driver Number</label>
-                    <input
-                      type="text"
-                      name="DriverMobileNo"
-                      value={transactionData.DriverMobileNo}
-                      onChange={handleTransactionDataChange}
-                      className="readonly-field"
-                      readOnly
-                      placeholder="Auto-populated from selected driver"
-                    />
-                  </div>
+                    <div className="form-group">
+                      <label>Driver Number</label>
+                      <input
+                        type="text"
+                        name="DriverMobileNo"
+                        value={transactionData.DriverMobileNo}
+                        onChange={handleTransactionDataChange}
+                        className="readonly-field"
+                        readOnly
+                        placeholder="Auto-populated from selected driver"
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label>Trip Number *</label>
-                    <input
-                      type="text"
-                      name="TripNumber"
-                      value={transactionData.TripNo || ''}
-                      onChange={(e) => {
-                        setTransactionData(prev => ({
-                          ...prev,
-                          TripNo: e.target.value
-                        }));
-                      }}
-                      className={errors.TripNo ? 'error' : ''}
-                      placeholder="Enter trip number"
-                    />
-                    {errors.TripNo && <span className="error-message">{errors.TripNo}</span>}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="form-group">
-                    <label>Driver Name *</label>
-                    <SearchableDropdown
-                      name="DriverID"
-                      value={transactionData.DriverID}
-                      onChange={handleDriverAutoPopulate}
-                      options={drivers}
-                      valueKey="DriverID"
-                      labelKey="DriverName"
-                      placeholder={transactionData.DriverID ?
-                        drivers.find(d => d.DriverID == transactionData.DriverID)?.DriverName || "Select Driver"
-                        : "Select Driver"
-                      }
-                      searchPlaceholder="Search drivers..."
-                      emptyLabel="Select Driver"
-                      required
-                      error={errors.DriverID}
-                    />
-                  </div>
+                    <div className="form-group">
+                      <label>Trip Number *</label>
+                      <input
+                        type="text"
+                        name="TripNumber"
+                        value={transactionData.TripNo || ''}
+                        onChange={(e) => {
+                          setTransactionData(prev => ({
+                            ...prev,
+                            TripNo: e.target.value
+                          }));
+                        }}
+                        className={errors.TripNo ? 'error' : ''}
+                        placeholder="Enter trip number"
+                      />
+                      {errors.TripNo && <span className="error-message">{errors.TripNo}</span>}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="form-group">
+                      <label>Driver Name *</label>
+                      <SearchableDropdown
+                        name="DriverID"
+                        value={transactionData.DriverID}
+                        onChange={handleDriverAutoPopulate}
+                        options={drivers}
+                        valueKey="DriverID"
+                        labelKey="DriverName"
+                        placeholder={transactionData.DriverID ?
+                          drivers.find(d => d.DriverID == transactionData.DriverID)?.DriverName || "Select Driver"
+                          : "Select Driver"
+                        }
+                        searchPlaceholder="Search drivers..."
+                        emptyLabel="Select Driver"
+                        required
+                        error={errors.DriverID}
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label>Driver Number</label>
-                    <input
-                      type="text"
-                      name="DriverMobileNo"
-                      value={transactionData.DriverMobileNo}
-                      onChange={handleTransactionDataChange}
-                      className="readonly-field"
-                      readOnly
-                      placeholder="Auto-populated from selected driver"
-                    />
-                  </div>
-
-
-                </>
-              )}
-
-              {/* Replacement Driver Fields - Only for Fixed transactions */}
-              {masterData.TypeOfTransaction === 'Fixed' && (
-                <>
-                  <div className="form-group">
-                    <label>Replacement Driver Name</label>
-                    <input
-                      type="text"
-                      name="ReplacementDriverName"
-                      value={transactionData.ReplacementDriverName}
-                      onChange={handleTransactionDataChange}
-                      className="form-control"
-                      placeholder="Enter replacement driver name"
-                      title={`Current value: ${transactionData.ReplacementDriverName || 'empty'}`}
-                    />
-                    {/* Debug info */}
-                    <small style={{color: '#666', fontSize: '0.8em'}}>
-                      Debug: "{transactionData.ReplacementDriverName || 'empty'}"
-                    </small>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Replacement Driver No</label>
-                    <input
-                      type="text"
-                      name="ReplacementDriverNo"
-                      value={transactionData.ReplacementDriverNo}
-                      onChange={handleReplacementDriverNoChange}
-                      className="form-control"
-                      placeholder="Enter 10-digit mobile number"
-                      maxLength="10"
-                      style={{
-                        MozAppearance: 'textfield',
-                        WebkitAppearance: 'none'
-                      }}
-                      title={`Current value: ${transactionData.ReplacementDriverNo || 'empty'}`}
-                    />
-                    {/* Debug info */}
-                    <small style={{color: '#666', fontSize: '0.8em'}}>
-                      Debug: "{transactionData.ReplacementDriverNo || 'empty'}"
-                    </small>
-                    {errors.ReplacementDriverNo && <span className="error-message">{errors.ReplacementDriverNo}</span>}
-                  </div>
-                </>
-              )}
+                    <div className="form-group">
+                      <label>Driver Number</label>
+                      <input
+                        type="text"
+                        name="DriverMobileNo"
+                        value={transactionData.DriverMobileNo}
+                        onChange={handleTransactionDataChange}
+                        className="readonly-field"
+                        readOnly
+                        placeholder="Auto-populated from selected driver"
+                      />
+                    </div>
 
 
+                  </>
+                )}
+
+                {/* Replacement Driver Fields - Only for Fixed transactions */}
+                {masterData.TypeOfTransaction === 'Fixed' && (
+                  <>
+                    <div className="form-group">
+                      <label>Replacement Driver Name</label>
+                      <input
+                        type="text"
+                        name="ReplacementDriverName"
+                        value={transactionData.ReplacementDriverName}
+                        onChange={handleTransactionDataChange}
+                        className="form-control"
+                        placeholder="Enter replacement driver name"
+                        title={`Current value: ${transactionData.ReplacementDriverName || 'empty'}`}
+                      />
+                      {/* Debug info */}
+                      <small style={{ color: '#666', fontSize: '0.8em' }}>
+                        Debug: "{transactionData.ReplacementDriverName || 'empty'}"
+                      </small>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Replacement Driver No</label>
+                      <input
+                        type="text"
+                        name="ReplacementDriverNo"
+                        value={transactionData.ReplacementDriverNo}
+                        onChange={handleReplacementDriverNoChange}
+                        className="form-control"
+                        placeholder="Enter 10-digit mobile number"
+                        maxLength="10"
+                        style={{
+                          MozAppearance: 'textfield',
+                          WebkitAppearance: 'none'
+                        }}
+                        title={`Current value: ${transactionData.ReplacementDriverNo || 'empty'}`}
+                      />
+                      {/* Debug info */}
+                      <small style={{ color: '#666', fontSize: '0.8em' }}>
+                        Debug: "{transactionData.ReplacementDriverNo || 'empty'}"
+                      </small>
+                      {errors.ReplacementDriverNo && <span className="error-message">{errors.ReplacementDriverNo}</span>}
+                    </div>
+                  </>
+                )}
 
 
-              {/* <div className="form-group">
+
+
+                {/* <div className="form-group">
                 <label>Replacement Driver No</label>
                 <input
                   type="text"
@@ -3731,180 +3733,180 @@ const DailyVehicleTransactionForm = () => {
                 />
               </div> */}
 
-              <div className="form-group">
-                <label>Date *</label>
-                <input
-                  type="date"
-                  name="Date"
-                  value={transactionData.Date}
-                  onChange={handleTransactionDataChange}
-                  className={errors.Date ? 'error' : ''}
-                />
-                {errors.Date && <span className="error-message">{errors.Date}</span>}
+                <div className="form-group">
+                  <label>Date *</label>
+                  <input
+                    type="date"
+                    name="Date"
+                    value={transactionData.Date}
+                    onChange={handleTransactionDataChange}
+                    className={errors.Date ? 'error' : ''}
+                  />
+                  {errors.Date && <span className="error-message">{errors.Date}</span>}
+                </div>
+
+                {/* NEW: 6 Time Fields (Mandatory - Chronological Order) */}
+                <div className="form-group">
+                  <label>Vehicle Reporting at Hub/WH *</label>
+                  <TimeInput12Hour
+                    name="VehicleReportingAtHub"
+                    value={transactionData.VehicleReportingAtHub}
+                    onChange={handleTransactionDataChange}
+                    className={errors.VehicleReportingAtHub ? 'error' : ''}
+                  />
+                  {errors.VehicleReportingAtHub && <span className="error-message">{errors.VehicleReportingAtHub}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Vehicle Entry in Hub/WH *</label>
+                  <TimeInput12Hour
+                    name="VehicleEntryInHub"
+                    value={transactionData.VehicleEntryInHub}
+                    onChange={handleTransactionDataChange}
+                    className={errors.VehicleEntryInHub ? 'error' : ''}
+                  />
+                  {errors.VehicleEntryInHub && <span className="error-message">{errors.VehicleEntryInHub}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Vehicle Out from Hub/WH for Delivery *</label>
+                  <TimeInput12Hour
+                    name="VehicleOutFromHubForDelivery"
+                    value={transactionData.VehicleOutFromHubForDelivery}
+                    onChange={handleTransactionDataChange}
+                    className={errors.VehicleOutFromHubForDelivery ? 'error' : ''}
+                  />
+                  {errors.VehicleOutFromHubForDelivery && <span className="error-message">{errors.VehicleOutFromHubForDelivery}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Vehicle Return at Hub/WH *</label>
+                  <TimeInput12Hour
+                    name="VehicleReturnAtHub"
+                    value={transactionData.VehicleReturnAtHub}
+                    onChange={handleTransactionDataChange}
+                    className={errors.VehicleReturnAtHub ? 'error' : ''}
+                  />
+                  {errors.VehicleReturnAtHub && <span className="error-message">{errors.VehicleReturnAtHub}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Vehicle Entered at Hub/WH (Return) *</label>
+                  <TimeInput12Hour
+                    name="VehicleEnteredAtHubReturn"
+                    value={transactionData.VehicleEnteredAtHubReturn}
+                    onChange={handleTransactionDataChange}
+                    className={errors.VehicleEnteredAtHubReturn ? 'error' : ''}
+                  />
+                  {errors.VehicleEnteredAtHubReturn && <span className="error-message">{errors.VehicleEnteredAtHubReturn}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Vehicle Out from Hub Final (Trip Close) *</label>
+                  <TimeInput12Hour
+                    name="VehicleOutFromHubFinal"
+                    value={transactionData.VehicleOutFromHubFinal}
+                    onChange={handleTransactionDataChange}
+                    className={errors.VehicleOutFromHubFinal ? 'error' : ''}
+                  />
+                  {errors.VehicleOutFromHubFinal && <span className="error-message">{errors.VehicleOutFromHubFinal}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Opening KM *</label>
+                  <input
+                    type="number"
+                    name="OpeningKM"
+                    value={transactionData.OpeningKM}
+                    onChange={handleTransactionDataChange}
+                    className={errors.OpeningKM ? 'error' : ''}
+                    step="0.01"
+                    placeholder="Enter opening KM"
+                  />
+                  {errors.OpeningKM && <span className="error-message">{errors.OpeningKM}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Opening KM Image</label>
+                  <DocumentUpload
+                    label=""
+                    name="OpeningKMImage"
+                    value={files.OpeningKMImage}
+                    onChange={createFileChangeHandler('OpeningKMImage')}
+                    accept="image/*"
+                    required={false}
+                    isEditing={!!editingTransaction}
+                    existingFileUrl={editingTransaction?.OpeningKMImage_url || null}
+                    entityType="transactions"
+                  />
+                </div>
+
+
+
+                <div className="form-group">
+                  <label>Total Deliveries</label>
+                  <input
+                    type="number"
+                    name="TotalDeliveries"
+                    value={transactionData.TotalDeliveries}
+                    onChange={handleTransactionDataChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Total Deliveries Attempted</label>
+                  <input
+                    type="number"
+                    name="TotalDeliveriesAttempted"
+                    value={transactionData.TotalDeliveriesAttempted}
+                    onChange={handleTransactionDataChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Total Deliveries Done</label>
+                  <input
+                    type="number"
+                    name="TotalDeliveriesDone"
+                    value={transactionData.TotalDeliveriesDone}
+                    onChange={handleTransactionDataChange}
+                  />
+                </div>
+
+
+
+                <div className="form-group">
+                  <label>Closing KM *</label>
+                  <input
+                    type="number"
+                    name="ClosingKM"
+                    value={transactionData.ClosingKM}
+                    onChange={handleTransactionDataChange}
+                    className={errors.ClosingKM ? 'error' : ''}
+                    step="0.01"
+                    placeholder="Enter closing KM"
+                  />
+                  {errors.ClosingKM && <span className="error-message">{errors.ClosingKM}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Closing KM Image</label>
+                  <DocumentUpload
+                    label=""
+                    name="ClosingKMImage"
+                    value={files.ClosingKMImage}
+                    onChange={createFileChangeHandler('ClosingKMImage')}
+                    accept="image/*"
+                    required={false}
+                    isEditing={!!editingTransaction}
+                    existingFileUrl={editingTransaction?.ClosingKMImage_url || null}
+                    entityType="transactions"
+                  />
+                </div>
+
+
               </div>
-
-              {/* NEW: 6 Time Fields (Mandatory - Chronological Order) */}
-              <div className="form-group">
-                <label>Vehicle Reporting at Hub/WH *</label>
-                <TimeInput12Hour
-                  name="VehicleReportingAtHub"
-                  value={transactionData.VehicleReportingAtHub}
-                  onChange={handleTransactionDataChange}
-                  className={errors.VehicleReportingAtHub ? 'error' : ''}
-                />
-                {errors.VehicleReportingAtHub && <span className="error-message">{errors.VehicleReportingAtHub}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Vehicle Entry in Hub/WH *</label>
-                <TimeInput12Hour
-                  name="VehicleEntryInHub"
-                  value={transactionData.VehicleEntryInHub}
-                  onChange={handleTransactionDataChange}
-                  className={errors.VehicleEntryInHub ? 'error' : ''}
-                />
-                {errors.VehicleEntryInHub && <span className="error-message">{errors.VehicleEntryInHub}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Vehicle Out from Hub/WH for Delivery *</label>
-                <TimeInput12Hour
-                  name="VehicleOutFromHubForDelivery"
-                  value={transactionData.VehicleOutFromHubForDelivery}
-                  onChange={handleTransactionDataChange}
-                  className={errors.VehicleOutFromHubForDelivery ? 'error' : ''}
-                />
-                {errors.VehicleOutFromHubForDelivery && <span className="error-message">{errors.VehicleOutFromHubForDelivery}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Vehicle Return at Hub/WH *</label>
-                <TimeInput12Hour
-                  name="VehicleReturnAtHub"
-                  value={transactionData.VehicleReturnAtHub}
-                  onChange={handleTransactionDataChange}
-                  className={errors.VehicleReturnAtHub ? 'error' : ''}
-                />
-                {errors.VehicleReturnAtHub && <span className="error-message">{errors.VehicleReturnAtHub}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Vehicle Entered at Hub/WH (Return) *</label>
-                <TimeInput12Hour
-                  name="VehicleEnteredAtHubReturn"
-                  value={transactionData.VehicleEnteredAtHubReturn}
-                  onChange={handleTransactionDataChange}
-                  className={errors.VehicleEnteredAtHubReturn ? 'error' : ''}
-                />
-                {errors.VehicleEnteredAtHubReturn && <span className="error-message">{errors.VehicleEnteredAtHubReturn}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Vehicle Out from Hub Final (Trip Close) *</label>
-                <TimeInput12Hour
-                  name="VehicleOutFromHubFinal"
-                  value={transactionData.VehicleOutFromHubFinal}
-                  onChange={handleTransactionDataChange}
-                  className={errors.VehicleOutFromHubFinal ? 'error' : ''}
-                />
-                {errors.VehicleOutFromHubFinal && <span className="error-message">{errors.VehicleOutFromHubFinal}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Opening KM *</label>
-                <input
-                  type="number"
-                  name="OpeningKM"
-                  value={transactionData.OpeningKM}
-                  onChange={handleTransactionDataChange}
-                  className={errors.OpeningKM ? 'error' : ''}
-                  step="0.01"
-                  placeholder="Enter opening KM"
-                />
-                {errors.OpeningKM && <span className="error-message">{errors.OpeningKM}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Opening KM Image</label>
-                <DocumentUpload
-                  label=""
-                  name="OpeningKMImage"
-                  value={files.OpeningKMImage}
-                  onChange={createFileChangeHandler('OpeningKMImage')}
-                  accept="image/*"
-                  required={false}
-                  isEditing={!!editingTransaction}
-                  existingFileUrl={editingTransaction?.OpeningKMImage_url || null}
-                  entityType="transactions"
-                />
-              </div>
-
-
-
-              <div className="form-group">
-                <label>Total Deliveries</label>
-                <input
-                  type="number"
-                  name="TotalDeliveries"
-                  value={transactionData.TotalDeliveries}
-                  onChange={handleTransactionDataChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Total Deliveries Attempted</label>
-                <input
-                  type="number"
-                  name="TotalDeliveriesAttempted"
-                  value={transactionData.TotalDeliveriesAttempted}
-                  onChange={handleTransactionDataChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Total Deliveries Done</label>
-                <input
-                  type="number"
-                  name="TotalDeliveriesDone"
-                  value={transactionData.TotalDeliveriesDone}
-                  onChange={handleTransactionDataChange}
-                />
-              </div>
-
-
-
-              <div className="form-group">
-                <label>Closing KM *</label>
-                <input
-                  type="number"
-                  name="ClosingKM"
-                  value={transactionData.ClosingKM}
-                  onChange={handleTransactionDataChange}
-                  className={errors.ClosingKM ? 'error' : ''}
-                  step="0.01"
-                  placeholder="Enter closing KM"
-                />
-                {errors.ClosingKM && <span className="error-message">{errors.ClosingKM}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Closing KM Image</label>
-                <DocumentUpload
-                  label=""
-                  name="ClosingKMImage"
-                  value={files.ClosingKMImage}
-                  onChange={createFileChangeHandler('ClosingKMImage')}
-                  accept="image/*"
-                  required={false}
-                  isEditing={!!editingTransaction}
-                  existingFileUrl={editingTransaction?.ClosingKMImage_url || null}
-                  entityType="transactions"
-                />
-              </div>
-
-
             </div>
-          </div>
           )}
 
           {/* ADHOC/REPLACEMENT SECTION - Comprehensive Form */}
@@ -4739,125 +4741,125 @@ const DailyVehicleTransactionForm = () => {
 
           {/* YELLOW SECTION - System Calculation (FIXED ONLY) */}
           {masterData.TypeOfTransaction === 'Fixed' && (
-          <div className="form-section calculation-section">
+            <div className="form-section calculation-section">
 
-            <div className="form-grid">
-              <div className="form-group">
-                <label>TOTAL KM</label>
-                <input
-                  type="text"
-                  name="TotalKM"
-                  value={calculatedData.TotalKM}
-                  onChange={handleCalculatedDataChange}
-                  className="readonly-field calculated-field"
-                  readOnly
-                />
-              </div>
-
-              <div className="form-group">
-                <label>V. FREIGHT (FIX)</label>
-                <input
-                  type="number"
-                  name="VFreightFix"
-                  value={calculatedData.VFreightFix}
-                  onChange={handleCalculatedDataChange}
-                  step="0.01"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Toll Expenses</label>
-                <input
-                  type="number"
-                  name="TollExpenses"
-                  value={calculatedData.TollExpenses}
-                  onChange={handleCalculatedDataChange}
-                  step="0.01"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Parking Charges</label>
-                <input
-                  type="number"
-                  name="ParkingCharges"
-                  value={calculatedData.ParkingCharges}
-                  onChange={handleCalculatedDataChange}
-                  step="0.01"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Handling Charges</label>
-                <input
-                  type="number"
-                  name="HandlingCharges"
-                  value={calculatedData.HandlingCharges}
-                  onChange={handleCalculatedDataChange}
-                  step="0.01"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Total Duty Hours</label>
-                <input
-                  type="text"
-                  name="TotalDutyHours"
-                  value={calculatedData.TotalDutyHours}
-                  onChange={handleCalculatedDataChange}
-                  className="readonly-field calculated-field"
-                  readOnly
-                />
-              </div>
-
-              {/* Total Expenses - Auto Calculated for Fixed transactions */}
-              {masterData.TypeOfTransaction === 'Fixed' && (
+              <div className="form-grid">
                 <div className="form-group">
-                  <label>Total Expenses</label>
+                  <label>TOTAL KM</label>
                   <input
                     type="text"
-                    name="TotalExpenses"
-                    value={transactionData.TotalExpenses}
+                    name="TotalKM"
+                    value={calculatedData.TotalKM}
+                    onChange={handleCalculatedDataChange}
                     className="readonly-field calculated-field"
                     readOnly
-                    style={{ backgroundColor: '#fff3cd', border: '1px solid #ffeaa7' }}
-                    placeholder="Auto-calculated: Toll + Parking + Loading + Unloading + Other + Handling + KM Charges"
                   />
                 </div>
-              )}
+
+                <div className="form-group">
+                  <label>V. FREIGHT (FIX)</label>
+                  <input
+                    type="number"
+                    name="VFreightFix"
+                    value={calculatedData.VFreightFix}
+                    onChange={handleCalculatedDataChange}
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Toll Expenses</label>
+                  <input
+                    type="number"
+                    name="TollExpenses"
+                    value={calculatedData.TollExpenses}
+                    onChange={handleCalculatedDataChange}
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Parking Charges</label>
+                  <input
+                    type="number"
+                    name="ParkingCharges"
+                    value={calculatedData.ParkingCharges}
+                    onChange={handleCalculatedDataChange}
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Handling Charges</label>
+                  <input
+                    type="number"
+                    name="HandlingCharges"
+                    value={calculatedData.HandlingCharges}
+                    onChange={handleCalculatedDataChange}
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Total Duty Hours</label>
+                  <input
+                    type="text"
+                    name="TotalDutyHours"
+                    value={calculatedData.TotalDutyHours}
+                    onChange={handleCalculatedDataChange}
+                    className="readonly-field calculated-field"
+                    readOnly
+                  />
+                </div>
+
+                {/* Total Expenses - Auto Calculated for Fixed transactions */}
+                {masterData.TypeOfTransaction === 'Fixed' && (
+                  <div className="form-group">
+                    <label>Total Expenses</label>
+                    <input
+                      type="text"
+                      name="TotalExpenses"
+                      value={transactionData.TotalExpenses}
+                      className="readonly-field calculated-field"
+                      readOnly
+                      style={{ backgroundColor: '#fff3cd', border: '1px solid #ffeaa7' }}
+                      placeholder="Auto-calculated: Toll + Parking + Loading + Unloading + Other + Handling + KM Charges"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
           )}
 
           {/* ORANGE SECTION - Remark & Trip Close by Supervisor (FIXED ONLY) */}
           {masterData.TypeOfTransaction === 'Fixed' && (
-          <div className="form-section supervisor-section">
+            <div className="form-section supervisor-section">
 
-            <div className="form-grid">
-              <div className="form-group full-width">
-                <label>Remarks</label>
-                <textarea
-                  name="Remarks"
-                  value={supervisorData.Remarks}
-                  onChange={handleSupervisorDataChange}
-                  rows="4"
-                  placeholder="Enter any remarks or notes..."
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    name="TripClose"
-                    checked={supervisorData.TripClose}
+              <div className="form-grid">
+                <div className="form-group full-width">
+                  <label>Remarks</label>
+                  <textarea
+                    name="Remarks"
+                    value={supervisorData.Remarks}
                     onChange={handleSupervisorDataChange}
+                    rows="4"
+                    placeholder="Enter any remarks or notes..."
                   />
-                  Trip Close
-                </label>
+                </div>
+
+                <div className="form-group">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="TripClose"
+                      checked={supervisorData.TripClose}
+                      onChange={handleSupervisorDataChange}
+                    />
+                    Trip Close
+                  </label>
+                </div>
               </div>
             </div>
-          </div>
           )}
         </div>
 

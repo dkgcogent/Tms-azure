@@ -109,8 +109,8 @@ const VehicleForm = () => {
 
         // Check if there's an existing photo URL (for edit mode)
         const hasExistingPhoto = editingVehicle && editingVehicle[field + '_url'] &&
-                                 typeof editingVehicle[field + '_url'] === 'string' &&
-                                 editingVehicle[field + '_url'].trim();
+          typeof editingVehicle[field + '_url'] === 'string' &&
+          editingVehicle[field + '_url'].trim();
 
         const photoStatus = hasNewPhoto || hasExistingPhoto ? '✅ OK' : '❌ MISSING';
         console.log(`  ${field}: ${photoStatus}`, {
@@ -170,8 +170,8 @@ const VehicleForm = () => {
         // Check NoEntryPassCopy file upload
         const hasNewNoEntryPassCopy = filesData && filesData.NoEntryPassCopy && filesData.NoEntryPassCopy instanceof File;
         const hasExistingNoEntryPassCopy = editingVehicle && editingVehicle.NoEntryPassCopy_url &&
-                                           typeof editingVehicle.NoEntryPassCopy_url === 'string' &&
-                                           editingVehicle.NoEntryPassCopy_url.trim();
+          typeof editingVehicle.NoEntryPassCopy_url === 'string' &&
+          editingVehicle.NoEntryPassCopy_url.trim();
 
         console.log(`  NoEntryPassCopy (conditional): ${hasNewNoEntryPassCopy || hasExistingNoEntryPassCopy ? '✅ OK' : '❌ MISSING'}`, {
           hasNewFile: hasNewNoEntryPassCopy,
@@ -870,7 +870,7 @@ const VehicleForm = () => {
     if (imagePath.startsWith('http')) return imagePath;
 
     // Create URL for server-stored image - use backend port 3004
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3004';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
 
     // Extract just the filename from the path
     let filename = imagePath;
@@ -1208,122 +1208,122 @@ const VehicleForm = () => {
 
       // Use the complete vehicle data for mapping
       const vehicleToEdit = completeVehicleData;
-    
-    // Map backend data to frontend form fields
-    const backendToFrontendMapping = {
-      // Direct field mappings from API response
-      VehicleID: 'VehicleID',
-      VehicleRegistrationNo: 'VehicleRegistrationNo',
-      VehicleCode: 'VehicleCode',
-      VehicleChasisNo: 'VehicleChasisNo',
-      VehicleModel: 'VehicleModel',
-      TypeOfBody: 'TypeOfBody',
-      VehicleType: 'VehicleType',
-      VehicleRegistrationDate: 'VehicleRegistrationDate',
-      VehicleAge: 'VehicleAge',
-      VehicleKMS: 'VehicleKMS',
-      VendorID: 'vendor_id',  // Map VendorID to vendor_id
-      DriverID: 'driver_id',  // Map DriverID to driver_id
-      GPSCompany: 'GPSCompany',
-      NoEntryPassStartDate: 'NoEntryPassStartDate',
-      NoEntryPassExpiry: 'NoEntryPassExpiry',
-      LastServicing: 'LastServicing',
-      VehicleLoadingCapacity: 'VehicleLoadingCapacity',
-      VehicleInsuranceCompany: 'VehicleInsuranceCompany',
-      VehicleInsuranceDate: 'VehicleInsuranceDate',
-      VehicleInsuranceExpiry: 'VehicleInsuranceExpiry',  // Direct mapping
-      InsuranceExpiry: 'VehicleInsuranceExpiry',  // Fallback mapping
-      VehicleFitnessCertificateIssue: 'VehicleFitnessCertificateIssue',
-      VehicleFitnessCertificateExpiry: 'VehicleFitnessCertificateExpiry',  // Direct mapping
-      FitnessExpiry: 'VehicleFitnessCertificateExpiry',  // Fallback mapping
-      VehiclePollutionDate: 'VehiclePollutionDate',
-      PollutionExpiry: 'VehiclePollutionExpiry',  // Map PollutionExpiry to VehiclePollutionExpiry
-      StateTaxIssue: 'StateTaxIssue',
-      StateTaxExpiry: 'StateTaxExpiry',
 
-      // Vehicle Freight fields
-      FixRate: 'FixRate',
-      FuelRate: 'FuelRate',
-      HandlingCharges: 'HandlingCharges',
+      // Map backend data to frontend form fields
+      const backendToFrontendMapping = {
+        // Direct field mappings from API response
+        VehicleID: 'VehicleID',
+        VehicleRegistrationNo: 'VehicleRegistrationNo',
+        VehicleCode: 'VehicleCode',
+        VehicleChasisNo: 'VehicleChasisNo',
+        VehicleModel: 'VehicleModel',
+        TypeOfBody: 'TypeOfBody',
+        VehicleType: 'VehicleType',
+        VehicleRegistrationDate: 'VehicleRegistrationDate',
+        VehicleAge: 'VehicleAge',
+        VehicleKMS: 'VehicleKMS',
+        VendorID: 'vendor_id',  // Map VendorID to vendor_id
+        DriverID: 'driver_id',  // Map DriverID to driver_id
+        GPSCompany: 'GPSCompany',
+        NoEntryPassStartDate: 'NoEntryPassStartDate',
+        NoEntryPassExpiry: 'NoEntryPassExpiry',
+        LastServicing: 'LastServicing',
+        VehicleLoadingCapacity: 'VehicleLoadingCapacity',
+        VehicleInsuranceCompany: 'VehicleInsuranceCompany',
+        VehicleInsuranceDate: 'VehicleInsuranceDate',
+        VehicleInsuranceExpiry: 'VehicleInsuranceExpiry',  // Direct mapping
+        InsuranceExpiry: 'VehicleInsuranceExpiry',  // Fallback mapping
+        VehicleFitnessCertificateIssue: 'VehicleFitnessCertificateIssue',
+        VehicleFitnessCertificateExpiry: 'VehicleFitnessCertificateExpiry',  // Direct mapping
+        FitnessExpiry: 'VehicleFitnessCertificateExpiry',  // Fallback mapping
+        VehiclePollutionDate: 'VehiclePollutionDate',
+        PollutionExpiry: 'VehiclePollutionExpiry',  // Map PollutionExpiry to VehiclePollutionExpiry
+        StateTaxIssue: 'StateTaxIssue',
+        StateTaxExpiry: 'StateTaxExpiry',
 
-      // File path mappings - keep the raw paths for internal use
-      RCUpload: 'RCUpload',
-      VehicleKMSPhoto: 'VehicleKMSPhoto',
-      VehiclePhoto: 'VehiclePhoto',
-      VehiclePhotoFront: 'VehiclePhotoFront',
-      VehiclePhotoBack: 'VehiclePhotoBack',
-      VehiclePhotoLeftSide: 'VehiclePhotoLeftSide',
-      VehiclePhotoRightSide: 'VehiclePhotoRightSide',
-      VehiclePhotoInterior: 'VehiclePhotoInterior',
-      VehiclePhotoEngine: 'VehiclePhotoEngine',
-      VehiclePhotoRoof: 'VehiclePhotoRoof',
-      VehiclePhotoDoor: 'VehiclePhotoDoor',
-      ServiceBillPhoto: 'ServiceBillPhoto',
-      InsuranceCopy: 'InsuranceCopy',
-      FitnessCertificateUpload: 'FitnessCertificateUpload',
-      PollutionPhoto: 'PollutionPhoto',
-      StateTaxPhoto: 'StateTaxPhoto',
-      NoEntryPassCopy: 'NoEntryPassCopy',
+        // Vehicle Freight fields
+        FixRate: 'FixRate',
+        FuelRate: 'FuelRate',
+        HandlingCharges: 'HandlingCharges',
 
-      // File URL mappings - these are what the DocumentUpload components need
-      RCUpload_url: 'RCUpload_url',
-      VehicleKMSPhoto_url: 'VehicleKMSPhoto_url',
-      VehiclePhoto_url: 'VehiclePhoto_url',
-      VehiclePhotoFront_url: 'VehiclePhotoFront_url',
-      VehiclePhotoBack_url: 'VehiclePhotoBack_url',
-      VehiclePhotoLeftSide_url: 'VehiclePhotoLeftSide_url',
-      VehiclePhotoRightSide_url: 'VehiclePhotoRightSide_url',
-      VehiclePhotoInterior_url: 'VehiclePhotoInterior_url',
-      VehiclePhotoEngine_url: 'VehiclePhotoEngine_url',
-      VehiclePhotoRoof_url: 'VehiclePhotoRoof_url',
-      VehiclePhotoDoor_url: 'VehiclePhotoDoor_url',
-      ServiceBillPhoto_url: 'ServiceBillPhoto_url',
-      InsuranceCopy_url: 'InsuranceCopy_url',
-      FitnessCertificateUpload_url: 'FitnessCertificateUpload_url',
-      PollutionPhoto_url: 'PollutionPhoto_url',
-      StateTaxPhoto_url: 'StateTaxPhoto_url',
-      NoEntryPassCopy_url: 'NoEntryPassCopy_url',
+        // File path mappings - keep the raw paths for internal use
+        RCUpload: 'RCUpload',
+        VehicleKMSPhoto: 'VehicleKMSPhoto',
+        VehiclePhoto: 'VehiclePhoto',
+        VehiclePhotoFront: 'VehiclePhotoFront',
+        VehiclePhotoBack: 'VehiclePhotoBack',
+        VehiclePhotoLeftSide: 'VehiclePhotoLeftSide',
+        VehiclePhotoRightSide: 'VehiclePhotoRightSide',
+        VehiclePhotoInterior: 'VehiclePhotoInterior',
+        VehiclePhotoEngine: 'VehiclePhotoEngine',
+        VehiclePhotoRoof: 'VehiclePhotoRoof',
+        VehiclePhotoDoor: 'VehiclePhotoDoor',
+        ServiceBillPhoto: 'ServiceBillPhoto',
+        InsuranceCopy: 'InsuranceCopy',
+        FitnessCertificateUpload: 'FitnessCertificateUpload',
+        PollutionPhoto: 'PollutionPhoto',
+        StateTaxPhoto: 'StateTaxPhoto',
+        NoEntryPassCopy: 'NoEntryPassCopy',
 
-      // Legacy mappings for backward compatibility
-      vehicle_number: 'VehicleRegistrationNo',
-      chassis_number: 'VehicleChasisNo',
-      model: 'VehicleModel',
-      body_type: 'TypeOfBody',
-      registration_date: 'VehicleRegistrationDate',
-      current_km_reading: 'VehicleKMS',
-      insurance_company: 'VehicleInsuranceCompany',
-      insurance_date: 'VehicleInsuranceDate',
-      insurance_expiry: 'VehicleInsuranceExpiry',
-      fitness_certificate_issue: 'VehicleFitnessCertificateIssue',
-      fitness_expiry: 'VehicleFitnessCertificateExpiry',
-      pollution_date: 'VehiclePollutionDate',
-      pollution_expiry: 'VehiclePollutionExpiry',
-      tax_issue_date: 'StateTaxIssue',
-      tax_paid_upto: 'StateTaxExpiry',
-      capacity_tons: 'VehicleLoadingCapacity',
-      gps_company: 'GPSCompany',
-      no_entry_pass_expiry: 'NoEntryPassExpiry',
-      last_service_date: 'LastServicing'
-    };
-    
-    // Define all date field names that need formatting
-    const dateFields = [
-      'VehicleRegistrationDate',
-      'VehicleInsuranceDate',
-      'VehicleInsuranceExpiry',
-      'InsuranceExpiry',
-      'VehicleFitnessCertificateIssue',
-      'VehicleFitnessCertificateExpiry',
-      'FitnessExpiry',
-      'VehiclePollutionDate',
-      'VehiclePollutionExpiry',
-      'PollutionExpiry',
-      'StateTaxIssue',
-      'StateTaxExpiry',
-      'NoEntryPassStartDate',
-      'NoEntryPassExpiry',
-      'LastServicing'
-    ];
+        // File URL mappings - these are what the DocumentUpload components need
+        RCUpload_url: 'RCUpload_url',
+        VehicleKMSPhoto_url: 'VehicleKMSPhoto_url',
+        VehiclePhoto_url: 'VehiclePhoto_url',
+        VehiclePhotoFront_url: 'VehiclePhotoFront_url',
+        VehiclePhotoBack_url: 'VehiclePhotoBack_url',
+        VehiclePhotoLeftSide_url: 'VehiclePhotoLeftSide_url',
+        VehiclePhotoRightSide_url: 'VehiclePhotoRightSide_url',
+        VehiclePhotoInterior_url: 'VehiclePhotoInterior_url',
+        VehiclePhotoEngine_url: 'VehiclePhotoEngine_url',
+        VehiclePhotoRoof_url: 'VehiclePhotoRoof_url',
+        VehiclePhotoDoor_url: 'VehiclePhotoDoor_url',
+        ServiceBillPhoto_url: 'ServiceBillPhoto_url',
+        InsuranceCopy_url: 'InsuranceCopy_url',
+        FitnessCertificateUpload_url: 'FitnessCertificateUpload_url',
+        PollutionPhoto_url: 'PollutionPhoto_url',
+        StateTaxPhoto_url: 'StateTaxPhoto_url',
+        NoEntryPassCopy_url: 'NoEntryPassCopy_url',
+
+        // Legacy mappings for backward compatibility
+        vehicle_number: 'VehicleRegistrationNo',
+        chassis_number: 'VehicleChasisNo',
+        model: 'VehicleModel',
+        body_type: 'TypeOfBody',
+        registration_date: 'VehicleRegistrationDate',
+        current_km_reading: 'VehicleKMS',
+        insurance_company: 'VehicleInsuranceCompany',
+        insurance_date: 'VehicleInsuranceDate',
+        insurance_expiry: 'VehicleInsuranceExpiry',
+        fitness_certificate_issue: 'VehicleFitnessCertificateIssue',
+        fitness_expiry: 'VehicleFitnessCertificateExpiry',
+        pollution_date: 'VehiclePollutionDate',
+        pollution_expiry: 'VehiclePollutionExpiry',
+        tax_issue_date: 'StateTaxIssue',
+        tax_paid_upto: 'StateTaxExpiry',
+        capacity_tons: 'VehicleLoadingCapacity',
+        gps_company: 'GPSCompany',
+        no_entry_pass_expiry: 'NoEntryPassExpiry',
+        last_service_date: 'LastServicing'
+      };
+
+      // Define all date field names that need formatting
+      const dateFields = [
+        'VehicleRegistrationDate',
+        'VehicleInsuranceDate',
+        'VehicleInsuranceExpiry',
+        'InsuranceExpiry',
+        'VehicleFitnessCertificateIssue',
+        'VehicleFitnessCertificateExpiry',
+        'FitnessExpiry',
+        'VehiclePollutionDate',
+        'VehiclePollutionExpiry',
+        'PollutionExpiry',
+        'StateTaxIssue',
+        'StateTaxExpiry',
+        'NoEntryPassStartDate',
+        'NoEntryPassExpiry',
+        'LastServicing'
+      ];
 
       // First try to populate with frontend field names (for backward compatibility)
       Object.keys(editData).forEach(key => {
@@ -1384,7 +1384,7 @@ const VehicleForm = () => {
       if (vehicleToEdit.no_entry_pass !== undefined) {
         editData.NoEntryPass = vehicleToEdit.no_entry_pass ? 'Yes' : 'No';
       }
-    
+
       console.log('🚛 VEHICLE EDIT - Setting vehicleData with editData:', editData);
       console.log('🚛 VEHICLE EDIT - vendor_id in editData:', editData.vendor_id);
       console.log('🚛 VEHICLE EDIT - Freight fields in editData:', {
@@ -1593,7 +1593,7 @@ const VehicleForm = () => {
             </span>
           )}
         </label>
-        
+
         {isRadio ? (
           <div className="radio-group">
             {values.map(val => (

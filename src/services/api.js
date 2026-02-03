@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'http://localhost:3004/api',
+  baseURL: '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -408,7 +408,7 @@ export const apiHelpers = {
         return `Something went wrong (Error ${status}). ${defaultMessage}`;
     }
   },
-  
+
   showSuccess: (message) => {
     // Dispatch custom event for in-app notification
     const event = new CustomEvent('show-notification', {

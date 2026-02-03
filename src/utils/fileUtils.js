@@ -10,7 +10,7 @@
  */
 export const isImageFile = (file) => {
   if (!file) return false;
-  
+
   let fileName = '';
   if (typeof file === 'string') {
     fileName = file;
@@ -23,7 +23,7 @@ export const isImageFile = (file) => {
   } else if (file.name) {
     fileName = file.name;
   }
-  
+
   const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
   const extension = fileName.split('.').pop()?.toLowerCase();
   return imageExtensions.includes(extension);
@@ -36,11 +36,11 @@ export const isImageFile = (file) => {
  */
 export const isPDFFile = (file) => {
   if (!file) return false;
-  
+
   if (file instanceof File) {
     return file.type === 'application/pdf';
   }
-  
+
   const fileName = typeof file === 'string' ? file : file.name || '';
   return fileName.toLowerCase().endsWith('.pdf');
 };
@@ -62,24 +62,24 @@ export const getFileType = (file) => {
  * @param {string} baseUrl - Base URL for server files (optional)
  * @returns {string|null} - Preview URL or null if not available
  */
-export const createPreviewUrl = (file, baseUrl = 'http://localhost:3004') => {
+export const createPreviewUrl = (file, baseUrl = '') => {
   if (!file) return null;
-  
+
   if (file instanceof File) {
     return URL.createObjectURL(file);
   }
-  
+
   if (typeof file === 'string') {
     // If it's already a full URL, return as is
     if (file.startsWith('http')) {
       return file;
     }
-    
+
     // If it's a relative path, construct full URL
     const normalizedPath = file.replace(/\\/g, '/');
     return `${baseUrl}/uploads/${normalizedPath}`;
   }
-  
+
   return null;
 };
 
@@ -93,7 +93,7 @@ export const viewFile = (fileUrl, fileName = 'document') => {
     alert('File URL not available');
     return;
   }
-  
+
   try {
     if (isPDFFile(fileUrl)) {
       // For PDFs, create a better viewer experience
@@ -141,7 +141,7 @@ export const downloadFile = (fileUrl, fileName = 'download') => {
     alert('File URL not available');
     return;
   }
-  
+
   try {
     const link = document.createElement('a');
     link.href = fileUrl;
@@ -163,7 +163,7 @@ export const downloadFile = (fileUrl, fileName = 'download') => {
  */
 export const getFileIcon = (file) => {
   const fileType = getFileType(file);
-  
+
   switch (fileType) {
     case 'image':
       return '🖼️';
@@ -181,11 +181,11 @@ export const getFileIcon = (file) => {
  */
 export const formatFileSize = (bytes) => {
   if (!bytes) return '0 B';
-  
+
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
@@ -199,11 +199,11 @@ export const formatFileSize = (bytes) => {
  */
 export const validateFile = (file, options = {}) => {
   const { allowedTypes = [], maxSize = 20 } = options;
-  
+
   if (!file) {
     return { isValid: false, error: 'No file selected' };
   }
-  
+
   // Check file type
   if (allowedTypes.length > 0) {
     const isTypeAllowed = allowedTypes.some(type => {
@@ -212,17 +212,17 @@ export const validateFile = (file, options = {}) => {
       }
       return file.type === type;
     });
-    
+
     if (!isTypeAllowed) {
       return { isValid: false, error: `File type not allowed. Allowed types: ${allowedTypes.join(', ')}` };
     }
   }
-  
+
   // Check file size
   if (file.size > maxSize * 1024 * 1024) {
     return { isValid: false, error: `File size must be less than ${maxSize}MB` };
   }
-  
+
   return { isValid: true, error: null };
 };
 
@@ -233,16 +233,16 @@ export const validateFile = (file, options = {}) => {
  * @returns {Object} - Preview data object
  */
 export const createFilePreviewData = (file, options = {}) => {
-  const { baseUrl = 'http://localhost:3004', showActions = true } = options;
-  
+  const { baseUrl = '', showActions = true } = options;
+
   if (!file) return null;
-  
+
   const fileType = getFileType(file);
   const previewUrl = createPreviewUrl(file, baseUrl);
-  const fileName = typeof file === 'string' 
+  const fileName = typeof file === 'string'
     ? file.split('/').pop().split('\\').pop()
     : file.name || 'Unknown file';
-  
+
   return {
     file,
     fileName,
