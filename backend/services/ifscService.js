@@ -8,6 +8,7 @@ const axios = require('axios');
 const mysql = require('mysql2/promise');
 
 // Database configuration (same as server.js)
+const isAzure = process.env.DB_HOST && process.env.DB_HOST.includes('azure.com');
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: process.env.DB_PORT || 3306,
@@ -16,7 +17,7 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  ssl: false,
+  ssl: isAzure ? { rejectUnauthorized: false } : false,
   charset: 'utf8mb4',
   insecureAuth: true
 };
@@ -48,10 +49,10 @@ class IFSCService {
     }
 
     const cleanIFSC = ifsc.trim().toUpperCase();
-    
+
     // IFSC format: 4 letters + 0 + 6 alphanumeric
     const ifscPattern = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-    
+
     if (cleanIFSC.length !== 11) {
       return { isValid: false, error: 'IFSC code must be exactly 11 characters' };
     }
@@ -145,7 +146,7 @@ class IFSCService {
     for (const endpoint of this.apiEndpoints) {
       try {
         let response;
-        
+
         if (endpoint.includes('razorpay')) {
           // Razorpay API format
           response = await axios.get(`${endpoint}/${ifsc}`, {
@@ -166,7 +167,7 @@ class IFSCService {
 
         if (response && response.data) {
           const data = response.data;
-          
+
           // Normalize response format
           return {
             ifsc: ifsc,
@@ -224,7 +225,7 @@ class IFSCService {
       if (apiData) {
         // Cache the result
         await this.cacheIFSC(cleanIFSC, apiData);
-        
+
         return {
           success: true,
           data: apiData,

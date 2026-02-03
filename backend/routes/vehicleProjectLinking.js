@@ -3,11 +3,13 @@ const mysql = require('mysql2/promise');
 const router = express.Router();
 
 // Database connection (adjust according to your config)
+const isAzure = process.env.DB_HOST && process.env.DB_HOST.includes('azure.com');
 const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'rites',
     database: process.env.DB_NAME || 'transportation_management',
+    ssl: isAzure ? { rejectUnauthorized: false } : false,
     charset: 'utf8mb4'
 };
 
@@ -18,7 +20,7 @@ const dbConfig = {
 router.get('/available-vehicles', async (req, res) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
-        
+
         // Try with the actual table names from the database
         let vehicles;
         try {
@@ -79,14 +81,14 @@ router.get('/available-vehicles', async (req, res) => {
             `);
             vehicles = rows;
         }
-        
+
         await connection.end();
         res.json({
             success: true,
             data: vehicles,
             count: vehicles.length
         });
-        
+
     } catch (error) {
         console.error('Error fetching available vehicles:', error);
         res.status(500).json({
@@ -105,7 +107,7 @@ router.get('/available-vehicles/customer/:customerId', async (req, res) => {
     try {
         const { customerId } = req.params;
         const connection = await mysql.createConnection(dbConfig);
-        
+
         // Get vehicles from vendors who have active contracts with this customer
         const [vehicles] = await connection.execute(`
             SELECT DISTINCT
@@ -126,7 +128,7 @@ router.get('/available-vehicles/customer/:customerId', async (req, res) => {
               AND v.status = 'active'
             ORDER BY vn.vendor_name, v.vehicle_number
         `, [customerId]);
-        
+
         await connection.end();
         res.json({
             success: true,
@@ -134,7 +136,7 @@ router.get('/available-vehicles/customer/:customerId', async (req, res) => {
             count: vehicles.length,
             message: `Found ${vehicles.length} available vehicles for customer`
         });
-        
+
     } catch (error) {
         console.error('Error fetching customer available vehicles:', error);
         res.status(500).json({
@@ -196,7 +198,7 @@ router.get('/projects/customer/:customerId', async (req, res) => {
 router.get('/projects', async (req, res) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
-        
+
         const [projects] = await connection.execute(`
             SELECT
                 p.ProjectID as project_id,
@@ -214,14 +216,14 @@ router.get('/projects', async (req, res) => {
             WHERE p.Status = 'Active'
             ORDER BY c.Name, p.ProjectName
         `);
-        
+
         await connection.end();
         res.json({
             success: true,
             data: projects,
             count: projects.length
         });
-        
+
     } catch (error) {
         console.error('Error fetching projects:', error);
         res.status(500).json({
@@ -238,11 +240,11 @@ router.get('/projects', async (req, res) => {
 
 router.post('/assign-vehicle', async (req, res) => {
     try {
-        const { 
-            vehicle_id, 
-            project_id, 
+        const {
+            vehicle_id,
+            project_id,
             assigned_by = 'System',
-            assignment_notes = '' 
+            assignment_notes = ''
         } = req.body;
 
         // Validation
@@ -254,25 +256,25 @@ router.post('/assign-vehicle', async (req, res) => {
         }
 
         const connection = await mysql.createConnection(dbConfig);
-        
+
         try {
             // Start transaction
             await connection.beginTransaction();
-            
+
             // Check if vehicle is available
             const [vehicleCheck] = await connection.execute(
                 'SELECT vehicle_id, assignment_status, project_id FROM vehicles WHERE vehicle_id = ?',
                 [vehicle_id]
             );
-            
+
             if (vehicleCheck.length === 0) {
                 throw new Error('Vehicle not found');
             }
-            
+
             if (vehicleCheck[0].project_id && vehicleCheck[0].project_id !== 0) {
                 throw new Error('Vehicle is already assigned to another project');
             }
-            
+
             // Record assignment without modifying master tables
             await connection.execute(
                 `INSERT INTO vehicle_project_assignments (vehicle_id, project_id, assigned_by, assignment_notes, status)
@@ -283,7 +285,7 @@ router.post('/assign-vehicle', async (req, res) => {
             // Commit transaction
             await connection.commit();
             await connection.end();
-            
+
             res.json({
                 success: true,
                 message: 'Vehicle successfully assigned to project',
@@ -300,7 +302,7 @@ router.post('/assign-vehicle', async (req, res) => {
             await connection.end();
             throw dbError;
         }
-        
+
     } catch (error) {
         console.error('Error assigning vehicle to project:', error);
         res.status(500).json({
@@ -317,9 +319,9 @@ router.post('/assign-vehicle', async (req, res) => {
 
 router.post('/unassign-vehicle', async (req, res) => {
     try {
-        const { 
-            vehicle_id, 
-            reason = 'Manual unassignment' 
+        const {
+            vehicle_id,
+            reason = 'Manual unassignment'
         } = req.body;
 
         if (!vehicle_id) {
@@ -330,7 +332,7 @@ router.post('/unassign-vehicle', async (req, res) => {
         }
 
         const connection = await mysql.createConnection(dbConfig);
-        
+
         // Call stored procedure to unassign vehicle
         await connection.execute(
             `UPDATE vehicle_project_assignments
@@ -340,12 +342,12 @@ router.post('/unassign-vehicle', async (req, res) => {
         );
 
         await connection.end();
-        
+
         res.json({
             success: true,
             message: 'Vehicle successfully unassigned from project'
         });
-        
+
     } catch (error) {
         console.error('Error unassigning vehicle from project:', error);
         res.status(500).json({
@@ -362,15 +364,15 @@ router.post('/unassign-vehicle', async (req, res) => {
 
 router.get('/vehicle-relationships', async (req, res) => {
     try {
-        const { 
-            customer_id = null, 
-            vendor_id = null, 
+        const {
+            customer_id = null,
+            vendor_id = null,
             project_id = null,
-            assignment_status = null 
+            assignment_status = null
         } = req.query;
 
         const connection = await mysql.createConnection(dbConfig);
-        
+
         let query = 'SELECT * FROM vehicle_project_relationships WHERE 1=1';
         const params = [];
 
@@ -379,17 +381,17 @@ router.get('/vehicle-relationships', async (req, res) => {
             query += ' AND customer_id = ?';
             params.push(customer_id);
         }
-        
+
         if (vendor_id) {
             query += ' AND vendor_id = ?';
             params.push(vendor_id);
         }
-        
+
         if (project_id) {
             query += ' AND project_id = ?';
             params.push(project_id);
         }
-        
+
         if (assignment_status) {
             query += ' AND assignment_status = ?';
             params.push(assignment_status);
@@ -398,7 +400,7 @@ router.get('/vehicle-relationships', async (req, res) => {
         query += ' ORDER BY customer_name, project_name, vendor_name, vehicle_number';
 
         const [relationships] = await connection.execute(query, params);
-        
+
         await connection.end();
         res.json({
             success: true,
@@ -406,12 +408,12 @@ router.get('/vehicle-relationships', async (req, res) => {
             count: relationships.length,
             filters_applied: {
                 customer_id,
-                vendor_id, 
+                vendor_id,
                 project_id,
                 assignment_status
             }
         });
-        
+
     } catch (error) {
         console.error('Error fetching vehicle relationships:', error);
         res.status(500).json({
@@ -429,7 +431,7 @@ router.get('/vehicle-relationships', async (req, res) => {
 router.get('/vendor-summary', async (req, res) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
-        
+
         const [summary] = await connection.execute(`
             SELECT
                 v.VendorID as vendor_id,
@@ -447,14 +449,14 @@ router.get('/vendor-summary', async (req, res) => {
             GROUP BY v.VendorID, v.VendorName, v.VendorCode, v.VendorMobileNo
             ORDER BY v.VendorName
         `);
-        
+
         await connection.end();
         res.json({
             success: true,
             data: summary,
             count: summary.length
         });
-        
+
     } catch (error) {
         console.error('Error fetching vendor summary:', error);
         res.status(500).json({
@@ -473,7 +475,7 @@ router.get('/assignment-history/:vehicleId', async (req, res) => {
     try {
         const { vehicleId } = req.params;
         const connection = await mysql.createConnection(dbConfig);
-        
+
         const [history] = await connection.execute(`
             SELECT 
                 h.*,
@@ -488,14 +490,14 @@ router.get('/assignment-history/:vehicleId', async (req, res) => {
             WHERE h.vehicle_id = ?
             ORDER BY h.assignment_start_date DESC
         `, [vehicleId]);
-        
+
         await connection.end();
         res.json({
             success: true,
             data: history,
             count: history.length
         });
-        
+
     } catch (error) {
         console.error('Error fetching assignment history:', error);
         res.status(500).json({
@@ -531,7 +533,7 @@ router.post('/customer-vendor-relationship', async (req, res) => {
         }
 
         const connection = await mysql.createConnection(dbConfig);
-        
+
         const [result] = await connection.execute(`
             INSERT INTO customer_vendors 
             (customer_id, vendor_id, contract_start_date, contract_end_date, 
@@ -543,13 +545,13 @@ router.post('/customer-vendor-relationship', async (req, res) => {
         ]);
 
         await connection.end();
-        
+
         res.json({
             success: true,
             message: 'Customer-Vendor relationship created successfully',
             relationship_id: result.insertId
         });
-        
+
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({
@@ -557,7 +559,7 @@ router.post('/customer-vendor-relationship', async (req, res) => {
                 message: 'Relationship between this customer and vendor already exists'
             });
         }
-        
+
         console.error('Error creating customer-vendor relationship:', error);
         res.status(500).json({
             success: false,
@@ -601,7 +603,7 @@ router.post('/projects', async (req, res) => {
         }
 
         const connection = await mysql.createConnection(dbConfig);
-        
+
         const [result] = await connection.execute(`
             INSERT INTO projects 
             (project_code, project_name, customer_id, project_description, project_location,
@@ -617,13 +619,13 @@ router.post('/projects', async (req, res) => {
         ]);
 
         await connection.end();
-        
+
         res.json({
             success: true,
             message: 'Project created successfully',
             project_id: result.insertId
         });
-        
+
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({
@@ -631,7 +633,7 @@ router.post('/projects', async (req, res) => {
                 message: 'Project code already exists'
             });
         }
-        
+
         console.error('Error creating project:', error);
         res.status(500).json({
             success: false,
@@ -648,7 +650,7 @@ router.post('/projects', async (req, res) => {
 router.get('/drivers', async (req, res) => {
     try {
         const connection = await mysql.createConnection(dbConfig);
-        
+
         // Query to get all drivers from the Driver table (capitalized)
         const [drivers] = await connection.execute(`
             SELECT
@@ -667,15 +669,15 @@ router.get('/drivers', async (req, res) => {
             WHERE d.Status = 'Active'
             ORDER BY d.DriverName
         `);
-        
+
         await connection.end();
-        
+
         res.json({
             success: true,
             data: drivers,
             count: drivers.length
         });
-        
+
     } catch (error) {
         console.error('Error fetching drivers:', error);
         res.status(500).json({
@@ -694,7 +696,7 @@ router.get('/available-drivers', async (req, res) => {
     try {
         const { search = '' } = req.query;
         const connection = await mysql.createConnection(dbConfig);
-        
+
         // Get all drivers - for now, we'll just return all drivers since we don't have a proper vehicle-driver relationship
         let query = `
             SELECT 
@@ -706,27 +708,27 @@ router.get('/available-drivers', async (req, res) => {
                 d.DriverTotalExperience
             FROM Driver d
         `;
-        
+
         const params = [];
-        
+
         if (search) {
             query += ` WHERE (d.DriverName LIKE ? OR d.DriverLicenceNo LIKE ? OR d.DriverMobileNo LIKE ?)`;
             const searchTerm = `%${search}%`;
             params.push(searchTerm, searchTerm, searchTerm);
         }
-        
+
         query += ` ORDER BY d.DriverName`;
-        
+
         const [drivers] = await connection.execute(query, params);
-        
+
         await connection.end();
-        
+
         res.json({
             success: true,
             data: drivers,
             count: drivers.length
         });
-        
+
     } catch (error) {
         console.error('Error fetching available drivers:', error);
         res.status(500).json({

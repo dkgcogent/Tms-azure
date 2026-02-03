@@ -1,0 +1,595 @@
+[2026-02-03T08:27:44.735Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:27:44.735Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:27:44.737Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:28:15.672Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:28:15.718Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:28:15.860Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:47:39.187Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:47:39.193Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:47:39.200Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:51:31.392Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:56:54.078Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:56:54.078Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T08:56:54.079Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:09:15.623Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:09:15.676Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:09:15.679Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:10:36.801Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:10:36.801Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:10:36.805Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:12:25.971Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:12:25.969Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:12:25.983Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:12:46.211Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:12:46.218Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:12:46.511Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:15:38.213Z] CUSTOMER_CREATE_ERROR: Column 'MasterCustomerName' cannot be null
+Code: ER_BAD_NULL_ERROR
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES (NULL, 'Test Customer', 'TCS001', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 14:45:35.582', '2026-02-03 14:45:35.582', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Column 'MasterCustomerName' cannot be null
+    at PromisePool.query (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:531:36
+    at Layer.handle [as handle_request] (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\route.js:149:13)
+    at multerMiddleware (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\multer\lib\make-middleware.js:13:41)
+    at Layer.handle [as handle_request] (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\index.js:284:15
+
+[2026-02-03T09:26:55.218Z] CUSTOMER_CREATE_ERROR: Data truncated for column 'POTenure' at row 1
+Code: WARN_DATA_TRUNCATED
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES ('ujjawal', 'cogent', 'UC001', '9431269522', 'verma@ujjwal.com', 'ujjawal', '7667629374', 'wallan', 'TRANS', 'Transportation', NULL, 'd82', 'pandav nagar', 'East Delhi', 'Delhi', '110092', 'India', 'GST', '2026-02-03 14:56:54.860', '2026-02-03 14:56:54.860', NULL, 'delhi - pandav nagar', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110809589-nomenclature.pdf', '2026-01-28', '2', '2028-01-28', '28', '30', '45', 'Yes', '1000.00', 'Yes', '100000.00', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110809626-nomenclature.pdf', '100000.00', '2026-01-27', '2026-02-04', 'hdfc', 'cogent', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110809688-nomenclature.pdf', '123456789', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110809703-nomenclature.pdf', '2026-01-28', '9876.00', '1 year', '2026-03-02', 'as per annexure', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110809717-nomenclature.pdf', 'Yes', '22AAAAA0000A1Z5', NULL, 'Monthly', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110809726-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110809733-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110809752-nomenclature.pdf', NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Data truncated for column 'POTenure' at row 1
+    at PromisePool.query (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:531:36
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:27:05.435Z] CUSTOMER_CREATE_ERROR: Column 'MasterCustomerName' cannot be null
+Code: ER_BAD_NULL_ERROR
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES (NULL, 'Test Customer', 'TCS001', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 14:57:05.130', '2026-02-03 14:57:05.130', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Column 'MasterCustomerName' cannot be null
+    at PromisePool.query (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:531:36
+    at Layer.handle [as handle_request] (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\route.js:149:13)
+    at multerMiddleware (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\multer\lib\make-middleware.js:13:41)
+    at Layer.handle [as handle_request] (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\index.js:284:15
+
+[2026-02-03T09:27:16.415Z] CUSTOMER_CREATE_ERROR: Column 'MasterCustomerName' cannot be null
+Code: ER_BAD_NULL_ERROR
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES (NULL, 'Test Customer', 'TCS001', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 14:57:16.132', '2026-02-03 14:57:16.132', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Column 'MasterCustomerName' cannot be null
+    at PromisePool.query (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:531:36
+    at Layer.handle [as handle_request] (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\route.js:149:13)
+    at multerMiddleware (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\multer\lib\make-middleware.js:13:41)
+    at Layer.handle [as handle_request] (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\layer.js:95:5)
+    at next (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\layer.js:95:5)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\router\index.js:284:15
+
+[2026-02-03T09:28:00.176Z] CUSTOMER_CREATE_ERROR: Data truncated for column 'POTenure' at row 1
+Code: WARN_DATA_TRUNCATED
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES ('ujjawal', 'cogent', 'UC001', '9431269522', 'verma@ujjwal.com', 'ujjawal', '7667629374', 'wallan', 'TRANS', 'Transportation', NULL, 'd82', 'pandav nagar', 'East Delhi', 'Delhi', '110092', 'India', 'GST', '2026-02-03 14:57:59.861', '2026-02-03 14:57:59.861', NULL, 'delhi - pandav nagar', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110877124-nomenclature.pdf', '2026-01-28', '2', '2028-01-28', '28', '30', '45', 'Yes', '1000.00', 'Yes', '100000.00', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110877130-nomenclature.pdf', '100000.00', '2026-01-27', '2026-02-04', 'hdfc', 'cogent', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110877158-nomenclature.pdf', '123456789', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110877168-nomenclature.pdf', '2026-01-28', '9876.00', '1 year', '2026-03-02', 'as per annexure', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110877183-nomenclature.pdf', 'Yes', '22AAAAA0000A1Z5', NULL, 'Monthly', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110877189-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110877194-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110877215-nomenclature.pdf', NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Data truncated for column 'POTenure' at row 1
+    at PromisePool.query (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:531:36
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:28:10.316Z] CUSTOMER_CREATE_ERROR: Data truncated for column 'POTenure' at row 1
+Code: WARN_DATA_TRUNCATED
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES ('ujjawal', 'cogent', 'UC001', '9431269522', 'verma@ujjwal.com', 'ujjawal', '7667629374', 'wallan', 'TRANS', 'Transportation', NULL, 'd82', 'pandav nagar', 'East Delhi', 'Delhi', '110092', 'India', 'GST', '2026-02-03 14:58:10.027', '2026-02-03 14:58:10.027', NULL, 'delhi - pandav nagar', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110886678-nomenclature.pdf', '2026-01-28', '2', '2028-01-28', '28', '30', '45', 'Yes', '1000.00', 'Yes', '100000.00', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110886682-nomenclature.pdf', '100000.00', '2026-01-27', '2026-02-04', 'hdfc', 'cogent', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110886687-nomenclature.pdf', '123456789', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110886697-nomenclature.pdf', '2026-01-28', '9876.00', '1 year', '2026-03-02', 'as per annexure', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110886707-nomenclature.pdf', 'Yes', '22AAAAA0000A1Z5', NULL, 'Monthly', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110886712-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110886736-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770110886739-nomenclature.pdf', NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Data truncated for column 'POTenure' at row 1
+    at PromisePool.query (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:531:36
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:33:49.819Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:33:49.818Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:33:49.818Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:40:50.795Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:40:50.795Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:40:50.797Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:41:54.604Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:41:54.622Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:41:54.630Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:44:25.800Z] CUSTOMER_CREATE_ERROR: Data truncated for column 'POTenure' at row 1
+Code: WARN_DATA_TRUNCATED
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES ('ujjawal', 'cogent', 'UC001', '9431269522', 'verma@ujjwal.com', 'ujjawal', '7667629374', 'wallan', 'TRANS', 'Transportation', NULL, 'd82', 'pandav nagar', 'East Delhi', 'Delhi', '110092', 'India', 'GST', '2026-02-03 15:14:25.464', '2026-02-03 15:14:25.464', NULL, 'delhi - pandav nagar', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111857050-nomenclature.pdf', '2026-01-28', '2', '2028-01-28', '28', '30', '45', 'Yes', '1000.00', 'Yes', '100000.00', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111857072-nomenclature.pdf', '100000.00', '2026-01-27', '2026-02-04', 'hdfc', 'cogent', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111857095-nomenclature.pdf', '123466', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111857108-nomenclature.pdf', '2026-01-28', '9876.00', '1 year', '2026-03-02', 'as per annexure', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111857117-nomenclature.pdf', 'Yes', '22AAAAA0000A1Z5', '5', 'Monthly', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111857124-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111857132-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111857140-nomenclature.pdf', NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Data truncated for column 'POTenure' at row 1
+    at PromisePool.query (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:536:36
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:45:13.744Z] CUSTOMER_CREATE_ERROR: Data truncated for column 'POTenure' at row 1
+Code: WARN_DATA_TRUNCATED
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES ('ujjawal', 'cogent', 'UC001', '9431269522', 'verma@ujjwal.com', 'ujjawal', '7667629374', 'wallan', 'TRANS', 'Transportation', NULL, 'd82', 'pandav nagar', 'East Delhi', 'Delhi', '110092', 'India', 'GST', '2026-02-03 15:15:13.358', '2026-02-03 15:15:13.358', NULL, 'delhi - pandav nagar', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111906852-nomenclature.pdf', '2026-01-28', '2', '2028-01-28', '28', '30', '45', 'Yes', '1000.00', 'Yes', '100000.00', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111906859-nomenclature.pdf', '100000.00', '2026-01-27', '2026-02-04', 'hdfc', 'cogent', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111906870-nomenclature.pdf', '123466', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111906876-nomenclature.pdf', '2026-01-28', '9876.00', '1 year', '2026-03-02', 'as per annexure', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111906884-nomenclature.pdf', 'Yes', '22AAAAA0000A1Z5', '5', 'Monthly', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111906892-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111906901-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770111906906-nomenclature.pdf', NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Data truncated for column 'POTenure' at row 1
+    at PromisePool.query (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:536:36
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T09:46:48.873Z] CUSTOMER_CREATE_ERROR: Data truncated for column 'POTenure' at row 1
+Code: WARN_DATA_TRUNCATED
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES ('ujjawal', 'cogent', 'UC001', '9431269522', 'verma@ujjwal.com', 'ujjawal', '7667629374', 'wallan', 'TRANS', 'Transportation', NULL, 'd82', 'pandav nagar', 'East Delhi', 'Delhi', '110092', 'India', 'GST', '2026-02-03 15:16:48.583', '2026-02-03 15:16:48.583', NULL, 'delhi - pandav nagar', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770112005686-nomenclature.pdf', '2026-01-28', '2', '2028-01-28', '28', '30', '45', 'Yes', '1000.00', 'Yes', '100000.00', 'Yes', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770112005694-nomenclature.pdf', '100000.00', '2026-01-27', '2026-02-04', 'hdfc', 'cogent', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770112005706-nomenclature.pdf', '123466', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770112005715-nomenclature.pdf', '2026-01-28', '9876.00', '1 year', '2026-03-02', 'as per annexure', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770112005720-nomenclature.pdf', 'Yes', '22AAAAA0000A1Z5', '5', 'Monthly', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770112005729-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770112005750-nomenclature.pdf', 'https://tmsstorage.blob.core.windows.net/tmsfiles/customers/1770112005766-nomenclature.pdf', NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Data truncated for column 'POTenure' at row 1
+    at PromisePool.query (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:536:36
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:10:26.808Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:10:26.832Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:10:26.889Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:12:43.783Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:12:43.812Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:12:43.840Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:13:24.924Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:13:24.935Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:13:25.094Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:14:29.231Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:22:57.789Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:25:49.771Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:30:22.849Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:35:11.296Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:35:28.297Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1897:16)
+    at listenInCluster (node:net:1945:12)
+    at Server.listen (node:net:2037:7)
+    at Function.listen (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\node_modules\express\lib\application.js:635:24)
+    at startServer (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:164:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+
+[2026-02-03T10:55:34.950Z] UNCAUGHT EXCEPTION: Invalid or unexpected token
+Stack: C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:1685
+/
+ 
+
+SyntaxError: Invalid or unexpected token
+    at internalCompileFunction (node:internal/vm:128:18)
+    at wrapSafe (node:internal/modules/cjs/loader:1280:20)
+    at Module._compile (node:internal/modules/cjs/loader:1332:27)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1427:10)
+    at Module.load (node:internal/modules/cjs/loader:1206:32)
+    at Module._load (node:internal/modules/cjs/loader:1022:12)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:179:18)
+    at Object.<anonymous> (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:78:24)
+    at Module._compile (node:internal/modules/cjs/loader:1369:14)
+
+[2026-02-03T10:58:48.415Z] UNCAUGHT EXCEPTION: Unexpected token '}'
+Stack: C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\backend\routes\customer.js:1679
+  });
+  ^
+
+SyntaxError: Unexpected token '}'
+    at internalCompileFunction (node:internal/vm:128:18)
+    at wrapSafe (node:internal/modules/cjs/loader:1280:20)
+    at Module._compile (node:internal/modules/cjs/loader:1332:27)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1427:10)
+    at Module.load (node:internal/modules/cjs/loader:1206:32)
+    at Module._load (node:internal/modules/cjs/loader:1022:12)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:179:18)
+    at Object.<anonymous> (C:\Users\hp\OneDrive\Desktop\DKG\tms ujjwal\TMS\server.js:78:24)
+    at Module._compile (node:internal/modules/cjs/loader:1369:14)
+

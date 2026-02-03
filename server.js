@@ -4,10 +4,28 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Log to file
+  const fs = require('fs');
+  const logMsg = `[${new Date().toISOString()}] UNHANDLED REJECTION: ${reason}\nStack: ${reason instanceof Error ? reason.stack : 'No stack'}\n\n`;
+  fs.appendFileSync('backend_errors.log', logMsg);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  // Log to file
+  const fs = require('fs');
+  const logMsg = `[${new Date().toISOString()}] UNCAUGHT EXCEPTION: ${err.message}\nStack: ${err.stack}\n\n`;
+  fs.appendFileSync('backend_errors.log', logMsg);
+  process.exit(1);
+});
+
 const app = express();
 const PORT = process.env.PORT || 3004;
 
 // Database configuration
+const isAzure = process.env.DB_HOST && process.env.DB_HOST.includes('azure.com');
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT) || 3306,
@@ -17,7 +35,7 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  ssl: false,
+  ssl: isAzure ? { rejectUnauthorized: false } : false,
   charset: 'utf8mb4',
   insecureAuth: true
 };
@@ -107,8 +125,8 @@ app.use('/api/vehicle-relationships', vehicleRelationshipsRoutes(pool));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'TMS Backend Server is running',
     timestamp: new Date().toISOString()
   });
@@ -117,17 +135,22 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({ 
+  // Log to file for debugging
+  const fs = require('fs');
+  const logMsg = `[${new Date().toISOString()}] ${err.message}\nStack: ${err.stack}\n\n`;
+  fs.appendFile('backend_errors.log', logMsg, (e) => { if (e) console.error('Log write failed', e); });
+
+  res.status(500).json({
     error: 'Internal server error',
-    message: err.message 
+    message: err.message
   });
 });
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     error: 'Route not found',
-    path: req.originalUrl 
+    path: req.originalUrl
   });
 });
 

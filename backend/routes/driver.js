@@ -7,45 +7,10 @@ const { validateModule, sanitizeData } = require('../utils/validation');
 const uploadsManager = require('../utils/uploadsManager');
 
 // Configure multer for file uploads using external directory
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Use external uploads directory for drivers
-    const uploadPath = uploadsManager.ensureEntityDirectory('drivers');
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'driver-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const { createUploadMiddleware } = require('../utils/uploadMiddleware');
 
-// File filter for all document types
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-    'application/pdf',
-    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'text/plain', 'text/csv'
-  ];
-
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    // Set a user-friendly error message on the request object
-    req.fileValidationError = `File "${file.originalname}" has an unsupported format. Please upload files in these formats: Images (JPG, PNG, GIF, WEBP), Documents (PDF, DOC, DOCX, XLS, XLSX, TXT, CSV).`;
-    cb(null, false); // Reject the file but don't throw an error
-  }
-};
-
-const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 20 * 1024 * 1024 // 20MB limit (increased for large PDF documents)
-  }
-});
+// Configure multer using shared middleware
+const upload = createUploadMiddleware('drivers');
 
 // This file defines API routes for managing driver data in the Transport Management System.
 // It uses Express.js to create route handlers for CRUD operations (Create, Read, Update, Delete)
@@ -59,6 +24,9 @@ module.exports = (pool) => {
     // Helper to normalize file paths for URLs
     const normalizeFilePath = (filePath) => {
       if (!filePath) return null;
+      if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+        return filePath;
+      }
       // Extract just the filename from the path
       const filename = filePath.split(/[\\/]/).pop();
       return filename;
@@ -67,7 +35,14 @@ module.exports = (pool) => {
     if (driver.DriverPhoto) {
       const filename = normalizeFilePath(driver.DriverPhoto);
       if (filename) {
-        driver.DriverPhoto_url = baseUrl + filename;
+        // If it was a URL, normalizeFilePath returned it as is.
+        // If it was a local path, it returned the filename.
+        // We need to check again if it is a URL to avoid double-prefixing.
+        if (filename.startsWith('http://') || filename.startsWith('https://')) {
+          driver.DriverPhoto_url = filename;
+        } else {
+          driver.DriverPhoto_url = baseUrl + filename;
+        }
       }
     }
 
@@ -142,7 +117,7 @@ module.exports = (pool) => {
       if (!req.file) {
         return res.status(400).json({ error: 'No photo file provided' });
       }
-      
+
       const photoPath = `/uploads/drivers/${req.file.filename}`;
       res.json({
         message: 'Photo uploaded successfully',
@@ -336,9 +311,12 @@ module.exports = (pool) => {
       let photoPath = null;
 
       if (req.file) {
-        // New file uploaded - delete old file if exists
-        if (existingDriver[0].DriverPhoto && fs.existsSync(existingDriver[0].DriverPhoto)) {
-          fs.unlinkSync(existingDriver[0].DriverPhoto);
+        // New file uploaded - delete old file if exists AND is local
+        if (existingDriver[0].DriverPhoto) {
+          const oldPath = existingDriver[0].DriverPhoto;
+          if (!oldPath.startsWith('http') && fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath);
+          }
         }
         photoPath = req.file.path;
         console.log('🚗 DRIVER UPDATE - New photo uploaded:', photoPath);

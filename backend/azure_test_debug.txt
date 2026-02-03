@@ -1,0 +1,71 @@
+--- Debug Log ---
+Checking Database Connection...
+✅ Database Connected
+Customer Columns (64):
+ - CustomerID (int) Null: NO
+ - MasterCustomerName (varchar(255)) Null: NO
+ - Name (varchar(255)) Null: NO
+ - CustomerCode (varchar(100)) Null: NO
+ - CustomerMobileNo (varchar(15)) Null: YES
+ - CustomerEmail (varchar(255)) Null: YES
+ - CustomerContactPerson (varchar(255)) Null: YES
+ - AlternateMobileNo (varchar(15)) Null: YES
+ - CustomerGroup (varchar(100)) Null: YES
+ - ServiceCode (varchar(100)) Null: YES
+ - TypeOfServices (enum('Transportation','Warehousing','Both','Logistics','Industrial Transport','Retail Distribution','Other')) Null: YES
+ - CityName (varchar(255)) Null: YES
+ - HouseFlatNo (varchar(100)) Null: YES
+ - StreetLocality (varchar(255)) Null: YES
+ - CustomerCity (varchar(100)) Null: YES
+ - CustomerState (varchar(100)) Null: YES
+ - CustomerPinCode (varchar(6)) Null: YES
+ - CustomerCountry (varchar(100)) Null: YES
+ - TypeOfBilling (enum('GST','Non-GST','RCM')) Null: YES
+ - CreatedAt (timestamp) Null: YES
+ - UpdatedAt (timestamp) Null: YES
+ - Locations (text) Null: YES
+ - CustomerSite (varchar(255)) Null: YES
+ - Agreement (enum('Yes','No')) Null: YES
+ - AgreementFile (varchar(500)) Null: YES
+ - AgreementDate (date) Null: YES
+ - AgreementTenure (int) Null: YES
+ - AgreementExpiryDate (date) Null: YES
+ - CustomerNoticePeriod (int) Null: YES
+ - CogentNoticePeriod (int) Null: YES
+ - CreditPeriod (int) Null: YES
+ - Insurance (enum('Yes','No')) Null: YES
+ - MinimumInsuranceValue (decimal(15,2)) Null: YES
+ - CogentDebitClause (enum('Yes','No')) Null: YES
+ - CogentDebitLimit (decimal(15,2)) Null: YES
+ - BG (enum('Yes','No')) Null: YES
+ - BGFile (varchar(500)) Null: YES
+ - BGAmount (decimal(15,2)) Null: YES
+ - BGDate (date) Null: YES
+ - BGExpiryDate (date) Null: YES
+ - BGBank (varchar(255)) Null: YES
+ - BGReceivingByCustomer (text) Null: YES
+ - BGReceivingFile (varchar(500)) Null: YES
+ - PO (text) Null: YES
+ - POFile (varchar(500)) Null: YES
+ - PODate (date) Null: YES
+ - POValue (decimal(15,2)) Null: YES
+ - POTenure (int) Null: YES
+ - POExpiryDate (date) Null: YES
+ - Rates (text) Null: YES
+ - RatesAnnexureFile (varchar(500)) Null: YES
+ - YearlyEscalationClause (enum('Yes','No')) Null: YES
+ - GSTNo (varchar(15)) Null: YES
+ - GSTRate (decimal(5,2)) Null: YES
+ - BillingTenure (varchar(50)) Null: YES
+ - MISFormatFile (varchar(500)) Null: YES
+ - KPISLAFile (varchar(500)) Null: YES
+ - PerformanceReportFile (varchar(500)) Null: YES
+ - CustomerRegisteredOfficeAddress (text) Null: YES
+ - CustomerCorporateOfficeAddress (text) Null: YES
+ - CogentProjectHead (varchar(255)) Null: YES
+ - CogentProjectOpsManager (varchar(255)) Null: YES
+ - CustomerImportantPersonAddress1 (text) Null: YES
+ - CustomerImportantPersonAddress2 (text) Null: YES
+Attempting insert with code: TEST2791
+✅ Minimal Insert Successful
+✅ Cleanup Successful

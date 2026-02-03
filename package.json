@@ -23,6 +23,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@azure/storage-blob": "^12.30.0",
     "@babel/parser": "^7.28.4",
     "antd": "^5.27.4",
     "axios": "^1.7.9",

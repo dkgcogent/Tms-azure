@@ -7,42 +7,10 @@ const { validationMiddleware, sanitizeData } = require('../utils/validation');
 const uploadsManager = require('../utils/uploadsManager');
 
 // Configure multer for file uploads using external directory
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Use external uploads directory for vendors
-    const uploadPath = uploadsManager.ensureEntityDirectory('vendors');
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const { createUploadMiddleware } = require('../utils/uploadMiddleware');
 
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 20 * 1024 * 1024 // 20MB limit (increased for large PDF documents)
-  },
-  fileFilter: (req, file, cb) => {
-    // Accept all common file types
-    const allowedTypes = [
-      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-      'application/pdf',
-      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain', 'text/csv'
-    ];
-
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      // Set a user-friendly error message on the request object
-      req.fileValidationError = `File "${file.originalname}" has an unsupported format. Please upload files in these formats: Images (JPG, PNG, GIF, WEBP), Documents (PDF, DOC, DOCX, XLS, XLSX, TXT, CSV).`;
-      cb(null, false); // Reject the file but don't throw an error
-    }
-  }
-});
+// Configure multer using shared middleware
+const upload = createUploadMiddleware('vendors');
 
 // This file defines API routes for managing comprehensive vendor data in the Transport Management System.
 // It supports all 15 fields from the Vendor Master form including file uploads for documents.
@@ -52,55 +20,26 @@ module.exports = (pool) => {
   const addFileUrls = (vendor) => {
     const baseUrl = 'http://localhost:3004/api/vendors/files/';
 
+    const getUrl = (filePath) => {
+      if (!filePath) return null;
+      if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+        return filePath;
+      }
+      const filename = filePath.includes('/') || filePath.includes('\\')
+        ? filePath.split(/[\\/]/).pop()
+        : filePath;
+      return baseUrl + filename;
+    };
+
     // Map database column names to URL field names
-    if (vendor.VendorPhoto) {
-      const filename = vendor.VendorPhoto.includes('/') || vendor.VendorPhoto.includes('\\')
-        ? vendor.VendorPhoto.split(/[\\/]/).pop()
-        : vendor.VendorPhoto;
-      vendor.vendor_photo_url = baseUrl + filename;
-    }
-    if (vendor.VendorAadharDoc) {
-      const filename = vendor.VendorAadharDoc.includes('/') || vendor.VendorAadharDoc.includes('\\')
-        ? vendor.VendorAadharDoc.split(/[\\/]/).pop()
-        : vendor.VendorAadharDoc;
-      vendor.vendor_aadhar_doc_url = baseUrl + filename;
-    }
-    if (vendor.VendorPANDoc) {
-      const filename = vendor.VendorPANDoc.includes('/') || vendor.VendorPANDoc.includes('\\')
-        ? vendor.VendorPANDoc.split(/[\\/]/).pop()
-        : vendor.VendorPANDoc;
-      vendor.vendor_pan_doc_url = baseUrl + filename;
-    }
-    if (vendor.VendorCompanyUdhyamDoc) {
-      const filename = vendor.VendorCompanyUdhyamDoc.includes('/') || vendor.VendorCompanyUdhyamDoc.includes('\\')
-        ? vendor.VendorCompanyUdhyamDoc.split(/[\\/]/).pop()
-        : vendor.VendorCompanyUdhyamDoc;
-      vendor.vendor_company_udhyam_doc_url = baseUrl + filename;
-    }
-    if (vendor.VendorCompanyPANDoc) {
-      const filename = vendor.VendorCompanyPANDoc.includes('/') || vendor.VendorCompanyPANDoc.includes('\\')
-        ? vendor.VendorCompanyPANDoc.split(/[\\/]/).pop()
-        : vendor.VendorCompanyPANDoc;
-      vendor.vendor_company_pan_doc_url = baseUrl + filename;
-    }
-    if (vendor.VendorCompanyGSTDoc) {
-      const filename = vendor.VendorCompanyGSTDoc.includes('/') || vendor.VendorCompanyGSTDoc.includes('\\')
-        ? vendor.VendorCompanyGSTDoc.split(/[\\/]/).pop()
-        : vendor.VendorCompanyGSTDoc;
-      vendor.vendor_company_gst_doc_url = baseUrl + filename;
-    }
-    if (vendor.CompanyLegalDocs) {
-      const filename = vendor.CompanyLegalDocs.includes('/') || vendor.CompanyLegalDocs.includes('\\')
-        ? vendor.CompanyLegalDocs.split(/[\\/]/).pop()
-        : vendor.CompanyLegalDocs;
-      vendor.company_legal_docs_url = baseUrl + filename;
-    }
-    if (vendor.BankChequeUpload) {
-      const filename = vendor.BankChequeUpload.includes('/') || vendor.BankChequeUpload.includes('\\')
-        ? vendor.BankChequeUpload.split(/[\\/]/).pop()
-        : vendor.BankChequeUpload;
-      vendor.bank_cheque_upload_url = baseUrl + filename;
-    }
+    if (vendor.VendorPhoto) vendor.vendor_photo_url = getUrl(vendor.VendorPhoto);
+    if (vendor.VendorAadharDoc) vendor.vendor_aadhar_doc_url = getUrl(vendor.VendorAadharDoc);
+    if (vendor.VendorPANDoc) vendor.vendor_pan_doc_url = getUrl(vendor.VendorPANDoc);
+    if (vendor.VendorCompanyUdhyamDoc) vendor.vendor_company_udhyam_doc_url = getUrl(vendor.VendorCompanyUdhyamDoc);
+    if (vendor.VendorCompanyPANDoc) vendor.vendor_company_pan_doc_url = getUrl(vendor.VendorCompanyPANDoc);
+    if (vendor.VendorCompanyGSTDoc) vendor.vendor_company_gst_doc_url = getUrl(vendor.VendorCompanyGSTDoc);
+    if (vendor.CompanyLegalDocs) vendor.company_legal_docs_url = getUrl(vendor.CompanyLegalDocs);
+    if (vendor.BankChequeUpload) vendor.bank_cheque_upload_url = getUrl(vendor.BankChequeUpload);
 
     return vendor;
   };
@@ -625,28 +564,29 @@ module.exports = (pool) => {
         if (files[fieldname] && files[fieldname][0]) {
           // New file uploaded - delete old file if exists
           const oldFieldName = fieldname === 'vendor_photo' ? 'VendorPhoto' :
-                               fieldname === 'vendor_aadhar_doc' ? 'VendorAadharDoc' :
-                               fieldname === 'vendor_pan_doc' ? 'VendorPANDoc' :
-                               fieldname === 'vendor_company_udhyam_doc' ? 'VendorCompanyUdhyamDoc' :
-                               fieldname === 'vendor_company_pan_doc' ? 'VendorCompanyPANDoc' :
-                               fieldname === 'vendor_company_gst_doc' ? 'VendorCompanyGSTDoc' :
-                               fieldname === 'company_legal_docs' ? 'CompanyLegalDocs' :
-                               fieldname === 'bank_cheque_upload' ? 'BankChequeUpload' : fieldname;
+            fieldname === 'vendor_aadhar_doc' ? 'VendorAadharDoc' :
+              fieldname === 'vendor_pan_doc' ? 'VendorPANDoc' :
+                fieldname === 'vendor_company_udhyam_doc' ? 'VendorCompanyUdhyamDoc' :
+                  fieldname === 'vendor_company_pan_doc' ? 'VendorCompanyPANDoc' :
+                    fieldname === 'vendor_company_gst_doc' ? 'VendorCompanyGSTDoc' :
+                      fieldname === 'company_legal_docs' ? 'CompanyLegalDocs' :
+                        fieldname === 'bank_cheque_upload' ? 'BankChequeUpload' : fieldname;
 
-          if (existingVendor[0][oldFieldName] && fs.existsSync(existingVendor[0][oldFieldName])) {
-            fs.unlinkSync(existingVendor[0][oldFieldName]);
+          const oldPath = existingVendor[0][oldFieldName];
+          if (oldPath && !oldPath.startsWith('http') && fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath);
           }
           filePaths[fieldname] = files[fieldname][0].path;
         } else {
           // No new file - keep existing file path
           const oldFieldName = fieldname === 'vendor_photo' ? 'VendorPhoto' :
-                               fieldname === 'vendor_aadhar_doc' ? 'VendorAadharDoc' :
-                               fieldname === 'vendor_pan_doc' ? 'VendorPANDoc' :
-                               fieldname === 'vendor_company_udhyam_doc' ? 'VendorCompanyUdhyamDoc' :
-                               fieldname === 'vendor_company_pan_doc' ? 'VendorCompanyPANDoc' :
-                               fieldname === 'vendor_company_gst_doc' ? 'VendorCompanyGSTDoc' :
-                               fieldname === 'company_legal_docs' ? 'CompanyLegalDocs' :
-                               fieldname === 'bank_cheque_upload' ? 'BankChequeUpload' : fieldname;
+            fieldname === 'vendor_aadhar_doc' ? 'VendorAadharDoc' :
+              fieldname === 'vendor_pan_doc' ? 'VendorPANDoc' :
+                fieldname === 'vendor_company_udhyam_doc' ? 'VendorCompanyUdhyamDoc' :
+                  fieldname === 'vendor_company_pan_doc' ? 'VendorCompanyPANDoc' :
+                    fieldname === 'vendor_company_gst_doc' ? 'VendorCompanyGSTDoc' :
+                      fieldname === 'company_legal_docs' ? 'CompanyLegalDocs' :
+                        fieldname === 'bank_cheque_upload' ? 'BankChequeUpload' : fieldname;
 
           filePaths[fieldname] = existingVendor[0][oldFieldName] || null;
         }

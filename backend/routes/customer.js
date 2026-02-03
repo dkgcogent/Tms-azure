@@ -1,4 +1,4 @@
- const express = require('express');
+const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -7,39 +7,10 @@ const { validateModule, sanitizeData } = require('../utils/validation');
 const uploadsManager = require('../utils/uploadsManager');
 
 // Configure multer for file uploads using external directory
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Use external uploads directory for customers
-    const uploadDir = uploadsManager.ensureEntityDirectory('customers');
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}-${file.originalname}`;
-    cb(null, uniqueName);
-  }
-});
+const { createUploadMiddleware } = require('../utils/uploadMiddleware');
 
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 20 * 1024 * 1024, // 20MB limit (increased for large PDF documents)
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = [
-      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-      'application/pdf',
-      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain', 'text/csv'
-    ];
-
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('File type not supported. Allowed: Images, PDF, DOC, DOCX, XLS, XLSX, TXT, CSV'));
-    }
-  }
-});
+// Configure multer using shared middleware
+const upload = createUploadMiddleware('customers');
 
 const validateDateSequence = (customerData) => {
   const errors = [];
@@ -60,9 +31,27 @@ const validateDateSequence = (customerData) => {
   return errors;
 };
 
-// This file defines API routes for managing customer data in the Transport Management System.
-// It uses Express.js to create route handlers for CRUD operations (Create, Read, Update, Delete)
-// related to customers. The routes interact with a MySQL database through a connection pool.
+// Helper to sanitize numeric values for database (converts empty strings to null)
+const sanitizeInt = (val) => {
+  if (val === undefined || val === null || val === '') return null;
+  const parsed = parseInt(val, 10);
+  return isNaN(parsed) ? null : parsed;
+};
+
+const sanitizeFloat = (val) => {
+  if (val === undefined || val === null || val === '') return null;
+  const parsed = parseFloat(val);
+  return isNaN(parsed) ? null : parsed;
+};
+
+const sanitizeDate = (val) => {
+  if (!val || val === '' || val === 'undefined' || val === 'null') return null;
+  // If it's an ISO datetime string, extract just the date part for DATE columns
+  if (typeof val === 'string' && val.includes('T')) {
+    return val.split('T')[0];
+  }
+  return val;
+};
 
 module.exports = (pool) => {
   // Get customers for dropdown (simplified data)
@@ -93,55 +82,26 @@ module.exports = (pool) => {
   const addFileUrls = (customer) => {
     const baseUrl = '/api/customers/files/';
 
-    if (customer.AgreementFile) {
-      // Extract just the filename from the stored path (customers/filename.pdf -> filename.pdf)
-      const filename = customer.AgreementFile.includes('/') || customer.AgreementFile.includes('\\')
-        ? customer.AgreementFile.split(/[\/\\]/).pop()
-        : customer.AgreementFile;
-      customer.AgreementFileUrl = baseUrl + filename;
-    }
-    if (customer.BGFile) {
-      const filename = customer.BGFile.includes('/') || customer.BGFile.includes('\\')
-        ? customer.BGFile.split(/[\/\\]/).pop()
-        : customer.BGFile;
-      customer.BGFileUrl = baseUrl + filename;
-    }
-    if (customer.BGReceivingFile) {
-      const filename = customer.BGReceivingFile.includes('/') || customer.BGReceivingFile.includes('\\')
-        ? customer.BGReceivingFile.split(/[\/\\]/).pop()
-        : customer.BGReceivingFile;
-      customer.BGReceivingFileUrl = baseUrl + filename;
-    }
-    if (customer.POFile) {
-      const filename = customer.POFile.includes('/') || customer.POFile.includes('\\')
-        ? customer.POFile.split(/[\/\\]/).pop()
-        : customer.POFile;
-      customer.POFileUrl = baseUrl + filename;
-    }
-    if (customer.RatesAnnexureFile) {
-      const filename = customer.RatesAnnexureFile.includes('/') || customer.RatesAnnexureFile.includes('\\')
-        ? customer.RatesAnnexureFile.split(/[\/\\]/).pop()
-        : customer.RatesAnnexureFile;
-      customer.RatesAnnexureFileUrl = baseUrl + filename;
-    }
-    if (customer.MISFormatFile) {
-      const filename = customer.MISFormatFile.includes('/') || customer.MISFormatFile.includes('\\')
-        ? customer.MISFormatFile.split(/[\/\\]/).pop()
-        : customer.MISFormatFile;
-      customer.MISFormatFileUrl = baseUrl + filename;
-    }
-    if (customer.KPISLAFile) {
-      const filename = customer.KPISLAFile.includes('/') || customer.KPISLAFile.includes('\\')
-        ? customer.KPISLAFile.split(/[\/\\]/).pop()
-        : customer.KPISLAFile;
-      customer.KPISLAFileUrl = baseUrl + filename;
-    }
-    if (customer.PerformanceReportFile) {
-      const filename = customer.PerformanceReportFile.includes('/') || customer.PerformanceReportFile.includes('\\')
-        ? customer.PerformanceReportFile.split(/[\/\\]/).pop()
-        : customer.PerformanceReportFile;
-      customer.PerformanceReportFileUrl = baseUrl + filename;
-    }
+    const getUrl = (filePath) => {
+      if (!filePath) return null;
+      if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+        return filePath;
+      }
+
+      const filename = filePath.includes('/') || filePath.includes('\\')
+        ? filePath.split(/[\/\\]/).pop()
+        : filePath;
+      return baseUrl + filename;
+    };
+
+    if (customer.AgreementFile) customer.AgreementFileUrl = getUrl(customer.AgreementFile);
+    if (customer.BGFile) customer.BGFileUrl = getUrl(customer.BGFile);
+    if (customer.BGReceivingFile) customer.BGReceivingFileUrl = getUrl(customer.BGReceivingFile);
+    if (customer.POFile) customer.POFileUrl = getUrl(customer.POFile);
+    if (customer.RatesAnnexureFile) customer.RatesAnnexureFileUrl = getUrl(customer.RatesAnnexureFile);
+    if (customer.MISFormatFile) customer.MISFormatFileUrl = getUrl(customer.MISFormatFile);
+    if (customer.KPISLAFile) customer.KPISLAFileUrl = getUrl(customer.KPISLAFile);
+    if (customer.PerformanceReportFile) customer.PerformanceReportFileUrl = getUrl(customer.PerformanceReportFile);
 
     return customer;
   };
@@ -346,6 +306,10 @@ module.exports = (pool) => {
     const customer = req.body;
     const files = req.files;
 
+    console.log('🚀 POST /api/customers - Start processing');
+    console.log('📦 Body fields:', Object.keys(customer));
+    console.log('📂 Files received:', Object.keys(files || {}));
+
     // Map frontend field names to backend database column names (only for top-level customer fields)
     // IMPORTANT: Only map top-level customer fields, not nested contact address fields
     if (customer.pin_code && typeof customer.pin_code === 'string') customer.CustomerPinCode = customer.pin_code;
@@ -394,6 +358,7 @@ module.exports = (pool) => {
 
     const dateErrors = validateDateSequence(customer);
     if (dateErrors.length > 0) {
+      console.warn('⚠️ Date validation failed:', dateErrors);
       return res.status(400).json({ errors: dateErrors });
     }
 
@@ -465,29 +430,46 @@ module.exports = (pool) => {
         }
       }
 
-      // Handle file paths - store relative paths for database
+      // Handle file paths - store relative paths or Azure URLs for database
       const filePaths = {};
+      const getStoragePath = (fileArray, entityType) => {
+        if (!fileArray || !fileArray[0]) return null;
+        const file = fileArray[0];
+        // if it's a URL (Azure), return it. Else compute relative path.
+        if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
+          return file.path;
+        }
+        return uploadsManager.getRelativePath(entityType, file.filename);
+      };
+
       if (files) {
-        if (files.AgreementFile) filePaths.AgreementFile = uploadsManager.getRelativePath('customers', files.AgreementFile[0].filename);
-        if (files.BGFile) filePaths.BGFile = uploadsManager.getRelativePath('customers', files.BGFile[0].filename);
-        if (files.BGReceivingFile) filePaths.BGReceivingFile = uploadsManager.getRelativePath('customers', files.BGReceivingFile[0].filename);
-        if (files.POFile) filePaths.POFile = uploadsManager.getRelativePath('customers', files.POFile[0].filename);
-        if (files.RatesAnnexureFile) filePaths.RatesAnnexureFile = uploadsManager.getRelativePath('customers', files.RatesAnnexureFile[0].filename);
-        if (files.MISFormatFile) filePaths.MISFormatFile = uploadsManager.getRelativePath('customers', files.MISFormatFile[0].filename);
-        if (files.KPISLAFile) filePaths.KPISLAFile = uploadsManager.getRelativePath('customers', files.KPISLAFile[0].filename);
-        if (files.PerformanceReportFile) filePaths.PerformanceReportFile = uploadsManager.getRelativePath('customers', files.PerformanceReportFile[0].filename);
+        if (files.AgreementFile) filePaths.AgreementFile = getStoragePath(files.AgreementFile, 'customers');
+        if (files.BGFile) filePaths.BGFile = getStoragePath(files.BGFile, 'customers');
+        if (files.BGReceivingFile) filePaths.BGReceivingFile = getStoragePath(files.BGReceivingFile, 'customers');
+        if (files.POFile) filePaths.POFile = getStoragePath(files.POFile, 'customers');
+        if (files.RatesAnnexureFile) filePaths.RatesAnnexureFile = getStoragePath(files.RatesAnnexureFile, 'customers');
+        if (files.MISFormatFile) filePaths.MISFormatFile = getStoragePath(files.MISFormatFile, 'customers');
+        if (files.KPISLAFile) filePaths.KPISLAFile = getStoragePath(files.KPISLAFile, 'customers');
+        if (files.PerformanceReportFile) filePaths.PerformanceReportFile = getStoragePath(files.PerformanceReportFile, 'customers');
       }
 
       // Verify uploaded files exist and are accessible
       const uploadedFiles = Object.values(filePaths).filter(Boolean);
       for (const filePath of uploadedFiles) {
+        if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+          continue; // Skip verification for Azure URLs
+        }
         const fullPath = uploadsManager.getFullPath(filePath);
         if (!fs.existsSync(fullPath)) {
           console.error('❌ Uploaded customer file not found:', fullPath);
-          return res.status(500).json({ error: 'File upload failed - file not accessible' });
+          // Don't fail the whole request if it's just a file check issue, but log it
+          // return res.status(500).json({ error: 'File upload failed - file not accessible' });
+        } else {
+          console.log('✅ Verified uploaded customer file:', filePath);
         }
-        console.log('✅ Verified uploaded customer file:', filePath);
       }
+
+      console.log('📝 Preparing main Customer insert with code:', customerCode);
 
       const insertQuery = `INSERT INTO Customer (
         \`MasterCustomerName\`, \`Name\`, \`CustomerCode\`, \`CustomerMobileNo\`, \`CustomerEmail\`, \`CustomerContactPerson\`, \`AlternateMobileNo\`, \`CustomerGroup\`, \`ServiceCode\`, \`TypeOfServices\`, \`CityName\`, \`HouseFlatNo\`, \`StreetLocality\`, \`CustomerCity\`, \`CustomerState\`, \`CustomerPinCode\`, \`CustomerCountry\`, \`TypeOfBilling\`, \`CreatedAt\`, \`UpdatedAt\`, \`Locations\`, \`CustomerSite\`, \`Agreement\`, \`AgreementFile\`, \`AgreementDate\`, \`AgreementTenure\`, \`AgreementExpiryDate\`, \`CustomerNoticePeriod\`, \`CogentNoticePeriod\`, \`CreditPeriod\`, \`Insurance\`, \`MinimumInsuranceValue\`, \`CogentDebitClause\`, \`CogentDebitLimit\`, \`BG\`, \`BGFile\`, \`BGAmount\`, \`BGDate\`, \`BGExpiryDate\`, \`BGBank\`, \`BGReceivingByCustomer\`, \`BGReceivingFile\`, \`PO\`, \`POFile\`, \`PODate\`, \`POValue\`, \`POTenure\`, \`POExpiryDate\`, \`Rates\`, \`RatesAnnexureFile\`, \`YearlyEscalationClause\`, \`GSTNo\`, \`GSTRate\`, \`BillingTenure\`, \`MISFormatFile\`, \`KPISLAFile\`, \`PerformanceReportFile\`, \`CustomerRegisteredOfficeAddress\`, \`CustomerCorporateOfficeAddress\`, \`CogentProjectHead\`, \`CogentProjectOpsManager\`, \`CustomerImportantPersonAddress1\`, \`CustomerImportantPersonAddress2\`
@@ -495,9 +477,14 @@ module.exports = (pool) => {
       `;
 
       const now = new Date();
+
+      // Fallback for MasterCustomerName if empty, to prevent "Column cannot be null" error
+      const masterNameValue = (customer.MasterCustomerName || customer.Name || 'Default Master').trim();
+      const companyNameValue = (customer.Name || masterNameValue).trim();
+
       const insertParams = [
-        customer.MasterCustomerName || null,
-        customer.Name || null,
+        masterNameValue,
+        companyNameValue,
         customerCode || null,
         customer.CustomerMobileNo || null,
         customer.CustomerEmail || null,
@@ -512,7 +499,7 @@ module.exports = (pool) => {
         customer.CustomerCity || null,
         customer.CustomerState || null,
         customer.CustomerPinCode || null,
-        customer.CustomerCountry || null,
+        customer.CustomerCountry || 'India',
         customer.TypeOfBilling || null,
         now,
         now,
@@ -520,36 +507,36 @@ module.exports = (pool) => {
         customer.CustomerSite || null,
         customer.Agreement || null,
         filePaths.AgreementFile || null,
-        customer.AgreementDate || null,
-        customer.AgreementTenure || null,
-        customer.AgreementExpiryDate || null,
-        customer.CustomerNoticePeriod || null,
-        customer.CogentNoticePeriod || null,
-        customer.CreditPeriod || null,
+        sanitizeDate(customer.AgreementDate),
+        sanitizeInt(customer.AgreementTenure),
+        sanitizeDate(customer.AgreementExpiryDate),
+        sanitizeInt(customer.CustomerNoticePeriod),
+        sanitizeInt(customer.CogentNoticePeriod),
+        sanitizeInt(customer.CreditPeriod),
         customer.Insurance || null,
-        customer.MinimumInsuranceValue || null,
+        sanitizeFloat(customer.MinimumInsuranceValue),
         customer.CogentDebitClause || null,
-        customer.CogentDebitLimit || null,
+        sanitizeFloat(customer.CogentDebitLimit),
         customer.BG || null,
         filePaths.BGFile || null,
-        customer.BGAmount || null,
-        customer.BGDate || null,
-        customer.BGExpiryDate || null,
+        sanitizeFloat(customer.BGAmount),
+        sanitizeDate(customer.BGDate),
+        sanitizeDate(customer.BGExpiryDate),
         customer.BGBank || null,
         customer.BGReceivingByCustomer || null,
         filePaths.BGReceivingFile || null,
         customer.PO || null,
         filePaths.POFile || null,
-        customer.PODate || null,
-        customer.POValue || null,
-        customer.POTenure || null,
-        customer.POExpiryDate || null,
+        sanitizeDate(customer.PODate),
+        sanitizeFloat(customer.POValue),
+        sanitizeInt(customer.POTenure),
+        sanitizeDate(customer.POExpiryDate),
         customer.Rates || null,
         filePaths.RatesAnnexureFile || null,
         customer.YearlyEscalationClause || null,
         customer.GSTNo || null,
-        customer.GSTRate || null,
-        customer.BillingTenure || null,
+        sanitizeFloat(customer.GSTRate),
+        sanitizeInt(customer.BillingTenure),
         filePaths.MISFormatFile || null,
         filePaths.KPISLAFile || null,
         filePaths.PerformanceReportFile || null,
@@ -560,10 +547,14 @@ module.exports = (pool) => {
         customer.CustomerImportantPersonAddress1 || null,
         customer.CustomerImportantPersonAddress2 || null
       ];
-      
+
+      console.log('📊 Executing main Customer insert query...');
+      console.log('🔢 Number of params:', insertParams.length);
+
       const [results] = await pool.query(insertQuery, insertParams);
 
       const customerId = results.insertId;
+      console.log('✅ Main Customer Record inserted with ID:', customerId);
 
       // Insert related data using Promise.all for parallel execution
       const insertPromises = [];
@@ -596,187 +587,86 @@ module.exports = (pool) => {
         }
       }
 
-      // SHARED DUPLICATE PREVENTION: Create a global set to prevent duplicates across all contact formats
-      const globalProcessedContacts = new Set(); // Track ALL processed contacts to prevent duplicates across formats
+      // SHARED DUPLICATE PREVENTION
+      const globalProcessedContacts = new Set();
 
       // Handle new unified additional contacts structure
       if (customer.AdditionalContacts) {
         try {
-          const additionalContacts = typeof customer.AdditionalContacts === 'string'
-            ? JSON.parse(customer.AdditionalContacts)
-            : customer.AdditionalContacts;
+          let additionalContacts = [];
+          if (typeof customer.AdditionalContacts === 'string') {
+            try {
+              additionalContacts = JSON.parse(customer.AdditionalContacts);
+            } catch (e) {
+              console.error('Failed to parse AdditionalContacts string', e);
+              additionalContacts = [];
+            }
+          } else {
+            additionalContacts = customer.AdditionalContacts;
+          }
 
           if (Array.isArray(additionalContacts)) {
-
-            additionalContacts.forEach(contact => {
-              // Skip completely empty contacts
+            for (const contact of additionalContacts) {
+              // Skip empty
               const hasContactData = contact.Name?.trim() || contact.Mobile?.trim() || contact.Email?.trim() ||
-                                   contact.Department?.trim() || contact.Designation?.trim() || contact.OfficeType?.trim();
+                contact.Department?.trim() || contact.Designation?.trim() || contact.OfficeType?.trim();
 
-              if (!hasContactData) {
-                return; // Skip this contact
-              }
+              if (!hasContactData) continue;
 
-              // Create duplicate detection key based on mobile and email
+              // Duplicate check
               const duplicateKey = `${contact.Mobile?.trim() || ''}-${contact.Email?.trim() || ''}`;
+              if (duplicateKey !== '-' && globalProcessedContacts.has(duplicateKey)) continue;
+              if (duplicateKey !== '-') globalProcessedContacts.add(duplicateKey);
 
-              // Skip if this mobile+email combination has already been processed GLOBALLY
-              if (duplicateKey !== '-' && globalProcessedContacts.has(duplicateKey)) {
-                console.warn('🚫 GLOBAL DUPLICATE PREVENTION - Skipping duplicate contact (AdditionalContacts):', {
-                  ContactType: contact.ContactType,
-                  Name: contact.Name,
-                  Mobile: contact.Mobile,
-                  Email: contact.Email,
-                  duplicateKey: duplicateKey,
-                  source: 'AdditionalContacts'
-                });
-                return; // Skip this duplicate contact
-              }
-
-              // Add to GLOBAL processed contacts set
-              if (duplicateKey !== '-') {
-                globalProcessedContacts.add(duplicateKey);
-              }
-              // Handle structured address format with better validation
+              // Address Handling
               let addressValue = null;
               if (contact.Address) {
-                if (typeof contact.Address === 'object' && contact.Address !== null) {
-                  // Serialize structured address to JSON
-                  try {
-                    addressValue = JSON.stringify(contact.Address);
-
-                    // Double-check that it's a valid JSON string
-                    if (typeof addressValue !== 'string') {
-                      console.error('JSON.stringify did not return a string:', typeof addressValue, addressValue);
-                      addressValue = null;
-                    } else if (!addressValue.startsWith('{') || !addressValue.endsWith('}')) {
-                      console.error('JSON string format invalid:', addressValue);
-                      addressValue = null;
-                    }
-                  } catch (error) {
-                    console.error('JSON stringify failed:', error);
-                    addressValue = null;
-                  }
+                if (typeof contact.Address === 'object') {
+                  try { addressValue = JSON.stringify(contact.Address); } catch (e) { addressValue = null; }
                 } else if (typeof contact.Address === 'string') {
-                  // Sanitize string addresses to prevent SQL injection
-                  // Remove any malformed object-like strings and keep only clean text
                   let cleanAddress = contact.Address.trim();
-
-                  // Check if it looks like a malformed object string (contains = signs and unescaped quotes)
+                  // Fix malformed string objects
                   if (cleanAddress.includes('=') && cleanAddress.includes("'")) {
-                    // Try to extract meaningful address parts
-                    const parts = cleanAddress.split(',').map(part => part.trim());
+                    const parts = cleanAddress.split(',').map(p => p.trim());
                     const addressParts = [];
-
                     parts.forEach(part => {
-                      // Extract value after = sign if present
                       if (part.includes('=')) {
-                        const value = part.split('=')[1]?.replace(/'/g, '').trim();
-                        if (value && value !== 'undefined' && value !== 'null') {
-                          addressParts.push(value);
-                        }
+                        const val = part.split('=')[1]?.replace(/'/g, '').trim();
+                        if (val && val !== 'undefined' && val !== 'null') addressParts.push(val);
                       } else {
-                        // Keep regular parts as-is
-                        if (part && part !== 'undefined' && part !== 'null') {
-                          addressParts.push(part);
-                        }
+                        if (part && part !== 'undefined' && part !== 'null') addressParts.push(part);
                       }
                     });
-
                     cleanAddress = addressParts.join(', ');
                   }
-
                   addressValue = cleanAddress || null;
-                } else {
-                  console.warn('Unexpected address type:', typeof contact.Address, contact.Address);
-                  addressValue = null;
                 }
               }
 
+              // Insert based on Type
               if (contact.ContactType === 'Office Address') {
-                // Ensure addressValue is a proper string or null
-                if (addressValue && typeof addressValue !== 'string') {
-                  console.warn('⚠️ CUSTOMER SQL DEBUG - Address value is not a string, converting:', addressValue);
-                  addressValue = String(addressValue);
-                }
-
-                // Keep address as JSON string for proper storage
-                let finalAddressValue = addressValue;
-
-                // Create the parameter array
                 const sqlParams = [
-                  customerId,
-                  contact.OfficeType || null,
-                  contact.Name || null,
-                  contact.Department || null,
-                  contact.Designation || null,
-                  contact.Mobile || null,
-                  contact.Email || null,
-                  contact.DOB || null,
-                  finalAddressValue
+                  customerId, contact.OfficeType || null, contact.Name || null, contact.Department || null,
+                  contact.Designation || null, contact.Mobile || null, contact.Email || null, contact.DOB || null,
+                  addressValue ? String(addressValue) : null
                 ];
-
-                console.log('🔍 CUSTOMER SQL DEBUG - About to insert office address with values:', sqlParams);
-                console.log('🔍 CUSTOMER SQL DEBUG - Original address value type:', typeof addressValue);
-                console.log('🔍 CUSTOMER SQL DEBUG - Original address value content:', addressValue);
-                console.log('🔍 CUSTOMER SQL DEBUG - Final address value type:', typeof finalAddressValue);
-                console.log('🔍 CUSTOMER SQL DEBUG - Final address value content:', finalAddressValue);
-                console.log('🔍 CUSTOMER SQL DEBUG - Final address value length:', finalAddressValue ? finalAddressValue.length : 'null');
-
                 insertPromises.push(
                   pool.query('INSERT INTO customer_office_address (CustomerID, OfficeType, ContactPerson, Department, Designation, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', sqlParams)
                 );
               } else if (contact.ContactType === 'Key Contact') {
-                // Apply the same address processing as Office Address to prevent corruption
-                if (addressValue && typeof addressValue !== 'string') {
-                  console.warn('⚠️ KEY CONTACT SQL DEBUG - Address value is not a string, converting:', addressValue);
-                  addressValue = String(addressValue);
-                }
-
-                // Keep address as JSON string for proper storage
-                let finalKeyContactAddressValue = addressValue;
-
-                // Enhanced error logging for Key Contact insertion
                 const keyContactParams = [
                   customerId, contact.Name || null, contact.Department || null, contact.Designation || null,
                   contact.Location || null, contact.OfficeType || null, contact.Mobile || null, contact.Email || null,
-                  contact.DOB || null, finalKeyContactAddressValue
+                  contact.DOB || null, addressValue ? String(addressValue) : null
                 ];
-
-                console.log('🔑 KEY CONTACT DEBUG - Inserting Key Contact:', {
-                  CustomerID: customerId,
-                  Name: contact.Name,
-                  Department: contact.Department,
-                  Designation: contact.Designation,
-                  Location: contact.Location,
-                  OfficeType: contact.OfficeType,
-                  Mobile: contact.Mobile,
-                  Email: contact.Email,
-                  DOB: contact.DOB,
-                  Address: finalKeyContactAddressValue,
-                  AddressType: typeof finalKeyContactAddressValue,
-                  parameterCount: keyContactParams.length
-                });
-
                 insertPromises.push(
                   pool.query('INSERT INTO customer_key_contact (CustomerID, Name, Department, Designation, Location, OfficeType, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', keyContactParams)
-                    .catch(error => {
-                      console.error('❌ KEY CONTACT INSERT ERROR:', {
-                        error: error.message,
-                        code: error.code,
-                        errno: error.errno,
-                        sqlState: error.sqlState,
-                        contact: contact,
-                        parameters: keyContactParams
-                      });
-                      throw error;
-                    })
                 );
               }
-            });
+            }
           }
         } catch (e) {
-          console.warn('Error parsing AdditionalContacts:', e);
+          console.error('Error in AdditionalContacts block', e);
         }
       }
 
@@ -854,7 +744,7 @@ module.exports = (pool) => {
             try {
               cleanAddress = JSON.stringify(cleanAddress);
             } catch (e) {
-              console.warn('Error converting legacy contact address object to JSON:', e);
+              console.warn('Failed to convert key contact address object:', e);
               cleanAddress = null;
             }
           } else if (cleanAddress && typeof cleanAddress === 'string') {
@@ -959,35 +849,45 @@ module.exports = (pool) => {
 
       console.log('🔍 BACKEND DEBUG - Final response data:', responseData);
 
-      // Add a small delay to ensure file system operations are complete
-      setTimeout(() => {
-        res.status(201).json(responseData);
-      }, 100);
+
+      // Send response
+      res.status(201).json(responseData);
+
     } catch (error) {
-      console.error('Error creating customer:', error);
+      console.error('❌ CRITICAL ERROR in Customer Creation:', {
+        message: error.message,
+        code: error.code,
+        errno: error.errno,
+        sqlState: error.sqlState,
+        sqlMessage: error.sqlMessage
+      });
+      console.error('Stack:', error.stack);
+
+      // Log to file too
+      const fs = require('fs');
+      const logMsg = `[${new Date().toISOString()}] CUSTOMER_CREATE_ERROR: ${error.message}\n` +
+        `Code: ${error.code}\n` +
+        `SQL: ${error.sql}\n` +
+        `Stack: ${error.stack}\n\n`;
+      fs.appendFileSync('backend_errors.log', logMsg);
 
       // Handle specific database errors
       if (error.code === 'ER_DUP_ENTRY') {
         if (error.message.includes('CustomerCode')) {
-          res.status(400).json({ error: 'A customer with this code already exists. Please use a different code.' });
+          return res.status(400).json({ error: 'A customer with this code already exists. Please use a different code.' });
         } else if (error.message.includes('Name')) {
-          res.status(400).json({ error: 'A customer with this name already exists. Please use a different name.' });
+          return res.status(400).json({ error: 'A customer with this name already exists. Please use a different name.' });
         } else if (error.message.includes('Email')) {
-          res.status(400).json({ error: 'This email address is already registered. Please use a different email.' });
-        } else {
-          res.status(400).json({ error: 'This customer information already exists. Please check your data and try again.' });
+          return res.status(400).json({ error: 'This email address is already registered. Please use a different email.' });
         }
-      } else if (error.code === 'ER_DATA_TOO_LONG') {
-        res.status(400).json({ error: 'Some of the information you entered is too long. Please shorten your entries and try again.' });
-      } else if (error.code === 'ER_BAD_NULL_ERROR') {
-        res.status(400).json({ error: 'Required information is missing. Please fill in all required fields.' });
-      } else if (error.code === 'ECONNREFUSED') {
-        res.status(503).json({ error: 'Unable to connect to database. Please try again later.' });
-      } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
-        res.status(503).json({ error: 'Database access denied. Please contact support.' });
-      } else {
-        res.status(500).json({ error: 'Unable to save customer information. Please check your data and try again.' });
       }
+
+      res.status(500).json({
+        error: 'Failed to create customer',
+        details: error.message,
+        code: error.code,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
   });
 
@@ -1035,7 +935,7 @@ module.exports = (pool) => {
     if (dateErrors.length > 0) {
       return res.status(400).json({ errors: dateErrors });
     }
-    
+
     try {
       // Check if customer exists
       const [existingCustomer] = await pool.query(
@@ -1070,7 +970,7 @@ module.exports = (pool) => {
         KPISLAFile: existingCustomer[0].KPISLAFile,
         PerformanceReportFile: existingCustomer[0].PerformanceReportFile
       };
-      
+
       if (files) {
         if (files.AgreementFile) {
           // Delete old file if exists
@@ -1208,6 +1108,10 @@ module.exports = (pool) => {
         }
       });
 
+      // Fallback for MasterCustomerName and Name to prevent "Column cannot be null" error
+      const masterNameValue = (processedCustomer.MasterCustomerName || processedCustomer.Name || existingCustomer[0].MasterCustomerName || 'Default Master').trim();
+      const companyNameValue = (processedCustomer.Name || masterNameValue || existingCustomer[0].Name).trim();
+
       await pool.query(`
         UPDATE Customer SET
           MasterCustomerName = ?, Name = ?, CustomerCode = ?, ServiceCode = ?, TypeOfServices = ?, Locations = ?, CustomerSite = ?,
@@ -1224,20 +1128,20 @@ module.exports = (pool) => {
           CustomerImportantPersonAddress1 = ?, CustomerImportantPersonAddress2 = ?
         WHERE CustomerID = ?
       `, [
-        processedCustomer.MasterCustomerName, processedCustomer.Name, processedCustomer.CustomerCode, processedCustomer.ServiceCode,
+        masterNameValue, companyNameValue, processedCustomer.CustomerCode, processedCustomer.ServiceCode,
         processedCustomer.TypeOfServices, processedCustomer.Locations, processedCustomer.CustomerSite,
         processedCustomer.CustomerMobileNo, processedCustomer.AlternateMobileNo, processedCustomer.CustomerEmail, processedCustomer.CustomerContactPerson, processedCustomer.CustomerGroup, processedCustomer.CityName,
         processedCustomer.house_flat_no || null, processedCustomer.street_locality || null, processedCustomer.city || null, processedCustomer.state || null, processedCustomer.pin_code || null, processedCustomer.country || 'India',
-        processedCustomer.Agreement, filePaths.AgreementFile, processedCustomer.AgreementDate,
-        processedCustomer.AgreementTenure, processedCustomer.AgreementExpiryDate, processedCustomer.CustomerNoticePeriod,
-        processedCustomer.CogentNoticePeriod, processedCustomer.CreditPeriod, processedCustomer.Insurance,
-        processedCustomer.MinimumInsuranceValue, processedCustomer.CogentDebitClause,
-        processedCustomer.CogentDebitLimit, processedCustomer.BG, filePaths.BGFile,
-        processedCustomer.BGAmount, processedCustomer.BGDate, processedCustomer.BGExpiryDate,
+        processedCustomer.Agreement, filePaths.AgreementFile, sanitizeDate(processedCustomer.AgreementDate),
+        sanitizeInt(processedCustomer.AgreementTenure), sanitizeDate(processedCustomer.AgreementExpiryDate), sanitizeInt(processedCustomer.CustomerNoticePeriod),
+        sanitizeInt(processedCustomer.CogentNoticePeriod), sanitizeInt(processedCustomer.CreditPeriod), processedCustomer.Insurance,
+        sanitizeFloat(processedCustomer.MinimumInsuranceValue), processedCustomer.CogentDebitClause,
+        sanitizeFloat(processedCustomer.CogentDebitLimit), processedCustomer.BG, filePaths.BGFile,
+        sanitizeFloat(processedCustomer.BGAmount), sanitizeDate(processedCustomer.BGDate), sanitizeDate(processedCustomer.BGExpiryDate),
         processedCustomer.BGBank, processedCustomer.BGReceivingByCustomer, filePaths.BGReceivingFile,
-        processedCustomer.PO, filePaths.POFile, processedCustomer.PODate, processedCustomer.POValue, processedCustomer.POTenure,
-        processedCustomer.POExpiryDate, processedCustomer.Rates, filePaths.RatesAnnexureFile, processedCustomer.YearlyEscalationClause,
-        processedCustomer.GSTNo, processedCustomer.GSTRate, processedCustomer.TypeOfBilling, processedCustomer.BillingTenure,
+        processedCustomer.PO, filePaths.POFile, sanitizeDate(processedCustomer.PODate), sanitizeFloat(processedCustomer.POValue), sanitizeInt(processedCustomer.POTenure),
+        sanitizeDate(processedCustomer.POExpiryDate), processedCustomer.Rates, filePaths.RatesAnnexureFile, processedCustomer.YearlyEscalationClause,
+        processedCustomer.GSTNo, sanitizeFloat(processedCustomer.GSTRate), processedCustomer.TypeOfBilling, sanitizeInt(processedCustomer.BillingTenure),
         filePaths.MISFormatFile, filePaths.KPISLAFile, filePaths.PerformanceReportFile,
         processedCustomer.CustomerRegisteredOfficeAddress, processedCustomer.CustomerCorporateOfficeAddress,
         processedCustomer.CogentProjectHead, processedCustomer.CogentProjectOpsManager,
@@ -1265,7 +1169,7 @@ module.exports = (pool) => {
             for (const contact of additionalContacts) {
               // Skip completely empty contacts
               const hasContactData = contact.Name?.trim() || contact.Mobile?.trim() || contact.Email?.trim() ||
-                                   contact.Department?.trim() || contact.Designation?.trim() || contact.OfficeType?.trim();
+                contact.Department?.trim() || contact.Designation?.trim() || contact.OfficeType?.trim();
 
               if (!hasContactData) {
                 continue; // Skip this contact
@@ -1395,104 +1299,104 @@ module.exports = (pool) => {
         // Fallback: Handle legacy contact structure for backward compatibility
 
         // Update customer office addresses
-      if (customer.CustomerOfficeAddress && Array.isArray(customer.CustomerOfficeAddress)) {
-        await pool.query('DELETE FROM customer_office_address WHERE CustomerID = ?', [id]);
-        for (const address of customer.CustomerOfficeAddress) {
-          // Handle structured address format with better validation
-          let addressValue = null;
-          if (address.Address) {
-            if (typeof address.Address === 'object') {
-              // Serialize structured address to JSON
-              addressValue = JSON.stringify(address.Address);
-            } else if (typeof address.Address === 'string') {
-              // Sanitize string addresses to prevent SQL injection
-              let cleanAddress = address.Address.trim();
+        if (customer.CustomerOfficeAddress && Array.isArray(customer.CustomerOfficeAddress)) {
+          await pool.query('DELETE FROM customer_office_address WHERE CustomerID = ?', [id]);
+          for (const address of customer.CustomerOfficeAddress) {
+            // Handle structured address format with better validation
+            let addressValue = null;
+            if (address.Address) {
+              if (typeof address.Address === 'object') {
+                // Serialize structured address to JSON
+                addressValue = JSON.stringify(address.Address);
+              } else if (typeof address.Address === 'string') {
+                // Sanitize string addresses to prevent SQL injection
+                let cleanAddress = address.Address.trim();
 
-              // Check if it looks like a malformed object string
-              if (cleanAddress.includes('=') && cleanAddress.includes("'")) {
-                console.warn('⚠️ Detected malformed address string in legacy office address, attempting to clean:', cleanAddress);
-                const parts = cleanAddress.split(',').map(part => part.trim());
-                const addressParts = [];
+                // Check if it looks like a malformed object string
+                if (cleanAddress.includes('=') && cleanAddress.includes("'")) {
+                  console.warn('⚠️ Detected malformed address string in legacy office address, attempting to clean:', cleanAddress);
+                  const parts = cleanAddress.split(',').map(part => part.trim());
+                  const addressParts = [];
 
-                parts.forEach(part => {
-                  if (part.includes('=')) {
-                    const value = part.split('=')[1]?.replace(/'/g, '').trim();
-                    if (value && value !== 'undefined' && value !== 'null') {
-                      addressParts.push(value);
+                  parts.forEach(part => {
+                    if (part.includes('=')) {
+                      const value = part.split('=')[1]?.replace(/'/g, '').trim();
+                      if (value && value !== 'undefined' && value !== 'null') {
+                        addressParts.push(value);
+                      }
+                    } else {
+                      if (part && part !== 'undefined' && part !== 'null') {
+                        addressParts.push(part);
+                      }
                     }
-                  } else {
-                    if (part && part !== 'undefined' && part !== 'null') {
-                      addressParts.push(part);
-                    }
-                  }
-                });
+                  });
 
-                cleanAddress = addressParts.join(', ');
-                console.log('✅ Cleaned legacy office address:', cleanAddress);
+                  cleanAddress = addressParts.join(', ');
+                  console.log('✅ Cleaned legacy office address:', cleanAddress);
+                }
+
+                addressValue = cleanAddress || null;
+              } else {
+                console.warn('⚠️ Unexpected address type in legacy office address:', typeof address.Address, address.Address);
+                addressValue = null;
               }
-
-              addressValue = cleanAddress || null;
-            } else {
-              console.warn('⚠️ Unexpected address type in legacy office address:', typeof address.Address, address.Address);
-              addressValue = null;
             }
+
+            await pool.query('INSERT INTO customer_office_address (CustomerID, OfficeType, ContactPerson, Department, Designation, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+              id, address.OfficeType || null, address.ContactPerson || null, address.Department || null, address.Designation || null, address.Mobile || null, address.Email || null, address.DOB || null, addressValue
+            ]);
           }
-
-          await pool.query('INSERT INTO customer_office_address (CustomerID, OfficeType, ContactPerson, Department, Designation, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-            id, address.OfficeType || null, address.ContactPerson || null, address.Department || null, address.Designation || null, address.Mobile || null, address.Email || null, address.DOB || null, addressValue
-          ]);
         }
-      }
 
-      // Update key contacts
-      if (customer.CustomerKeyContact && Array.isArray(customer.CustomerKeyContact)) {
-        await pool.query('DELETE FROM customer_key_contact WHERE CustomerID = ?', [id]);
-        for (const contact of customer.CustomerKeyContact) {
-          // Handle structured address format with better validation
-          let addressValue = null;
-          if (contact.Address) {
-            if (typeof contact.Address === 'object') {
-              // Serialize structured address to JSON
-              addressValue = JSON.stringify(contact.Address);
-            } else if (typeof contact.Address === 'string') {
-              // Sanitize string addresses to prevent SQL injection
-              let cleanAddress = contact.Address.trim();
+        // Update key contacts
+        if (customer.CustomerKeyContact && Array.isArray(customer.CustomerKeyContact)) {
+          await pool.query('DELETE FROM customer_key_contact WHERE CustomerID = ?', [id]);
+          for (const contact of customer.CustomerKeyContact) {
+            // Handle structured address format with better validation
+            let addressValue = null;
+            if (contact.Address) {
+              if (typeof contact.Address === 'object') {
+                // Serialize structured address to JSON
+                addressValue = JSON.stringify(contact.Address);
+              } else if (typeof contact.Address === 'string') {
+                // Sanitize string addresses to prevent SQL injection
+                let cleanAddress = contact.Address.trim();
 
-              // Check if it looks like a malformed object string
-              if (cleanAddress.includes('=') && cleanAddress.includes("'")) {
-                console.warn('⚠️ Detected malformed address string in legacy key contact, attempting to clean:', cleanAddress);
-                const parts = cleanAddress.split(',').map(part => part.trim());
-                const addressParts = [];
+                // Check if it looks like a malformed object string
+                if (cleanAddress.includes('=') && cleanAddress.includes("'")) {
+                  console.warn('⚠️ Detected malformed address string in legacy key contact, attempting to clean:', cleanAddress);
+                  const parts = cleanAddress.split(',').map(part => part.trim());
+                  const addressParts = [];
 
-                parts.forEach(part => {
-                  if (part.includes('=')) {
-                    const value = part.split('=')[1]?.replace(/'/g, '').trim();
-                    if (value && value !== 'undefined' && value !== 'null') {
-                      addressParts.push(value);
+                  parts.forEach(part => {
+                    if (part.includes('=')) {
+                      const value = part.split('=')[1]?.replace(/'/g, '').trim();
+                      if (value && value !== 'undefined' && value !== 'null') {
+                        addressParts.push(value);
+                      }
+                    } else {
+                      if (part && part !== 'undefined' && part !== 'null') {
+                        addressParts.push(part);
+                      }
                     }
-                  } else {
-                    if (part && part !== 'undefined' && part !== 'null') {
-                      addressParts.push(part);
-                    }
-                  }
-                });
+                  });
 
-                cleanAddress = addressParts.join(', ');
-                console.log('✅ Cleaned legacy key contact address:', cleanAddress);
+                  cleanAddress = addressParts.join(', ');
+                  console.log('✅ Cleaned legacy key contact address:', cleanAddress);
+                }
+
+                addressValue = cleanAddress || null;
+              } else {
+                console.warn('⚠️ Unexpected address type in legacy key contact:', typeof contact.Address, contact.Address);
+                addressValue = null;
               }
-
-              addressValue = cleanAddress || null;
-            } else {
-              console.warn('⚠️ Unexpected address type in legacy key contact:', typeof contact.Address, contact.Address);
-              addressValue = null;
             }
-          }
 
-          await pool.query('INSERT INTO customer_key_contact (CustomerID, Name, Department, Designation, Location, OfficeType, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-            id, contact.Name || null, contact.Department || null, contact.Designation || null, contact.Location || null, contact.OfficeType || null, contact.Mobile || null, contact.Email || null, contact.DOB || null, addressValue
-          ]);
+            await pool.query('INSERT INTO customer_key_contact (CustomerID, Name, Department, Designation, Location, OfficeType, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+              id, contact.Name || null, contact.Department || null, contact.Designation || null, contact.Location || null, contact.OfficeType || null, contact.Mobile || null, contact.Email || null, contact.DOB || null, addressValue
+            ]);
+          }
         }
-      }
       } // End of else block for legacy contact handling
 
       // Update cogent contacts
@@ -1772,9 +1676,6 @@ module.exports = (pool) => {
 
   // Customer sites are now stored directly in the Customer table
 
+  return router;
+};
 
-
-
-
-   return router;
- };

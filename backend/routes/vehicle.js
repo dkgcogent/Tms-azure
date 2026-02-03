@@ -6,34 +6,10 @@ const fs = require('fs');
 const uploadsManager = require('../utils/uploadsManager');
 
 // Configure multer for file uploads using external directory
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // Use external uploads directory for vehicles
-    const uploadPath = uploadsManager.ensureEntityDirectory('vehicles');
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const { createUploadMiddleware } = require('../utils/uploadMiddleware');
 
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 20 * 1024 * 1024 // 20MB limit (increased for large PDF documents)
-  },
-  fileFilter: (req, file, cb) => {
-    // Accept images and PDFs only
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
-      cb(null, true);
-    } else {
-      // Set a user-friendly error message on the request object
-      req.fileValidationError = `File "${file.originalname}" has an unsupported format. Please upload images (JPG, PNG, GIF, WEBP) or PDF documents only.`;
-      cb(null, false); // Reject the file but don't throw an error
-    }
-  }
-});
+// Configure multer using shared middleware
+const upload = createUploadMiddleware('vehicles');
 
 const validateDateSequence = (vehicleData) => {
   const errors = [];
@@ -67,6 +43,9 @@ module.exports = (pool) => {
     // Helper to normalize file paths for URLs
     const normalizeFilePath = (filePath) => {
       if (!filePath) return null;
+      if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+        return filePath;
+      }
       // Extract just the filename from the path
       const filename = filePath.split(/[\\/]/).pop();
       return filename;
@@ -103,7 +82,11 @@ module.exports = (pool) => {
       if (vehicle[dbField]) {
         const filename = normalizeFilePath(vehicle[dbField]);
         if (filename) {
-          vehicle[urlField] = baseUrl + filename;
+          if (filename.startsWith('http://') || filename.startsWith('https://')) {
+            vehicle[urlField] = filename;
+          } else {
+            vehicle[urlField] = baseUrl + filename;
+          }
         }
       }
     });
@@ -253,7 +236,7 @@ module.exports = (pool) => {
           throw capitalizedError; // Throw the original error
         }
       }
-      
+
       // Format the response to match frontend expectations
       const formattedRows = rows.map(row => ({
         ...row,
@@ -341,11 +324,11 @@ module.exports = (pool) => {
           WHERE v.VehicleID = ?
         `, [id]);
       }
-      
+
       if (rows.length === 0) {
         return res.status(404).json({ error: 'Vehicle not found' });
       }
-      
+
       console.log('🚛 VEHICLE BY ID - Found vehicle:', {
         id: id,
         VehicleID: rows[0].VehicleID,
@@ -357,7 +340,7 @@ module.exports = (pool) => {
         PollutionExpiry: rows[0].PollutionExpiry,
         totalFields: Object.keys(rows[0]).length
       });
-      
+
       // Add file URLs to the vehicle data
       const vehicleWithFileUrls = addFileUrls(rows[0]);
       res.json(vehicleWithFileUrls);
@@ -496,11 +479,11 @@ module.exports = (pool) => {
     console.log('Content-Type:', req.get('Content-Type'));
     console.log('Raw req.body:', JSON.stringify(req.body, null, 2));
     console.log('req.files:', req.files);
-    
+
     try {
       // Handle both direct object data and FormData from frontend
       let vehicle = {};
-      
+
       if (req.body.vehicleData) {
         // If vehicleData is sent as JSON string (for comprehensive form)
         vehicle = JSON.parse(req.body.vehicleData || '{}');
@@ -637,7 +620,7 @@ module.exports = (pool) => {
       // Build INSERT query compatible with existing Vehicle table schema
       // First try the comprehensive vehicles table, then fall back to existing Vehicle table
       let result;
-      
+
       try {
         // First try inserting into comprehensive vehicles table (lowercase)
         const insertQuery = `
@@ -692,10 +675,10 @@ module.exports = (pool) => {
         ];
 
         [result] = await pool.query(insertQuery, values);
-        
+
       } catch (comprehensiveError) {
         console.log('Comprehensive vehicles table not available, using existing Vehicle table:', comprehensiveError.message);
-        
+
         // Use existing Vehicle table schema with all available fields
         const fallbackQuery = `
           INSERT INTO vehicle (
@@ -772,8 +755,8 @@ module.exports = (pool) => {
         const vehicleId = result.insertId;
 
         if (vehicle.FixRate || vehicle.FuelRate || vehicle.HandlingCharges) {
-            const freightQuery = 'INSERT INTO vehicle_freight (VehicleID, FixRate, FuelRate, HandlingCharges) VALUES (?, ?, ?, ?)';
-            await pool.query(freightQuery, [vehicleId, vehicle.FixRate, vehicle.FuelRate, vehicle.HandlingCharges]);
+          const freightQuery = 'INSERT INTO vehicle_freight (VehicleID, FixRate, FuelRate, HandlingCharges) VALUES (?, ?, ?, ?)';
+          await pool.query(freightQuery, [vehicleId, vehicle.FixRate, vehicle.FuelRate, vehicle.HandlingCharges]);
         }
       }
 
@@ -883,14 +866,14 @@ module.exports = (pool) => {
 
     // Handle both direct object data and FormData from frontend (same as POST route)
     let vehicle = {};
-    
+
     if (req.body.vehicleData) {
       // If vehicleData is sent as JSON string (for comprehensive form)
       vehicle = JSON.parse(req.body.vehicleData || '{}');
     } else {
       // If form data is sent directly (from VehicleForm.jsx)
       vehicle = req.body;
-      
+
       // Map frontend field names to backend field names
       const fieldMapping = {
         'VehicleRegistrationNo': 'vehicle_number',
@@ -917,13 +900,13 @@ module.exports = (pool) => {
         'NoEntryPassExpiry': 'no_entry_pass_expiry',
         'LastServicing': 'last_service_date'
       };
-      
+
       // Create mapped vehicle object
       const mappedVehicle = {};
       Object.keys(vehicle).forEach(key => {
         const mappedKey = fieldMapping[key] || key.toLowerCase();
         let value = vehicle[key];
-        
+
         // Handle special conversions for database compatibility
         if (key === 'GPS') {
           // GPS: tinyint(1) - expects 0 or 1
@@ -957,14 +940,14 @@ module.exports = (pool) => {
             value = isNaN(numValue) ? null : numValue;
           }
         }
-        
+
         mappedVehicle[mappedKey] = value;
       });
-      
+
       // Set required fields with defaults
       mappedVehicle.vehicle_type = mappedVehicle.vehicle_type || 'truck';
       mappedVehicle.body_type = mappedVehicle.body_type || 'open';
-      
+
       vehicle = mappedVehicle;
     }
 
@@ -974,7 +957,7 @@ module.exports = (pool) => {
     }
 
     try {
-      
+
 
 
       // Validate required fields (same as POST route)
@@ -996,7 +979,7 @@ module.exports = (pool) => {
         // Try with capitalized table name as fallback
         [existingVehicle] = await pool.query('SELECT * FROM Vehicle WHERE VehicleID = ?', [id]);
       }
-      
+
       if (existingVehicle.length === 0) {
         return res.status(404).json({ error: 'Vehicle not found' });
       }
@@ -1348,19 +1331,19 @@ module.exports = (pool) => {
       timestamp: new Date().toISOString()
     });
   });
-  
+
   // Simple route for vehicle-project assignment (temporary solution)
   router.post('/:id/assign-project', async (req, res) => {
     const { id } = req.params;
     const { project_id, assigned_by = 'System', assignment_notes = '' } = req.body;
-    
+
     if (!project_id) {
       return res.status(400).json({
         success: false,
-        message: 'Project ID is required' 
+        message: 'Project ID is required'
       });
     }
-    
+
     try {
       // Simple update to assign project to vehicle
       // Since ProjectID column doesn't exist, we'll just change the status for now
@@ -1369,14 +1352,14 @@ module.exports = (pool) => {
         'UPDATE Vehicle SET Status = ? WHERE VehicleID = ?',
         ['Assigned', id]
       );
-      
+
       if (result.affectedRows === 0) {
         return res.status(404).json({
           success: false,
-          message: 'Vehicle not found' 
+          message: 'Vehicle not found'
         });
       }
-      
+
       res.json({
         success: true,
         message: 'Vehicle successfully assigned to project',
@@ -1392,7 +1375,7 @@ module.exports = (pool) => {
       res.status(500).json({
         success: false,
         message: 'Error assigning vehicle to project',
-        error: error.message 
+        error: error.message
       });
     }
   });
