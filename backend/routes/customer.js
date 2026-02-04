@@ -106,6 +106,40 @@ module.exports = (pool) => {
     return customer;
   };
 
+  // Shared helpers for file storage
+  const getStoragePath = (fileArray, entityType) => {
+    if (!fileArray || !fileArray[0]) return null;
+    const file = fileArray[0];
+    if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
+      return file.path;
+    }
+    return uploadsManager.getRelativePath(entityType, file.filename);
+  };
+
+  const deleteFileHelper = async (fileName) => {
+    if (!fileName) return;
+    if (fileName.startsWith('http')) {
+      try {
+        const { BlobServiceClient } = require("@azure/storage-blob");
+        const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+        const containerName = process.env.AZURE_CONTAINER_NAME || process.env.container_name || 'tmsfiles';
+        if (connectionString) {
+          const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+          const containerClient = blobServiceClient.getContainerClient(containerName);
+          const urlObj = new URL(fileName);
+          const pathParts = urlObj.pathname.split('/').filter(Boolean);
+          const blobName = pathParts.slice(1).join('/');
+          await containerClient.getBlockBlobClient(blobName).deleteIfExists();
+        }
+      } catch (e) {
+        console.warn('Azure delete failed:', e.message);
+      }
+    } else {
+      const oldPath = uploadsManager.getFullPath(fileName);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+  };
+
   // Get all customers with optional date filtering
   // This route retrieves all customer records from the database.
   // It responds with a JSON array of customer objects ordered by latest first.
@@ -432,15 +466,6 @@ module.exports = (pool) => {
 
       // Handle file paths - store relative paths or Azure URLs for database
       const filePaths = {};
-      const getStoragePath = (fileArray, entityType) => {
-        if (!fileArray || !fileArray[0]) return null;
-        const file = fileArray[0];
-        // if it's a URL (Azure), return it. Else compute relative path.
-        if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
-          return file.path;
-        }
-        return uploadsManager.getRelativePath(entityType, file.filename);
-      };
 
       if (files) {
         if (files.AgreementFile) filePaths.AgreementFile = getStoragePath(files.AgreementFile, 'customers');
@@ -973,82 +998,49 @@ module.exports = (pool) => {
 
       if (files) {
         if (files.AgreementFile) {
-          // Delete old file if exists
-          if (existingCustomer[0].AgreementFile) {
-            const oldPath = uploadsManager.getFullPath(existingCustomer[0].AgreementFile);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-          }
-          filePaths.AgreementFile = uploadsManager.getRelativePath('customers', files.AgreementFile[0].filename);
+          if (existingCustomer[0].AgreementFile) await deleteFileHelper(existingCustomer[0].AgreementFile);
+          filePaths.AgreementFile = getStoragePath(files.AgreementFile, 'customers');
         }
         if (files.BGFile) {
-          if (existingCustomer[0].BGFile) {
-            const oldPath = uploadsManager.getFullPath(existingCustomer[0].BGFile);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-          }
-          filePaths.BGFile = uploadsManager.getRelativePath('customers', files.BGFile[0].filename);
+          if (existingCustomer[0].BGFile) await deleteFileHelper(existingCustomer[0].BGFile);
+          filePaths.BGFile = getStoragePath(files.BGFile, 'customers');
         }
         if (files.BGReceivingFile) {
-          if (existingCustomer[0].BGReceivingFile) {
-            const oldPath = uploadsManager.getFullPath(existingCustomer[0].BGReceivingFile);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-          }
-          filePaths.BGReceivingFile = uploadsManager.getRelativePath('customers', files.BGReceivingFile[0].filename);
+          if (existingCustomer[0].BGReceivingFile) await deleteFileHelper(existingCustomer[0].BGReceivingFile);
+          filePaths.BGReceivingFile = getStoragePath(files.BGReceivingFile, 'customers');
         }
         if (files.POFile) {
-          if (existingCustomer[0].POFile) {
-            const oldPath = uploadsManager.getFullPath(existingCustomer[0].POFile);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-          }
-          filePaths.POFile = uploadsManager.getRelativePath('customers', files.POFile[0].filename);
+          if (existingCustomer[0].POFile) await deleteFileHelper(existingCustomer[0].POFile);
+          filePaths.POFile = getStoragePath(files.POFile, 'customers');
         }
         if (files.RatesAnnexureFile) {
-          if (existingCustomer[0].RatesAnnexureFile) {
-            const oldPath = uploadsManager.getFullPath(existingCustomer[0].RatesAnnexureFile);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-          }
-          filePaths.RatesAnnexureFile = uploadsManager.getRelativePath('customers', files.RatesAnnexureFile[0].filename);
+          if (existingCustomer[0].RatesAnnexureFile) await deleteFileHelper(existingCustomer[0].RatesAnnexureFile);
+          filePaths.RatesAnnexureFile = getStoragePath(files.RatesAnnexureFile, 'customers');
         }
         if (files.MISFormatFile) {
-          if (existingCustomer[0].MISFormatFile) {
-            const oldPath = uploadsManager.getFullPath(existingCustomer[0].MISFormatFile);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-          }
-          filePaths.MISFormatFile = uploadsManager.getRelativePath('customers', files.MISFormatFile[0].filename);
+          if (existingCustomer[0].MISFormatFile) await deleteFileHelper(existingCustomer[0].MISFormatFile);
+          filePaths.MISFormatFile = getStoragePath(files.MISFormatFile, 'customers');
         }
         if (files.KPISLAFile) {
-          if (existingCustomer[0].KPISLAFile) {
-            const oldPath = uploadsManager.getFullPath(existingCustomer[0].KPISLAFile);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-          }
-          filePaths.KPISLAFile = uploadsManager.getRelativePath('customers', files.KPISLAFile[0].filename);
+          if (existingCustomer[0].KPISLAFile) await deleteFileHelper(existingCustomer[0].KPISLAFile);
+          filePaths.KPISLAFile = getStoragePath(files.KPISLAFile, 'customers');
         }
         if (files.PerformanceReportFile) {
-          if (existingCustomer[0].PerformanceReportFile) {
-            const oldPath = uploadsManager.getFullPath(existingCustomer[0].PerformanceReportFile);
-            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-          }
-          filePaths.PerformanceReportFile = uploadsManager.getRelativePath('customers', files.PerformanceReportFile[0].filename);
+          if (existingCustomer[0].PerformanceReportFile) await deleteFileHelper(existingCustomer[0].PerformanceReportFile);
+          filePaths.PerformanceReportFile = getStoragePath(files.PerformanceReportFile, 'customers');
         }
-      }
 
-      // Verify uploaded files exist and are accessible
-      const newUploadedFiles = [];
-      if (files) {
-        Object.keys(files).forEach(fieldName => {
-          if (files[fieldName]) {
-            const relativePath = filePaths[fieldName];
-            newUploadedFiles.push(relativePath);
+        // Verify newly uploaded files
+        for (const fieldName in files) {
+          const filePath = filePaths[fieldName];
+          if (filePath && !filePath.startsWith('http')) {
+            const fullPath = uploadsManager.getFullPath(filePath);
+            if (!fs.existsSync(fullPath)) {
+              console.error('❌ Uploaded customer file not found during update:', fullPath);
+              return res.status(500).json({ error: 'File upload failed - file not accessible' });
+            }
           }
-        });
-      }
-
-      for (const filePath of newUploadedFiles) {
-        const fullPath = uploadsManager.getFullPath(filePath);
-        if (!fs.existsSync(fullPath)) {
-          console.error('❌ Uploaded customer file not found during update:', fullPath);
-          return res.status(500).json({ error: 'File upload failed - file not accessible' });
         }
-        console.log('✅ Verified uploaded customer file during update:', filePath);
       }
 
       // Convert empty strings to null for date and numeric fields
@@ -1166,14 +1158,12 @@ module.exports = (pool) => {
             // Insert new contact data with GLOBAL duplicate prevention
             const globalProcessedContactsUpdate = new Set(); // Track ALL processed contacts to prevent duplicates across formats
 
-            for (const contact of additionalContacts) {
+            const contactPromises = additionalContacts.map(async (contact) => {
               // Skip completely empty contacts
               const hasContactData = contact.Name?.trim() || contact.Mobile?.trim() || contact.Email?.trim() ||
                 contact.Department?.trim() || contact.Designation?.trim() || contact.OfficeType?.trim();
 
-              if (!hasContactData) {
-                continue; // Skip this contact
-              }
+              if (!hasContactData) return;
 
               // Create duplicate detection key based on mobile and email
               const duplicateKey = `${contact.Mobile?.trim() || ''}-${contact.Email?.trim() || ''}`;
@@ -1188,7 +1178,7 @@ module.exports = (pool) => {
                   duplicateKey: duplicateKey,
                   source: 'AdditionalContacts'
                 });
-                continue; // Skip this duplicate contact
+                return;
               }
 
               // Add to GLOBAL processed contacts set
@@ -1200,97 +1190,42 @@ module.exports = (pool) => {
               let addressValue = null;
               if (contact.Address) {
                 if (typeof contact.Address === 'object') {
-                  // Serialize structured address to JSON
                   addressValue = JSON.stringify(contact.Address);
                 } else if (typeof contact.Address === 'string') {
-                  // Sanitize string addresses to prevent SQL injection
-                  // Remove any malformed object-like strings and keep only clean text
                   let cleanAddress = contact.Address.trim();
-
-                  // Check if it looks like a malformed object string (contains = signs and unescaped quotes)
                   if (cleanAddress.includes('=') && cleanAddress.includes("'")) {
-                    console.warn('⚠️ Detected malformed address string in UPDATE, attempting to clean:', cleanAddress);
-                    // Try to extract meaningful address parts
                     const parts = cleanAddress.split(',').map(part => part.trim());
                     const addressParts = [];
-
                     parts.forEach(part => {
-                      // Extract value after = sign if present
                       if (part.includes('=')) {
                         const value = part.split('=')[1]?.replace(/'/g, '').trim();
-                        if (value && value !== 'undefined' && value !== 'null') {
-                          addressParts.push(value);
-                        }
+                        if (value && value !== 'undefined' && value !== 'null') addressParts.push(value);
                       } else {
-                        // Keep regular parts as-is
-                        if (part && part !== 'undefined' && part !== 'null') {
-                          addressParts.push(part);
-                        }
+                        if (part && part !== 'undefined' && part !== 'null') addressParts.push(part);
                       }
                     });
-
                     cleanAddress = addressParts.join(', ');
-                    console.log('✅ Cleaned address in UPDATE:', cleanAddress);
                   }
-
                   addressValue = cleanAddress || null;
-                } else {
-                  console.warn('⚠️ Unexpected address type in UPDATE:', typeof contact.Address, contact.Address);
-                  addressValue = null;
                 }
               }
 
               if (contact.ContactType === 'Office Address') {
-                await pool.query('INSERT INTO customer_office_address (CustomerID, OfficeType, ContactPerson, Department, Designation, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+                return pool.query('INSERT INTO customer_office_address (CustomerID, OfficeType, ContactPerson, Department, Designation, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
                   id, contact.OfficeType || null, contact.Name || null, contact.Department || null, contact.Designation || null, contact.Mobile || null, contact.Email || null, contact.DOB || null, addressValue
                 ]);
               } else if (contact.ContactType === 'Key Contact') {
-                // Apply the same address processing as Office Address to prevent corruption
-                if (addressValue && typeof addressValue !== 'string') {
-                  console.warn('⚠️ KEY CONTACT UPDATE SQL DEBUG - Address value is not a string, converting:', addressValue);
-                  addressValue = String(addressValue);
-                }
-
-                // Keep address as JSON string for proper storage
-                let finalKeyContactAddressValue = addressValue;
-
-                // Enhanced error logging for Key Contact insertion (UPDATE)
+                if (addressValue && typeof addressValue !== 'string') addressValue = String(addressValue);
                 const keyContactParams = [
                   id, contact.Name || null, contact.Department || null, contact.Designation || null,
                   contact.Location || null, contact.OfficeType || null, contact.Mobile || null, contact.Email || null,
-                  contact.DOB || null, finalKeyContactAddressValue
+                  contact.DOB || null, addressValue
                 ];
-
-                console.log('🔑 KEY CONTACT UPDATE DEBUG - Inserting Key Contact:', {
-                  CustomerID: id,
-                  Name: contact.Name,
-                  Department: contact.Department,
-                  Designation: contact.Designation,
-                  Location: contact.Location,
-                  OfficeType: contact.OfficeType,
-                  Mobile: contact.Mobile,
-                  Email: contact.Email,
-                  DOB: contact.DOB,
-                  Address: finalKeyContactAddressValue,
-                  AddressType: typeof finalKeyContactAddressValue,
-                  parameterCount: keyContactParams.length
-                });
-
-                try {
-                  await pool.query('INSERT INTO customer_key_contact (CustomerID, Name, Department, Designation, Location, OfficeType, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', keyContactParams);
-                } catch (error) {
-                  console.error('❌ KEY CONTACT UPDATE INSERT ERROR:', {
-                    error: error.message,
-                    code: error.code,
-                    errno: error.errno,
-                    sqlState: error.sqlState,
-                    contact: contact,
-                    parameters: keyContactParams
-                  });
-                  throw error;
-                }
+                return pool.query('INSERT INTO customer_key_contact (CustomerID, Name, Department, Designation, Location, OfficeType, Mobile, Email, DOB, Address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', keyContactParams);
               }
-            }
+            });
+
+            await Promise.all(contactPromises);
           }
         } catch (e) {
           console.warn('Error parsing AdditionalContacts in UPDATE:', e);
@@ -1399,10 +1334,10 @@ module.exports = (pool) => {
         }
       } // End of else block for legacy contact handling
 
-      // Update cogent contacts
+      // Insert cogent contacts
       if (customer.CustomerCogentContact) {
-        await pool.query('DELETE FROM customer_cogent_contact WHERE CustomerID = ?', [id]);
         const cogent = customer.CustomerCogentContact;
+        await pool.query('DELETE FROM customer_cogent_contact WHERE CustomerID = ?', [id]);
         await pool.query('INSERT INTO customer_cogent_contact (CustomerID, CustomerOwner, ProjectHead, OpsHead, OpsManager, Supervisor) VALUES (?, ?, ?, ?, ?, ?)', [
           id, cogent.CustomerOwner, cogent.ProjectHead, cogent.OpsHead, cogent.OpsManager, cogent.Supervisor
         ]);
@@ -1513,6 +1448,20 @@ module.exports = (pool) => {
   // Serve customer files from external directory
   router.get('/files/:filename', (req, res) => {
     const filename = req.params.filename;
+    const storageType = process.env.STORAGE_TYPE || 'LOCAL';
+
+    // Handle Azure Storage
+    if (storageType === 'AZURE') {
+      const containerName = process.env.AZURE_CONTAINER_NAME || process.env.container_name || 'tmsfiles';
+      const accountName = process.env.AZURE_STORAGE_CONNECTION_STRING.match(/AccountName=([^;]+)/)?.[1];
+
+      if (accountName) {
+        // Redirect to Azure Blob URL (assuming public or SAS-less access for now as per previous Turn's setup)
+        const azureUrl = `https://${accountName}.blob.core.windows.net/${containerName}/customers/${filename}`;
+        console.log('🌐 Redirecting to Azure file:', azureUrl);
+        return res.redirect(azureUrl);
+      }
+    }
 
     // Handle both old format (just filename) and new format (customers/filename)
     let relativePath = filename;
@@ -1624,33 +1573,62 @@ module.exports = (pool) => {
         return res.status(404).json({ error: 'File not found in database' });
       }
 
-      // Delete file from filesystem using uploadsManager
-      // Handle three formats:
-      // 1. Just filename: "file.pdf"
-      // 2. Relative path: "customers/file.pdf"
-      // 3. Full path (legacy): "d:/tms-uploads/customers/file.pdf"
-      let relativePath = fileName;
+      // Delete file from filesystem or Azure using uploadsManager
+      if (fileName.startsWith('http')) {
+        // Handle Azure deletion
+        try {
+          const { BlobServiceClient } = require("@azure/storage-blob");
+          const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+          const containerName = process.env.AZURE_CONTAINER_NAME || process.env.container_name || 'tmsfiles';
 
-      // Check if it's a full path (contains base uploads directory)
-      const baseDir = uploadsManager.getBaseUploadPath();
-      if (fileName.includes(baseDir)) {
-        // Extract relative path from full path
-        relativePath = fileName.replace(baseDir, '').replace(/^[\/\\]+/, '');
-        console.log('🗑️ CUSTOMER FILE DELETE - Detected full path, extracted relative:', relativePath);
-      } else if (!fileName.includes('/') && !fileName.includes('\\')) {
-        // Just filename, add entity prefix
-        relativePath = `customers/${fileName}`;
-      }
+          if (connectionString) {
+            const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+            const containerClient = blobServiceClient.getContainerClient(containerName);
 
-      const filePath = uploadsManager.getFullPath(relativePath);
-      console.log('🗑️ CUSTOMER FILE DELETE - Relative path:', relativePath);
-      console.log('🗑️ CUSTOMER FILE DELETE - Full path:', filePath);
+            // Extract blob name from URL
+            // URL format: https://[account].blob.core.windows.net/[container]/[blobName]
+            const urlObj = new URL(fileName);
+            const pathParts = urlObj.pathname.split('/').filter(Boolean);
+            // Skip container name part
+            const blobName = pathParts.slice(1).join('/');
 
-      if (uploadsManager.fileExists(relativePath)) {
-        fs.unlinkSync(filePath);
-        console.log(`✅ File deleted from filesystem: ${filePath}`);
+            console.log('🗑️ Deleting Azure blob:', blobName);
+            const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+            await blockBlobClient.deleteIfExists();
+            console.log('✅ Azure blob deleted successfully');
+          }
+        } catch (azureErr) {
+          console.warn('⚠️ Failed to delete Azure blob (non-critical):', azureErr.message);
+        }
       } else {
-        console.warn(`⚠️ File not found in filesystem: ${filePath}`);
+        // Local Disk Handle
+        // Handle three formats:
+        // 1. Just filename: "file.pdf"
+        // 2. Relative path: "customers/file.pdf"
+        // 3. Full path (legacy): "d:/tms-uploads/customers/file.pdf"
+        let relativePath = fileName;
+
+        // Check if it's a full path (contains base uploads directory)
+        const baseDir = uploadsManager.getBaseUploadPath();
+        if (fileName.includes(baseDir)) {
+          // Extract relative path from full path
+          relativePath = fileName.replace(baseDir, '').replace(/^[\/\\]+/, '');
+          console.log('🗑️ CUSTOMER FILE DELETE - Detected full path, extracted relative:', relativePath);
+        } else if (!fileName.includes('/') && !fileName.includes('\\')) {
+          // Just filename, add entity prefix
+          relativePath = `customers/${fileName}`;
+        }
+
+        const filePath = uploadsManager.getFullPath(relativePath);
+        console.log('🗑️ CUSTOMER FILE DELETE - Relative path:', relativePath);
+        console.log('🗑️ CUSTOMER FILE DELETE - Full path:', filePath);
+
+        if (uploadsManager.fileExists(relativePath)) {
+          fs.unlinkSync(filePath);
+          console.log(`✅ File deleted from filesystem: ${filePath}`);
+        } else {
+          console.warn(`⚠️ File not found in filesystem: ${filePath}`);
+        }
       }
 
       // Update database to remove file reference

@@ -16,40 +16,9 @@ const convertToBoolean = (value) => {
   return false;
 };
 
-// Configure multer for file uploads using external directory
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Use external uploads directory for transactions
-    const uploadDir = uploadsManager.ensureEntityDirectory('transactions');
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 20 * 1024 * 1024 // 20MB limit (increased for large PDF documents)
-  },
-  fileFilter: function (req, file, cb) {
-    // Allow only specific file types
-    const allowedTypes = /jpeg|jpg|png|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      // Set a user-friendly error message on the request object
-      req.fileValidationError = `File "${file.originalname}" has an unsupported format. Please upload images (JPG, PNG) or PDF documents only.`;
-      cb(null, false); // Reject the file but don't throw an error
-    }
-  }
-});
+// Configure multer for file uploads using share middleware
+const { createUploadMiddleware } = require('../utils/uploadMiddleware');
+const upload = createUploadMiddleware('transactions');
 
 // This file defines API routes for managing daily vehicle transaction data in the Transport Management System.
 // It handles the daily transaction entries with four main sections: master details, transaction details, 
@@ -279,25 +248,25 @@ module.exports = (pool) => {
   router.get('/stats/summary', async (req, res) => {
     try {
       const { date_from, date_to, customer_id, vehicle_id } = req.query;
-      
+
       let whereClause = '1=1';
       let queryParams = [];
-      
+
       if (date_from) {
         whereClause += ' AND duty_start_date >= ?';
         queryParams.push(date_from);
       }
-      
+
       if (date_to) {
         whereClause += ' AND duty_start_date <= ?';
         queryParams.push(date_to);
       }
-      
+
       if (customer_id) {
         whereClause += ' AND customer_id = ?';
         queryParams.push(customer_id);
       }
-      
+
       if (vehicle_id) {
         whereClause += ' AND vehicle_id = ?';
         queryParams.push(vehicle_id);
@@ -342,9 +311,9 @@ module.exports = (pool) => {
       });
     } catch (error) {
       console.error('Database test error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Database connection failed',
-        details: error.message 
+        details: error.message
       });
     }
   });
@@ -365,7 +334,7 @@ module.exports = (pool) => {
         WHERE Name IS NOT NULL AND CustomerCode IS NOT NULL
         ORDER BY Name
       `;
-      
+
       const [customers] = await pool.query(query);
       res.json({
         success: true,
@@ -392,12 +361,12 @@ module.exports = (pool) => {
         FROM customer
         WHERE CustomerID = ?
       `;
-      
+
       const [customer] = await pool.query(query, [customerId]);
       if (customer.length === 0) {
         return res.status(404).json({ error: 'Customer not found' });
       }
-      
+
       res.json({
         success: true,
         data: customer[0]
@@ -412,7 +381,7 @@ module.exports = (pool) => {
   router.get('/form-data/customer/:customerId/vehicles', async (req, res) => {
     try {
       const { customerId } = req.params;
-      
+
       // Get vehicles for customer through projects (simplified)
       const query = `
         SELECT DISTINCT
@@ -435,7 +404,7 @@ module.exports = (pool) => {
           AND p.Status = 'Active'
         ORDER BY vn.VendorName, v.VehicleRegistrationNo
       `;
-      
+
       const [vehicles] = await pool.query(query, [customerId]);
       res.json({
         success: true,
@@ -451,7 +420,7 @@ module.exports = (pool) => {
   router.get('/form-data/vehicle/:vehicleId/details', async (req, res) => {
     try {
       const { vehicleId } = req.params;
-      
+
       const query = `
         SELECT 
           v.VehicleID as vehicle_id,
@@ -467,12 +436,12 @@ module.exports = (pool) => {
         LEFT JOIN Vendor vn ON v.VendorID = vn.VendorID
         WHERE v.VehicleID = ?
       `;
-      
+
       const [vehicle] = await pool.query(query, [vehicleId]);
       if (vehicle.length === 0) {
         return res.status(404).json({ error: 'Vehicle not found' });
       }
-      
+
       res.json({
         success: true,
         data: vehicle[0]
@@ -488,7 +457,7 @@ module.exports = (pool) => {
     try {
       const { vehicleId } = req.params;
       const { customerId } = req.query;
-      
+
       const query = `
         SELECT 
           p.ProjectID as project_id,
@@ -506,14 +475,14 @@ module.exports = (pool) => {
         ORDER BY vpa.assigned_date DESC
         LIMIT 1
       `;
-      
+
       const params = customerId ? [vehicleId, customerId] : [vehicleId];
       const [project] = await pool.query(query, params);
-      
+
       if (project.length === 0) {
         return res.status(404).json({ error: 'No active project assignment found for this vehicle' });
       }
-      
+
       res.json({
         success: true,
         data: project[0]
@@ -528,7 +497,7 @@ module.exports = (pool) => {
   router.get('/form-data/vehicle/:vehicleId/drivers', async (req, res) => {
     try {
       const { vehicleId } = req.params;
-      
+
       const query = `
         SELECT 
           d.DriverID as driver_id,
@@ -542,7 +511,7 @@ module.exports = (pool) => {
           AND d.Status = 'Active'
         ORDER BY d.DriverName
       `;
-      
+
       const [drivers] = await pool.query(query, [vehicleId]);
       res.json({
         success: true,
@@ -824,30 +793,39 @@ module.exports = (pool) => {
         Status = 'Pending'
       } = req.body;
 
+      // Shared helpers for file storage
+      const getStoragePath = (fileArray, entityType) => {
+        if (!fileArray || !fileArray[0]) return null;
+        const file = fileArray[0];
+        if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
+          return file.path;
+        }
+        return uploadsManager.getRelativePath(entityType, file.filename);
+      };
+
       // Handle file uploads - store relative paths for database
       const files = req.files || {};
-      const DriverAadharDoc = files.DriverAadharDoc ? uploadsManager.getRelativePath('transactions', files.DriverAadharDoc[0].filename) : null;
-      const DriverLicenceDoc = files.DriverLicenceDoc ? uploadsManager.getRelativePath('transactions', files.DriverLicenceDoc[0].filename) : null;
-      const TollExpensesDoc = files.TollExpensesDoc ? uploadsManager.getRelativePath('transactions', files.TollExpensesDoc[0].filename) : null;
-      const ParkingChargesDoc = files.ParkingChargesDoc ? uploadsManager.getRelativePath('transactions', files.ParkingChargesDoc[0].filename) : null;
+      const DriverAadharDoc = getStoragePath(files.DriverAadharDoc, 'transactions');
+      const DriverLicenceDoc = getStoragePath(files.DriverLicenceDoc, 'transactions');
+      const TollExpensesDoc = getStoragePath(files.TollExpensesDoc, 'transactions');
+      const ParkingChargesDoc = getStoragePath(files.ParkingChargesDoc, 'transactions');
 
       // Handle KM image uploads
-      const OpeningKMImage = files.OpeningKMImage ? uploadsManager.getRelativePath('transactions', files.OpeningKMImage[0].filename) : null;
-      const ClosingKMImage = files.ClosingKMImage ? uploadsManager.getRelativePath('transactions', files.ClosingKMImage[0].filename) : null;
-      const OpeningKMImageAdhoc = files.OpeningKMImageAdhoc ? uploadsManager.getRelativePath('transactions', files.OpeningKMImageAdhoc[0].filename) : null;
-      const ClosingKMImageAdhoc = files.ClosingKMImageAdhoc ? uploadsManager.getRelativePath('transactions', files.ClosingKMImageAdhoc[0].filename) : null;
+      const OpeningKMImage = getStoragePath(files.OpeningKMImage, 'transactions');
+      const ClosingKMImage = getStoragePath(files.ClosingKMImage, 'transactions');
+      const OpeningKMImageAdhoc = getStoragePath(files.OpeningKMImageAdhoc, 'transactions');
+      const ClosingKMImageAdhoc = getStoragePath(files.ClosingKMImageAdhoc, 'transactions');
 
       // Verify uploaded files exist and are accessible
       const uploadedFiles = [DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc, OpeningKMImage, ClosingKMImage, OpeningKMImageAdhoc, ClosingKMImageAdhoc].filter(Boolean);
       for (const filePath of uploadedFiles) {
+        if (filePath.startsWith('http')) continue;
         const fullPath = uploadsManager.getFullPath(filePath);
         if (!fs.existsSync(fullPath)) {
           console.error('❌ Uploaded file not found:', fullPath);
           return res.status(500).json({ error: 'File upload failed - file not accessible' });
         }
         console.log('✅ Verified uploaded file:', filePath);
-        // This check is good for debugging but can be removed for production
-        // as multer guarantees the file was written.
       }
 
       // Handle empty string values that should be null for integer fields
@@ -1363,18 +1341,28 @@ module.exports = (pool) => {
       console.log('🔧 Using original TransactionID:', originalTransactionID, 'in table:', transactionTable);
       console.log('🔧 Transaction Type:', existingTransaction.TripType);
 
+      // Shared helpers for file storage
+      const getStoragePath = (fileArray, entityType) => {
+        if (!fileArray || !fileArray[0]) return null;
+        const file = fileArray[0];
+        if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
+          return file.path;
+        }
+        return uploadsManager.getRelativePath(entityType, file.filename);
+      };
+
       // Handle file uploads - store relative paths for database
       const files = req.files || {};
-      const DriverAadharDoc = files.DriverAadharDoc ? uploadsManager.getRelativePath('transactions', files.DriverAadharDoc[0].filename) : null;
-      const DriverLicenceDoc = files.DriverLicenceDoc ? uploadsManager.getRelativePath('transactions', files.DriverLicenceDoc[0].filename) : null;
-      const TollExpensesDoc = files.TollExpensesDoc ? uploadsManager.getRelativePath('transactions', files.TollExpensesDoc[0].filename) : null;
-      const ParkingChargesDoc = files.ParkingChargesDoc ? uploadsManager.getRelativePath('transactions', files.ParkingChargesDoc[0].filename) : null;
+      const DriverAadharDoc = getStoragePath(files.DriverAadharDoc, 'transactions');
+      const DriverLicenceDoc = getStoragePath(files.DriverLicenceDoc, 'transactions');
+      const TollExpensesDoc = getStoragePath(files.TollExpensesDoc, 'transactions');
+      const ParkingChargesDoc = getStoragePath(files.ParkingChargesDoc, 'transactions');
 
       // Handle KM image uploads
-      const OpeningKMImage = files.OpeningKMImage ? uploadsManager.getRelativePath('transactions', files.OpeningKMImage[0].filename) : null;
-      const ClosingKMImage = files.ClosingKMImage ? uploadsManager.getRelativePath('transactions', files.ClosingKMImage[0].filename) : null;
-      const OpeningKMImageAdhoc = files.OpeningKMImageAdhoc ? uploadsManager.getRelativePath('transactions', files.OpeningKMImageAdhoc[0].filename) : null;
-      const ClosingKMImageAdhoc = files.ClosingKMImageAdhoc ? uploadsManager.getRelativePath('transactions', files.ClosingKMImageAdhoc[0].filename) : null;
+      const OpeningKMImage = getStoragePath(files.OpeningKMImage, 'transactions');
+      const ClosingKMImage = getStoragePath(files.ClosingKMImage, 'transactions');
+      const OpeningKMImageAdhoc = getStoragePath(files.OpeningKMImageAdhoc, 'transactions');
+      const ClosingKMImageAdhoc = getStoragePath(files.ClosingKMImageAdhoc, 'transactions');
 
       console.log('🔧 Document files:', { DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc });
       console.log('🔧 KM Image files:', { OpeningKMImage, ClosingKMImage, OpeningKMImageAdhoc, ClosingKMImageAdhoc });
@@ -1382,13 +1370,13 @@ module.exports = (pool) => {
       // Verify uploaded files exist and are accessible
       const uploadedFiles = [DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc, OpeningKMImage, ClosingKMImage, OpeningKMImageAdhoc, ClosingKMImageAdhoc].filter(Boolean);
       for (const filePath of uploadedFiles) {
+        if (filePath.startsWith('http')) continue;
         const fullPath = uploadsManager.getFullPath(filePath);
         if (!fs.existsSync(fullPath)) {
           console.error('❌ Uploaded file not found during update:', fullPath);
           return res.status(500).json({ error: 'File upload failed - file not accessible' });
         }
         console.log('✅ Verified uploaded file during update:', filePath);
-        // This check is good for debugging but can be removed for production.
       }
 
       // Build update query based on table type
@@ -1719,9 +1707,9 @@ module.exports = (pool) => {
       });
     } catch (error) {
       console.error('Database test error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Database connection failed',
-        details: error.message 
+        details: error.message
       });
     }
   });
@@ -1730,50 +1718,51 @@ module.exports = (pool) => {
 
   // Helper function to add file URLs to transaction data
   const addFileUrls = (transaction) => {
+    if (!transaction) return transaction;
     const baseUrl = '/api/daily-vehicle-transactions/files/';
 
-    if (transaction.DriverAadharDoc) {
-      // Extract filename from relative path (transactions/filename.pdf -> filename.pdf)
-      const filename = transaction.DriverAadharDoc.includes('/')
-        ? transaction.DriverAadharDoc.split('/').pop()
-        : transaction.DriverAadharDoc;
-      transaction.DriverAadharDoc_url = baseUrl + filename;
-    }
-    if (transaction.DriverLicenceDoc) {
-      const filename = transaction.DriverLicenceDoc.includes('/')
-        ? transaction.DriverLicenceDoc.split('/').pop()
-        : transaction.DriverLicenceDoc;
-      transaction.DriverLicenceDoc_url = baseUrl + filename;
-    }
-    if (transaction.TollExpensesDoc) {
-      const filename = transaction.TollExpensesDoc.includes('/')
-        ? transaction.TollExpensesDoc.split('/').pop()
-        : transaction.TollExpensesDoc;
-      transaction.TollExpensesDoc_url = baseUrl + filename;
-    }
-    if (transaction.ParkingChargesDoc) {
-      const filename = transaction.ParkingChargesDoc.includes('/')
-        ? transaction.ParkingChargesDoc.split('/').pop()
-        : transaction.ParkingChargesDoc;
-      transaction.ParkingChargesDoc_url = baseUrl + filename;
-    }
+    const getUrl = (filePath) => {
+      if (!filePath) return null;
+      if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath;
+      const filename = filePath.includes('/') ? filePath.split('/').pop() : filePath;
+      return baseUrl + filename;
+    };
 
-    // Add KM image URLs
-    if (transaction.OpeningKMImage) {
-      const filename = transaction.OpeningKMImage.includes('/')
-        ? transaction.OpeningKMImage.split('/').pop()
-        : transaction.OpeningKMImage;
-      transaction.OpeningKMImage_url = baseUrl + filename;
-    }
-    if (transaction.ClosingKMImage) {
-      const filename = transaction.ClosingKMImage.includes('/')
-        ? transaction.ClosingKMImage.split('/').pop()
-        : transaction.ClosingKMImage;
-      transaction.ClosingKMImage_url = baseUrl + filename;
-    }
+    if (transaction.DriverAadharDoc) transaction.DriverAadharDoc_url = getUrl(transaction.DriverAadharDoc);
+    if (transaction.DriverLicenceDoc) transaction.DriverLicenceDoc_url = getUrl(transaction.DriverLicenceDoc);
+    if (transaction.TollExpensesDoc) transaction.TollExpensesDoc_url = getUrl(transaction.TollExpensesDoc);
+    if (transaction.ParkingChargesDoc) transaction.ParkingChargesDoc_url = getUrl(transaction.ParkingChargesDoc);
+    if (transaction.OpeningKMImage) transaction.OpeningKMImage_url = getUrl(transaction.OpeningKMImage);
+    if (transaction.ClosingKMImage) transaction.ClosingKMImage_url = getUrl(transaction.ClosingKMImage);
+    if (transaction.OpeningKMImageAdhoc) transaction.OpeningKMImageAdhoc_url = getUrl(transaction.OpeningKMImageAdhoc);
+    if (transaction.ClosingKMImageAdhoc) transaction.ClosingKMImageAdhoc_url = getUrl(transaction.ClosingKMImageAdhoc);
 
     return transaction;
   };
+
+  // Serve transaction files from external directory or Azure
+  router.get('/files/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const storageType = process.env.STORAGE_TYPE || 'LOCAL';
+
+    if (storageType === 'AZURE') {
+      const containerName = process.env.AZURE_CONTAINER_NAME || process.env.container_name || 'tmsfiles';
+      const accountName = process.env.AZURE_STORAGE_CONNECTION_STRING.match(/AccountName=([^;]+)/)?.[1];
+      if (accountName) {
+        const azureUrl = `https://${accountName}.blob.core.windows.net/${containerName}/transactions/${filename}`;
+        return res.redirect(azureUrl);
+      }
+    }
+
+    const relativePath = `transactions/${filename}`;
+    const filePath = uploadsManager.getFullPath(relativePath);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    res.sendFile(filePath);
+  });
 
   // =====================================================
   // EXPORT ENDPOINTS
@@ -2958,11 +2947,29 @@ module.exports = (pool) => {
         return res.status(404).json({ error: 'File not found in database' });
       }
 
-      // Delete file from filesystem
-      const filePath = path.join(__dirname, '../uploads/transactions', fileName);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        console.log(`✅ File deleted from filesystem: ${filePath}`);
+      // Delete file from filesystem or Azure using uploadsManager
+      if (fileName.startsWith('http')) {
+        try {
+          const { BlobServiceClient } = require("@azure/storage-blob");
+          const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+          const containerName = process.env.AZURE_CONTAINER_NAME || process.env.container_name || 'tmsfiles';
+          if (connectionString) {
+            const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            const urlObj = new URL(fileName);
+            const pathParts = urlObj.pathname.split('/').filter(Boolean);
+            const blobName = pathParts.slice(1).join('/');
+            await containerClient.getBlockBlobClient(blobName).deleteIfExists();
+            console.log('✅ Azure blob deleted successfully');
+          }
+        } catch (azureErr) { console.warn('⚠️ Azure delete failed:', azureErr.message); }
+      } else {
+        const relativePath = fileName.includes('/') ? fileName : `transactions/${fileName}`;
+        const filePath = uploadsManager.getFullPath(relativePath);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          console.log(`✅ File deleted from filesystem: ${filePath}`);
+        }
       }
 
       // Update database to remove file reference

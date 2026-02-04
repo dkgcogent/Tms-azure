@@ -1575,7 +1575,8 @@ const CustomerForm = () => {
       if (editingCustomer && filesToDelete.length > 0) {
         console.log('🗑️ CUSTOMER UPDATE - Deleting marked files:', filesToDelete);
 
-        for (const fileToDelete of filesToDelete) {
+        // Parallelize deletions for better performance
+        await Promise.all(filesToDelete.map(async (fileToDelete) => {
           try {
             console.log('🗑️ Deleting file:', fileToDelete.fieldName);
             await customerAPI.deleteFile(editingCustomer.CustomerID, fileToDelete.fieldName);
@@ -1584,7 +1585,7 @@ const CustomerForm = () => {
             console.error('❌ Failed to delete file:', fileToDelete.fieldName, error);
             // Continue with other deletions even if one fails
           }
-        }
+        }));
 
         // Clear the marked deletions after processing
         setFilesToDelete([]);
