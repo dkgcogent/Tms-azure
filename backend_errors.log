@@ -709,3 +709,55 @@ Stack: Error: listen EADDRINUSE: address already in use :::3004
     at Module.load (node:internal/modules/cjs/loader:1441:32)
     at Function._load (node:internal/modules/cjs/loader:1263:12)
 
+[2026-02-04T06:43:28.417Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\tms 1\Tms-azure\server.js:195:11)
+    at Object.<anonymous> (D:\tms 1\Tms-azure\server.js:213:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+
+[2026-02-04T06:43:50.280Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\tms 1\Tms-azure\server.js:195:11)
+    at Object.<anonymous> (D:\tms 1\Tms-azure\server.js:213:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+
+[2026-02-04T06:45:32.381Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\tms 1\Tms-azure\server.js:195:11)
+    at Object.<anonymous> (D:\tms 1\Tms-azure\server.js:213:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+
+[2026-02-04T06:46:09.783Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\tms 1\Tms-azure\server.js:195:11)
+    at Object.<anonymous> (D:\tms 1\Tms-azure\server.js:213:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+

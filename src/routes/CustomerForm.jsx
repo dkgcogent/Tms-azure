@@ -741,10 +741,8 @@ const CustomerForm = () => {
         if (!fieldValue) return 'Please select a type of service';
         break;
       case 'AgreementDate':
-        if (allData.Agreement === 'Yes' && !fieldValue) return 'Agreement date is required when agreement is Yes';
         break;
       case 'AgreementExpiryDate':
-        if (allData.Agreement === 'Yes' && !fieldValue) return 'Agreement expiry date is required when agreement is Yes';
         if (allData.AgreementDate && fieldValue && new Date(fieldValue) <= new Date(allData.AgreementDate)) {
           return 'Agreement expiry date must be after agreement date';
         }
@@ -1174,12 +1172,7 @@ const CustomerForm = () => {
 
     // 2. Agreement & Terms Section
     if (customerData.Agreement === 'Yes') {
-      if (!customerData.AgreementDate) {
-        newErrors.AgreementDate = 'Agreement date is required when agreement is Yes';
-      }
-      if (!customerData.AgreementExpiryDate) {
-        newErrors.AgreementExpiryDate = 'Agreement expiry date is required when agreement is Yes';
-      } else if (customerData.AgreementDate && new Date(customerData.AgreementExpiryDate) <= new Date(customerData.AgreementDate)) {
+      if (customerData.AgreementDate && customerData.AgreementExpiryDate && new Date(customerData.AgreementExpiryDate) <= new Date(customerData.AgreementDate)) {
         newErrors.AgreementExpiryDate = 'Agreement expiry date must be after agreement date';
       }
     }
