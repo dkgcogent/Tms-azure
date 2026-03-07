@@ -136,8 +136,8 @@ const CustomerFormRefactored = () => {
       <div className="form-header">
         <h2>{editingCustomer ? 'Edit Customer' : 'Add New Customer'}</h2>
         {editingCustomer && (
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={resetForm}
             className="cancel-edit-btn"
           >
@@ -205,8 +205,8 @@ const CustomerFormRefactored = () => {
 
       <DataTable data={customers} columns={[{ key: 'CustomerCode', label: 'Customer Code' }, { key: 'MasterCustomerName', label: 'Master Customer' }, { key: 'Name', label: 'Company Name' }, { key: 'TypeOfServices', label: 'Services' }, { key: 'CustomerMobileNo', label: 'Mobile' }, { key: 'CustomerEmail', label: 'Email' }, { key: 'CreatedAt', label: 'Created', type: 'date' }]} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} searchable exportable title="Customers" />
       <ValidationErrorModal isOpen={showErrorModal} onClose={closeErrorModal} errors={errorSummary} onGoToField={goToField} />
-      <PDFPreviewModal isOpen={false} onClose={() => {}} pdfUrl="" fileName="" />
-      <DocumentActionModal isOpen={false} onClose={() => {}} fileType="" fileName="" onDownload={() => {}} onOpenInNewTab={() => {}} />
+      <PDFPreviewModal isOpen={false} onClose={() => { }} pdfUrl="" fileName="" />
+      <DocumentActionModal isOpen={false} onClose={() => { }} fileType="" fileName="" onDownload={() => { }} onOpenInNewTab={() => { }} />
     </div>
   );
 };

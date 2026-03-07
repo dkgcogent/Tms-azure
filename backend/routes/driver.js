@@ -183,13 +183,16 @@ module.exports = (pool) => {
     }
 
     try {
-      // Handle photo upload if provided
+      // Handle photo: prefer Azure blob URL string, fall back to multer file upload
       let photoPath = null;
       if (req.file) {
         photoPath = req.file.path;
-        console.log('🚗 DRIVER API - Photo uploaded:', photoPath);
+        console.log('🚗 DRIVER API - Photo uploaded via multer:', photoPath);
+      } else if (driver.DriverPhoto && typeof driver.DriverPhoto === 'string' && driver.DriverPhoto.startsWith('http')) {
+        photoPath = driver.DriverPhoto; // Azure blob URL sent directly from frontend
+        console.log('🚗 DRIVER API - Photo received as Azure blob URL:', photoPath);
       } else {
-        console.log('🚗 DRIVER API - No photo uploaded');
+        console.log('🚗 DRIVER API - No photo provided');
       }
 
       console.log('🚗 DRIVER API - Creating driver with data:', {
@@ -307,11 +310,11 @@ module.exports = (pool) => {
         return res.status(404).json({ error: 'Driver not found' });
       }
 
-      // Handle photo upload if provided
+      // Handle photo: prefer Azure blob URL string, fall back to multer file, else keep existing
       let photoPath = null;
 
       if (req.file) {
-        // New file uploaded - delete old file if exists AND is local
+        // New file uploaded via multer - delete old local file if exists
         if (existingDriver[0].DriverPhoto) {
           const oldPath = existingDriver[0].DriverPhoto;
           if (!oldPath.startsWith('http') && fs.existsSync(oldPath)) {
@@ -319,7 +322,11 @@ module.exports = (pool) => {
           }
         }
         photoPath = req.file.path;
-        console.log('🚗 DRIVER UPDATE - New photo uploaded:', photoPath);
+        console.log('🚗 DRIVER UPDATE - New photo uploaded via multer:', photoPath);
+      } else if (driver.DriverPhoto && typeof driver.DriverPhoto === 'string' && driver.DriverPhoto.startsWith('http')) {
+        // Azure blob URL sent directly from frontend
+        photoPath = driver.DriverPhoto;
+        console.log('🚗 DRIVER UPDATE - New photo as Azure blob URL:', photoPath);
       } else {
         // No new file - keep existing photo
         photoPath = existingDriver[0].DriverPhoto || null;

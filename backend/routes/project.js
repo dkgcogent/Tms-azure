@@ -175,7 +175,7 @@ module.exports = (pool) => {
         WHERE p.CustomerID = ?
         ORDER BY p.ProjectID DESC
       `, [customerId]);
-      
+
       res.json({ success: true, data: rows });
     } catch (error) {
       console.error('Error fetching projects by customer:', error);
@@ -238,7 +238,7 @@ module.exports = (pool) => {
         'SELECT CustomerID, CustomerCode FROM Customer WHERE CustomerID = ?',
         [CustomerID]
       );
-      
+
       if (customerCheck.length === 0) {
         return res.status(400).json({ error: 'Customer not found' });
       }
@@ -299,7 +299,7 @@ module.exports = (pool) => {
         'INSERT INTO Project (ProjectName, CustomerID, ProjectCode, ProjectDescription, LocationID, Location, ProjectValue, StartDate, EndDate, Status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [ProjectName, CustomerID, projectCode, ProjectDescription || '', locationIdValue, Location || null, ProjectValue || null, StartDate || null, EndDate || null, Status || 'Active']
       );
-      
+
       // Fetch the created project with customer information
       const [newProject] = await pool.query(`
         SELECT
@@ -310,7 +310,7 @@ module.exports = (pool) => {
         LEFT JOIN Customer c ON p.CustomerID = c.CustomerID
         WHERE p.ProjectID = ?
       `, [result.insertId]);
-      
+
       res.status(201).json(newProject[0]);
     } catch (error) {
       console.error('Error creating project:', error);
@@ -347,7 +347,7 @@ module.exports = (pool) => {
         'SELECT CustomerID FROM Customer WHERE CustomerID = ?',
         [CustomerID]
       );
-      
+
       if (customerCheck.length === 0) {
         return res.status(400).json({ error: 'Customer not found' });
       }
@@ -370,11 +370,11 @@ module.exports = (pool) => {
         `UPDATE Project SET ${updateFields} WHERE ProjectID = ?`,
         updateValues
       );
-      
+
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Project not found' });
       }
-      
+
       // Fetch the updated project with customer information
       const [updatedProject] = await pool.query(`
         SELECT

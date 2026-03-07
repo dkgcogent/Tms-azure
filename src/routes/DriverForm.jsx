@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { driverAPI, vendorAPI, apiHelpers } from '../services/api';
+import { uploadFileDirectly } from '../utils/azureUpload';
 import DataTable from '../components/DataTable';
 import Dropdown from '../components/Dropdown';
 import SearchableDropdown from '../components/SearchableDropdown';
@@ -561,67 +562,54 @@ const DriverForm = () => {
             console.log('✅ File deleted successfully:', fileToDelete.fieldName);
           } catch (error) {
             console.error('❌ Failed to delete file:', fileToDelete.fieldName, error);
-            // Continue with other deletions even if one fails
           }
         }
-
-        // Clear the marked deletions after processing
         setFilesToDelete([]);
       }
 
-      // Create FormData for file upload support
-      const formData = new FormData();
-
-      // Add text fields - only add non-empty values to preserve existing data
-      if (driverData.DriverName && driverData.DriverName.trim()) {
-        formData.append('DriverName', driverData.DriverName.trim());
-      }
-      if (driverData.DriverLicenceNo && driverData.DriverLicenceNo.trim()) {
-        formData.append('DriverLicenceNo', driverData.DriverLicenceNo.trim());
-      }
-      if (driverData.DriverMobileNo && driverData.DriverMobileNo.trim()) {
-        formData.append('DriverMobileNo', driverData.DriverMobileNo.trim());
-      }
-      if (driverData.DriverAddress && driverData.DriverAddress.trim()) {
-        formData.append('DriverAddress', driverData.DriverAddress.trim());
-      }
-      if (driverData.DriverLicenceIssueDate) {
-        formData.append('DriverLicenceIssueDate', driverData.DriverLicenceIssueDate);
-      }
-      if (driverData.DriverLicenceExpiryDate) {
-        formData.append('DriverLicenceExpiryDate', driverData.DriverLicenceExpiryDate);
-      }
-      if (driverData.DriverMedicalDate) {
-        formData.append('DriverMedicalDate', driverData.DriverMedicalDate);
-      }
-      formData.append('DriverSameAsVendor', driverData.DriverSameAsVendor || 'Separate');
-      if (driverData.DriverAlternateNo && driverData.DriverAlternateNo.trim()) {
-        formData.append('DriverAlternateNo', driverData.DriverAlternateNo.trim());
-      }
-      if (driverData.DriverTotalExperience) {
-        formData.append('DriverTotalExperience', driverData.DriverTotalExperience);
-      }
-      if (driverData.vendor_id) {
-        formData.append('VendorID', driverData.vendor_id);
+      // ── Upload DriverPhoto directly to Azure (bypasses Vercel 4.5 MB limit) ──
+      let driverPhotoBlobUrl = null;
+      if (files.DriverPhoto && files.DriverPhoto instanceof File) {
+        console.log('☁️ DRIVER FORM - Uploading photo directly to Azure:', files.DriverPhoto.name);
+        driverPhotoBlobUrl = await uploadFileDirectly(files.DriverPhoto, 'drivers');
+        console.log('✅ DRIVER FORM - Photo uploaded to Azure:', driverPhotoBlobUrl);
       }
 
+      // ── Build a plain JSON payload (no file binary in the body) ──────────────
+      const payload = {};
 
+      if (driverData.DriverName && driverData.DriverName.trim())
+        payload.DriverName = driverData.DriverName.trim();
+      if (driverData.DriverLicenceNo && driverData.DriverLicenceNo.trim())
+        payload.DriverLicenceNo = driverData.DriverLicenceNo.trim();
+      if (driverData.DriverMobileNo && driverData.DriverMobileNo.trim())
+        payload.DriverMobileNo = driverData.DriverMobileNo.trim();
+      if (driverData.DriverAddress && driverData.DriverAddress.trim())
+        payload.DriverAddress = driverData.DriverAddress.trim();
+      if (driverData.DriverLicenceIssueDate)
+        payload.DriverLicenceIssueDate = driverData.DriverLicenceIssueDate;
+      if (driverData.DriverLicenceExpiryDate)
+        payload.DriverLicenceExpiryDate = driverData.DriverLicenceExpiryDate;
+      if (driverData.DriverMedicalDate)
+        payload.DriverMedicalDate = driverData.DriverMedicalDate;
+      payload.DriverSameAsVendor = driverData.DriverSameAsVendor || 'Separate';
+      if (driverData.DriverAlternateNo && driverData.DriverAlternateNo.trim())
+        payload.DriverAlternateNo = driverData.DriverAlternateNo.trim();
+      if (driverData.DriverTotalExperience)
+        payload.DriverTotalExperience = driverData.DriverTotalExperience;
+      if (driverData.vendor_id)
+        payload.VendorID = driverData.vendor_id;
 
-      // Add file only if a new file is selected (following Vendor Form pattern)
-      if (files.DriverPhoto && files.DriverPhoto.name) {
-        formData.append('DriverPhoto', files.DriverPhoto);
-        console.log('📁 DRIVER FORM - Adding new photo to FormData:', files.DriverPhoto.name);
+      // Pass the Azure blob URL as a plain string field — no file binary!
+      if (driverPhotoBlobUrl) {
+        payload.DriverPhoto = driverPhotoBlobUrl;
       }
-      // Note: If no new file is selected, we don't send any file data
-      // The backend will preserve the existing photo automatically
-
-
 
       if (editingDriver) {
-        await driverAPI.update(editingDriver.DriverID, formData);
+        await driverAPI.update(editingDriver.DriverID, payload);
         apiHelpers.showSuccess('Driver updated successfully!');
       } else {
-        await driverAPI.create(formData);
+        await driverAPI.create(payload);
         apiHelpers.showSuccess('Driver created successfully!');
       }
 
