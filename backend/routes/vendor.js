@@ -247,16 +247,22 @@ module.exports = (pool) => {
 
   // Create a new comprehensive vendor record
   // This route creates a new vendor with all 15 Vendor Master form fields and file uploads
-  router.post('/', upload.fields([
-    { name: 'vendor_photo', maxCount: 1 },
-    { name: 'vendor_aadhar_doc', maxCount: 1 },
-    { name: 'vendor_pan_doc', maxCount: 1 },
-    { name: 'vendor_company_udhyam_doc', maxCount: 1 },
-    { name: 'vendor_company_pan_doc', maxCount: 1 },
-    { name: 'vendor_company_gst_doc', maxCount: 1 },
-    { name: 'company_legal_docs', maxCount: 1 },
-    { name: 'bank_cheque_upload', maxCount: 1 }
-  ]), (req, res, next) => {
+  router.post('/', (req, res, next) => {
+    // Only use multer for multipart/form-data
+    if (req.get('Content-Type')?.includes('multipart/form-data')) {
+      return upload.fields([
+        { name: 'vendor_photo', maxCount: 1 },
+        { name: 'vendor_aadhar_doc', maxCount: 1 },
+        { name: 'vendor_pan_doc', maxCount: 1 },
+        { name: 'vendor_company_udhyam_doc', maxCount: 1 },
+        { name: 'vendor_company_pan_doc', maxCount: 1 },
+        { name: 'vendor_company_gst_doc', maxCount: 1 },
+        { name: 'company_legal_docs', maxCount: 1 },
+        { name: 'bank_cheque_upload', maxCount: 1 }
+      ])(req, res, next);
+    }
+    next();
+  }, (req, res, next) => {
     // Handle multer errors with user-friendly messages
     if (req.fileValidationError) {
       return res.status(400).json({
@@ -296,7 +302,12 @@ module.exports = (pool) => {
     next();
   }, async (req, res) => {
     try {
-      const vendor = JSON.parse(req.body.vendorData || '{}');
+      let vendor;
+      if (req.get('Content-Type')?.includes('application/json')) {
+        vendor = req.body;
+      } else {
+        vendor = JSON.parse(req.body.vendorData || '{}');
+      }
       const files = req.files || {};
 
       // Enhanced validation using validation utility
@@ -369,11 +380,26 @@ module.exports = (pool) => {
         }
       }
 
-      // Handle file paths
+      // Handle file paths - Check both multer files and direct URLs in vendor object
+      const fileFieldsMapped = {
+        'vendor_photo': 'VendorPhoto',
+        'vendor_aadhar_doc': 'VendorAadharDoc',
+        'vendor_pan_doc': 'VendorPANDoc',
+        'vendor_company_udhyam_doc': 'VendorCompanyUdhyamDoc',
+        'vendor_company_pan_doc': 'VendorCompanyPAN',
+        'vendor_company_gst_doc': 'VendorCompanyGSTDoc',
+        'company_legal_docs': 'CompanyLegalDocs',
+        'bank_cheque_upload': 'BankChequeUpload'
+      };
+
       const filePaths = {};
-      Object.keys(files).forEach(fieldname => {
+      Object.keys(fileFieldsMapped).forEach(fieldname => {
         if (files[fieldname] && files[fieldname][0]) {
           filePaths[fieldname] = files[fieldname][0].path;
+        } else if (vendor[fieldname] && (vendor[fieldname].startsWith('http') || vendor[fieldname].includes('/uploads/'))) {
+          filePaths[fieldname] = vendor[fieldname];
+        } else {
+          filePaths[fieldname] = null;
         }
       });
 
@@ -456,16 +482,22 @@ module.exports = (pool) => {
 
   // Update a comprehensive vendor record
   // This route updates an existing vendor with all Vendor Master form fields and file uploads
-  router.put('/:id', upload.fields([
-    { name: 'vendor_photo', maxCount: 1 },
-    { name: 'vendor_aadhar_doc', maxCount: 1 },
-    { name: 'vendor_pan_doc', maxCount: 1 },
-    { name: 'vendor_company_udhyam_doc', maxCount: 1 },
-    { name: 'vendor_company_pan_doc', maxCount: 1 },
-    { name: 'vendor_company_gst_doc', maxCount: 1 },
-    { name: 'company_legal_docs', maxCount: 1 },
-    { name: 'bank_cheque_upload', maxCount: 1 }
-  ]), (req, res, next) => {
+  router.put('/:id', (req, res, next) => {
+    // Only use multer for multipart/form-data
+    if (req.get('Content-Type')?.includes('multipart/form-data')) {
+      return upload.fields([
+        { name: 'vendor_photo', maxCount: 1 },
+        { name: 'vendor_aadhar_doc', maxCount: 1 },
+        { name: 'vendor_pan_doc', maxCount: 1 },
+        { name: 'vendor_company_udhyam_doc', maxCount: 1 },
+        { name: 'vendor_company_pan_doc', maxCount: 1 },
+        { name: 'vendor_company_gst_doc', maxCount: 1 },
+        { name: 'company_legal_docs', maxCount: 1 },
+        { name: 'bank_cheque_upload', maxCount: 1 }
+      ])(req, res, next);
+    }
+    next();
+  }, (req, res, next) => {
     // Handle multer errors with user-friendly messages
     if (req.fileValidationError) {
       return res.status(400).json({
@@ -507,10 +539,14 @@ module.exports = (pool) => {
     const { id } = req.params;
 
     console.log('🔧 Vendor UPDATE request for ID:', id);
-    console.log('📝 Vendor data received:', req.body);
 
     try {
-      let vendor = JSON.parse(req.body.vendorData || '{}');
+      let vendor;
+      if (req.get('Content-Type')?.includes('application/json')) {
+        vendor = req.body;
+      } else {
+        vendor = JSON.parse(req.body.vendorData || '{}');
+      }
       const files = req.files || {};
 
       // Apply same logic as customer route - handle array values and date formatting
@@ -577,6 +613,22 @@ module.exports = (pool) => {
             fs.unlinkSync(oldPath);
           }
           filePaths[fieldname] = files[fieldname][0].path;
+        } else if (vendor[fieldname] && (vendor[fieldname].startsWith('http') || vendor[fieldname].includes('/uploads/'))) {
+          // New file URL provided (e.g. from Azure)
+          const oldFieldName = fieldname === 'vendor_photo' ? 'VendorPhoto' :
+            fieldname === 'vendor_aadhar_doc' ? 'VendorAadharDoc' :
+              fieldname === 'vendor_pan_doc' ? 'VendorPANDoc' :
+                fieldname === 'vendor_company_udhyam_doc' ? 'VendorCompanyUdhyamDoc' :
+                  fieldname === 'vendor_company_pan_doc' ? 'VendorCompanyPANDoc' :
+                    fieldname === 'vendor_company_gst_doc' ? 'VendorCompanyGSTDoc' :
+                      fieldname === 'company_legal_docs' ? 'CompanyLegalDocs' :
+                        fieldname === 'bank_cheque_upload' ? 'BankChequeUpload' : fieldname;
+
+          const oldPath = existingVendor[0][oldFieldName];
+          if (oldPath && !oldPath.startsWith('http') && fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath);
+          }
+          filePaths[fieldname] = vendor[fieldname];
         } else {
           // No new file - keep existing file path
           const oldFieldName = fieldname === 'vendor_photo' ? 'VendorPhoto' :

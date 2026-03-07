@@ -10,6 +10,7 @@ import BasicInfoSection from '../components/vendor/sections/BasicInfoSection';
 import PersonalDocsSection from '../components/vendor/sections/PersonalDocsSection';
 import CompanyInfoSection from '../components/vendor/sections/CompanyInfoSection';
 import BankDetailsSection from '../components/vendor/sections/BankDetailsSection';
+import { uploadFileDirectly } from '../utils/azureUpload';
 import './VendorForm.css';
 
 const VendorFormRefactored = () => {
@@ -27,34 +28,84 @@ const VendorFormRefactored = () => {
 
   const handleDateFilterClear = useCallback(async () => { setDateFilter({ fromDate: '', toDate: '' }); await fetchVendors(); }, [setDateFilter, fetchVendors]);
 
+  const submitVendorData = useCallback(async (validatedData) => {
+    try {
+      // 1. Handle multiple file uploads directly to Azure
+      const updatedFiles = { ...vendorData }; // Start with existing data (URLs or local paths)
+
+      const fileFields = [
+        'vendor_photo', 'vendor_aadhar_doc', 'vendor_pan_doc',
+        'vendor_company_udhyam_doc', 'vendor_company_pan_doc',
+        'vendor_company_gst_doc', 'company_legal_docs', 'bank_cheque_upload'
+      ];
+
+      for (const field of fileFields) {
+        if (files[field] instanceof File) {
+          console.log(`☁️ Uploading ${field} directly to Azure...`);
+          updatedFiles[field] = await uploadFileDirectly(files[field], 'vendors');
+          console.log(`✅ ${field} uploaded:`, updatedFiles[field]);
+        }
+      }
+
+      // 2. Prepare payload for JSON API call
+      const vendorPayload = {
+        vendor_name: validatedData.vendor_name?.trim() || vendorData.vendor_name.trim(),
+        vendor_mobile_no: validatedData.vendor_mobile_no?.trim() || vendorData.vendor_mobile_no.trim(),
+        project_id: vendorData.project_id || null,
+        vendor_address: `${vendorData.house_flat_no.trim()}, ${vendorData.street_locality.trim()}, ${vendorData.city.trim()}, ${vendorData.state.trim()}, ${vendorData.pin_code.trim()}${vendorData.country.trim() ? ', ' + vendorData.country.trim() : ''}`,
+        house_flat_no: vendorData.house_flat_no.trim(),
+        street_locality: vendorData.street_locality.trim(),
+        city: vendorData.city.trim(),
+        state: vendorData.state.trim(),
+        pin_code: vendorData.pin_code.trim(),
+        country: vendorData.country.trim() || 'India',
+        vendor_alternate_no: vendorData.vendor_alternate_no.trim() || null,
+        vendor_aadhar: vendorData.vendor_aadhar.trim().toUpperCase() || null,
+        vendor_pan: vendorData.vendor_pan.trim().toUpperCase() || null,
+        vendor_company_name: vendorData.vendor_company_name.trim() || null,
+        vendor_company_udhyam: vendorData.vendor_company_udhyam.trim() || null,
+        vendor_company_pan: vendorData.vendor_company_pan.trim().toUpperCase() || null,
+        vendor_company_gst: vendorData.vendor_company_gst.trim().toUpperCase() || null,
+        type_of_company: vendorData.type_of_company,
+        start_date_of_company: vendorData.start_date_of_company || null,
+        address_of_company: `${vendorData.address_of_company_house_flat_no || ''}, ${vendorData.address_of_company_street_locality || ''}, ${vendorData.address_of_company_city || ''}, ${vendorData.address_of_company_state || ''}, ${vendorData.address_of_company_pin_code || ''}${vendorData.address_of_company_country && vendorData.address_of_company_country !== 'India' ? ', ' + vendorData.address_of_company_country : ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim() || null,
+        bank_details: vendorData.bank_details.trim() || null,
+        account_holder_name: bankDetails.account_holder_name.trim() || null,
+        account_number: bankDetails.account_number.trim() || null,
+        ifsc_code: bankDetails.ifsc_code.trim() || null,
+        bank_name: bankDetails.bank_name.trim() || null,
+        branch_name: bankDetails.branch_name.trim() || null,
+        branch_address: bankDetails.branch_address.trim() || null,
+        bank_city: bankDetails.city.trim() || null,
+        bank_state: bankDetails.state.trim() || null,
+        // Add the uploaded file URLs
+        ...updatedFiles
+      };
+
+      // 3. Send as JSON
+      editingVendor
+        ? await vendorAPI.update(editingVendor.vendor_id ?? editingVendor.VendorID, vendorPayload)
+        : await vendorAPI.create(vendorPayload);
+
+      apiHelpers.showSuccess(`Vendor ${editingVendor ? 'updated' : 'created'} successfully!`);
+      clearDraft();
+      resetForm();
+      await fetchVendors();
+    } catch (error) {
+      console.error('Submission error:', error);
+      apiHelpers.showError(error, 'Failed to save vendor');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [vendorData, bankDetails, files, editingVendor, resetForm, fetchVendors, clearDraft]);
+
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     await validateBeforeSubmit({ ...vendorData, ...bankDetails }, async (validatedData) => {
       setIsSubmitting(true);
       await submitVendorData(validatedData);
     });
-  }, [vendorData, bankDetails, validateBeforeSubmit]);
-
-  const submitVendorData = useCallback(async (validatedData) => {
-    try {
-      const formData = new FormData();
-      const vendorPayload = { vendor_name: validatedData.vendor_name?.trim() || vendorData.vendor_name.trim(), vendor_mobile_no: validatedData.vendor_mobile_no?.trim() || vendorData.vendor_mobile_no.trim(), project_id: vendorData.project_id || null, vendor_address: `${vendorData.house_flat_no.trim()}, ${vendorData.street_locality.trim()}, ${vendorData.city.trim()}, ${vendorData.state.trim()}, ${vendorData.pin_code.trim()}${vendorData.country.trim() ? ', ' + vendorData.country.trim() : ''}`, house_flat_no: vendorData.house_flat_no.trim(), street_locality: vendorData.street_locality.trim(), city: vendorData.city.trim(), state: vendorData.state.trim(), pin_code: vendorData.pin_code.trim(), country: vendorData.country.trim() || 'India', vendor_alternate_no: vendorData.vendor_alternate_no.trim() || null, vendor_aadhar: vendorData.vendor_aadhar.trim().toUpperCase() || null, vendor_pan: vendorData.vendor_pan.trim().toUpperCase() || null, vendor_company_name: vendorData.vendor_company_name.trim() || null, vendor_company_udhyam: vendorData.vendor_company_udhyam.trim() || null, vendor_company_pan: vendorData.vendor_company_pan.trim().toUpperCase() || null, vendor_company_gst: vendorData.vendor_company_gst.trim().toUpperCase() || null, type_of_company: vendorData.type_of_company, start_date_of_company: vendorData.start_date_of_company || null, address_of_company: `${vendorData.address_of_company_house_flat_no || ''}, ${vendorData.address_of_company_street_locality || ''}, ${vendorData.address_of_company_city || ''}, ${vendorData.address_of_company_state || ''}, ${vendorData.address_of_company_pin_code || ''}${vendorData.address_of_company_country && vendorData.address_of_company_country !== 'India' ? ', ' + vendorData.address_of_company_country : ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim() || null, bank_details: vendorData.bank_details.trim() || null, account_holder_name: bankDetails.account_holder_name.trim() || null, account_number: bankDetails.account_number.trim() || null, ifsc_code: bankDetails.ifsc_code.trim() || null, bank_name: bankDetails.bank_name.trim() || null, branch_name: bankDetails.branch_name.trim() || null, branch_address: bankDetails.branch_address.trim() || null, bank_city: bankDetails.city.trim() || null, bank_state: bankDetails.state.trim() || null };
-
-      formData.append('vendorData', JSON.stringify(vendorPayload));
-      Object.entries(vendorPayload).forEach(([k, v]) => { v !== undefined && v !== null && v !== '' && formData.append(k, v); });
-      Object.keys(files).forEach(fileKey => { files[fileKey] && formData.append(fileKey, files[fileKey]); });
-
-      editingVendor ? await vendorAPI.update(editingVendor.vendor_id ?? editingVendor.VendorID, formData) : await vendorAPI.create(formData);
-      apiHelpers.showSuccess(`Vendor ${editingVendor ? 'updated' : 'created'} successfully!`);
-      clearDraft();
-      resetForm();
-      await fetchVendors();
-    } catch (error) {
-      apiHelpers.showError(error, 'Failed to save vendor');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [vendorData, bankDetails, files, editingVendor, resetForm, fetchVendors]);
+  }, [vendorData, bankDetails, validateBeforeSubmit, submitVendorData]);
 
   const createToast = useCallback((content, bgColor) => {
     const toast = document.createElement('div');
@@ -64,57 +115,22 @@ const VendorFormRefactored = () => {
     return toast;
   }, []);
 
-  const handleExportVendors = useCallback(async () => {
-    try {
-      // Build query parameters for date filtering (same as fetchVendors)
-      const queryParams = new URLSearchParams();
-      if (dateFilter.fromDate) {
-        queryParams.append('fromDate', dateFilter.fromDate);
-      }
-      if (dateFilter.toDate) {
-        queryParams.append('toDate', dateFilter.toDate);
-      }
-
-      const queryString = queryParams.toString();
-      const exportUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/export/vendors${queryString ? `?${queryString}` : ''}`;
-
-      console.log('📊 Export URL with filters:', exportUrl);
-      console.log('🗓️ Date filter applied to export:', { fromDate: dateFilter.fromDate, toDate: dateFilter.toDate });
-
-      const loadingToast = createToast('🔄 Exporting vendors... Please wait', '#007bff');
-
-      const link = document.createElement('a');
-      Object.assign(link, { href: exportUrl, download: `Vendor_Master_${new Date().toISOString().slice(0, 10)}.xlsx`, target: '_blank' });
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      document.body.removeChild(loadingToast);
-
-      const successToast = createToast('✅ Vendor Export Started!<br><small>Downloading ALL 26+ vendor master fields</small>', '#28a745');
-      setTimeout(() => { document.body.contains(successToast) && document.body.removeChild(successToast); }, 5000);
-    } catch (error) {
-      alert(`❌ Export failed: ${error.message}`);
-    }
-  }, [createToast]);
-
   const vendorColumns = [
-    { key: 'vendor_name', label: 'Vendor Name', sortable: true, minWidth: '150px' },
-    { key: 'vendor_mobile_no', label: 'Mobile', sortable: true, minWidth: '120px', render: (value) => value || '-' },
-    { key: 'project_name', label: 'Project', sortable: true, minWidth: '150px', render: (value, row) => value || (row.project_id ? 'Project ID: ' + row.project_id : 'Not Assigned') },
-    { key: 'type_of_company', label: 'Company Type', sortable: true, minWidth: '130px' },
-    { key: 'vendor_company_name', label: 'Company Name', sortable: true, minWidth: '150px', render: (value) => value || '-' },
-    { key: 'vendor_company_gst', label: 'GST No.', sortable: true, minWidth: '150px', render: (value) => value || '-' },
-    { key: 'vendor_photo', label: 'Photo', sortable: false, minWidth: '80px', render: (value) => value ? <div className="photo-indicator">📷</div> : <div className="no-photo-indicator">-</div> },
-    { key: 'vendor_address', label: 'Address', sortable: false, minWidth: '200px', render: (value) => value ? (value.length > 40 ? value.substring(0, 40) + '...' : value) : '-' }
+    { key: 'vendor_name', label: 'Vendor Name', sortable: true },
+    { key: 'vendor_mobile_no', label: 'Mobile No', sortable: true },
+    { key: 'city', label: 'City', sortable: true },
+    { key: 'type_of_company', label: 'Company Type', sortable: true },
+    { key: 'vendor_company_gst', label: 'GST No', sortable: true }
   ];
 
-  const commonSectionProps = { vendorData, handleInputChange, handleFileChange, handleFileDelete, files, editingVendor, errors };
+  const commonSectionProps = { vendorData, handleInputChange, files, editingVendor, errors, handleFileChange, handleFileDelete };
 
   return (
     <div className="vendor-form-container">
       <div className="form-header">
-        <h1>🏢 Vendor Management</h1>
-        <p>Add and manage vendors for your transportation services</p>
+        <h1>🤝 Vendor Master</h1>
+        <p>Comprehensive vendor onboarding and management system</p>
+        <RestoreDraftNotification isVisible={hasDraft && !editingVendor} onRestore={restoreDraft} onClear={clearDraft} />
         {editingVendor && (
           <div className="edit-notice">
             <span className="edit-notice-text">Editing: <strong className="edit-notice-item">{editingVendor.vendor_name}</strong></span>
@@ -124,12 +140,11 @@ const VendorFormRefactored = () => {
       </div>
 
       <div className="form-layout-card">
-        <RestoreDraftNotification isVisible={hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
-        <form onSubmit={handleSubmit} className="form-content" encType="multipart/form-data">
-          <BasicInfoSection {...commonSectionProps} handleAddressChange={handleAddressChange} getAddressData={getAddressData} projects={projects} />
+        <form onSubmit={handleSubmit} className="form-content">
+          <BasicInfoSection {...commonSectionProps} projects={projects} />
           <PersonalDocsSection {...commonSectionProps} />
-          <CompanyInfoSection {...commonSectionProps} setVendorData={setVendorData} />
-          <BankDetailsSection {...commonSectionProps} bankDetails={bankDetails} setBankDetails={setBankDetails} />
+          <CompanyInfoSection {...commonSectionProps} />
+          <BankDetailsSection bankDetails={bankDetails} setBankDetails={setBankDetails} errors={errors} />
 
           <div className="form-actions">
             <button type="submit" disabled={isSubmitting} className="submit-btn">
@@ -139,25 +154,7 @@ const VendorFormRefactored = () => {
         </form>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px', paddingRight: '10px' }}>
-        <button onClick={handleExportVendors} style={{ backgroundColor: '#007bff', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,123,255,0.3)', transition: 'all 0.2s ease' }} title="Export All Vendors to Excel">📊 Export to Excel</button>
-      </div>
-
-      <DataTable title="📋 Vendor List" data={vendors} columns={vendorColumns} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} keyField="VendorID" emptyMessage="No vendors found. Add your first vendor above." showPagination customizable exportable={false} />
-
-      {showModal && modalImage && (
-        <div className="image-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="image-modal-header">
-              <h3>Image Preview</h3>
-              <button className="modal-close-btn" onClick={() => setShowModal(false)}>✕</button>
-            </div>
-            <div className="image-modal-body">
-              <img src={modalImage} alt="Full size preview" className="modal-image-full" />
-            </div>
-          </div>
-        </div>
-      )}
+      <DataTable title="📋 Vendor List" data={vendors} columns={driverColumns || vendorColumns} onEdit={handleEdit} onDelete={handleDelete} isLoading={isLoading} keyField="VendorID" emptyMessage="No vendors found. Add your first vendor above." showPagination customizable exportable={false} />
 
       <ValidationErrorModal isOpen={showErrorModal} onClose={closeErrorModal} errorSummary={errorSummary} onGoToField={goToField} onTryAgain={() => handleSubmit({ preventDefault: () => { } })} />
     </div>

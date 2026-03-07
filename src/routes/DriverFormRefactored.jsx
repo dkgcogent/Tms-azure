@@ -7,6 +7,7 @@ import ValidationErrorModal from '../components/ValidationErrorModal';
 import DriverDetailsSection from '../components/driver/sections/DriverDetailsSection';
 import LicenseMedicalSection from '../components/driver/sections/LicenseMedicalSection';
 import PhotoAddressSection from '../components/driver/sections/PhotoAddressSection';
+import { uploadFileDirectly } from '../utils/azureUpload';
 import './DriverForm.css';
 
 const DriverFormRefactored = () => {
@@ -25,31 +26,60 @@ const DriverFormRefactored = () => {
 
   const handleDateFilterClear = useCallback(async () => { setDateFilter({ fromDate: '', toDate: '' }); await fetchDrivers(); }, [setDateFilter, fetchDrivers]);
 
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
-    if (!validateForm(driverData).isValid) return;
-    await validateBeforeSubmit(driverData, async (validatedData) => { setIsSubmitting(true); await submitDriverData(validatedData); }, (validationResult) => console.log('Driver validation failed:', validationResult.summary));
-  }, [driverData, validateForm, validateBeforeSubmit]);
-
   const submitDriverData = useCallback(async (validatedData) => {
     try {
-      const formData = new FormData();
-      ['DriverName', 'DriverLicenceNo', 'DriverMobileNo', 'DriverAddress', 'DriverLicenceIssueDate', 'DriverLicenceExpiryDate', 'DriverMedicalDate', 'DriverAlternateNo', 'DriverTotalExperience'].forEach(field => { driverData[field] && driverData[field].toString().trim() && formData.append(field, driverData[field].toString().trim()); });
+      // 1. Handle file upload directly to Azure if a new file is selected
+      let photoUrl = driverData.DriverPhoto; // Keep existing URL if any
 
-      formData.append('DriverSameAsVendor', driverData.DriverSameAsVendor || 'Separate');
-      driverData.vendor_id && formData.append('VendorID', driverData.vendor_id);
-      files.DriverPhoto?.name && formData.append('DriverPhoto', files.DriverPhoto);
+      if (files.DriverPhoto instanceof File) {
+        console.log('☁️ Uploading driver photo directly to Azure...');
+        photoUrl = await uploadFileDirectly(files.DriverPhoto, 'drivers');
+        console.log('✅ Photo uploaded:', photoUrl);
+      }
 
-      editingDriver ? await driverAPI.update(editingDriver.DriverID, formData) : await driverAPI.create(formData);
+      // 2. Prepare payload for JSON API call (bypassing Vercel 4.5MB limits)
+      const payload = {
+        DriverName: validatedData.DriverName?.trim(),
+        DriverLicenceNo: validatedData.DriverLicenceNo?.trim(),
+        DriverMobileNo: driverData.DriverMobileNo?.trim() || null,
+        DriverAddress: driverData.DriverAddress?.trim() || null,
+        DriverLicenceIssueDate: driverData.DriverLicenceIssueDate || null,
+        DriverLicenceExpiryDate: driverData.DriverLicenceExpiryDate || null,
+        DriverMedicalDate: driverData.DriverMedicalDate || null,
+        DriverAlternateNo: driverData.DriverAlternateNo?.trim() || null,
+        DriverTotalExperience: driverData.DriverTotalExperience || null,
+        DriverSameAsVendor: driverData.DriverSameAsVendor || 'Separate',
+        VendorID: driverData.vendor_id || null,
+        DriverPhoto: photoUrl
+      };
+
+      // 3. Send as JSON instead of FormData
+      editingDriver
+        ? await driverAPI.update(editingDriver.DriverID, payload)
+        : await driverAPI.create(payload);
+
       apiHelpers.showSuccess(`Driver ${editingDriver ? 'updated' : 'created'} successfully!`);
       resetForm();
       await fetchDrivers();
     } catch (error) {
+      console.error('Submission error:', error);
       apiHelpers.showError(error, 'Failed to save driver');
     } finally {
       setIsSubmitting(false);
     }
   }, [driverData, files, editingDriver, resetForm, fetchDrivers]);
+
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+    if (!validateForm(driverData).isValid) return;
+    await validateBeforeSubmit(driverData, async (validatedData) => {
+      setIsSubmitting(true);
+      await submitDriverData(validatedData);
+    }, (validationResult) => {
+      setErrorSummary(validationResult.summary);
+      setShowErrorModal(true);
+    });
+  }, [driverData, validateForm, validateBeforeSubmit, submitDriverData, setIsSubmitting]);
 
   const createToast = useCallback((content, bgColor) => {
     const toast = document.createElement('div');
@@ -61,23 +91,14 @@ const DriverFormRefactored = () => {
 
   const handleExportDrivers = useCallback(async () => {
     try {
-      // Build query parameters for date filtering (same as fetchDrivers)
       const queryParams = new URLSearchParams();
-      if (dateFilter.fromDate) {
-        queryParams.append('fromDate', dateFilter.fromDate);
-      }
-      if (dateFilter.toDate) {
-        queryParams.append('toDate', dateFilter.toDate);
-      }
+      if (dateFilter.fromDate) queryParams.append('fromDate', dateFilter.fromDate);
+      if (dateFilter.toDate) queryParams.append('toDate', dateFilter.toDate);
 
       const queryString = queryParams.toString();
       const exportUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/export/drivers${queryString ? `?${queryString}` : ''}`;
 
-      console.log('📊 Export URL with filters:', exportUrl);
-      console.log('🗓️ Date filter applied to export:', { fromDate: dateFilter.fromDate, toDate: dateFilter.toDate });
-
       const loadingToast = createToast('🔄 Exporting drivers... Please wait', '#007bff');
-
       const link = document.createElement('a');
       Object.assign(link, { href: exportUrl, download: `Driver_Master_${new Date().toISOString().slice(0, 10)}.xlsx`, target: '_blank' });
       document.body.appendChild(link);
@@ -85,18 +106,17 @@ const DriverFormRefactored = () => {
       document.body.removeChild(link);
       document.body.removeChild(loadingToast);
 
-      const successToast = createToast('✅ Driver Export Started!<br><small>Downloading ALL driver master fields + vendor info</small>', '#28a745');
+      const successToast = createToast('✅ Driver Export Started!', '#28a745');
       setTimeout(() => { document.body.contains(successToast) && document.body.removeChild(successToast); }, 5000);
     } catch (error) {
       alert(`❌ Export failed: ${error.message}`);
     }
-  }, [createToast]);
+  }, [createToast, dateFilter]);
 
   const driverColumns = [
     { key: 'DriverName', label: 'Driver Name', sortable: true },
     { key: 'DriverLicenceNo', label: 'Licence No', sortable: true },
     { key: 'DriverMobileNo', label: 'Mobile', sortable: true },
-    { key: 'DriverAlternateNo', label: 'Alt. Mobile', sortable: true },
     { key: 'DriverLicenceExpiryDate', label: 'Licence Expiry', sortable: true, type: 'date' },
     { key: 'DriverAddress', label: 'Address', sortable: false, render: (value) => value ? (value.length > 30 ? value.substring(0, 30) + '...' : value) : '-' }
   ];

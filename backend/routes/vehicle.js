@@ -609,11 +609,25 @@ module.exports = (pool) => {
         }
       }
 
-      // Handle file paths
+      // Handle file paths - Check both multer files and direct URLs in vehicle object
       const filePaths = {};
       Object.keys(files).forEach(fieldname => {
         if (files[fieldname] && files[fieldname][0]) {
           filePaths[fieldname] = files[fieldname][0].path;
+        }
+      });
+
+      // Add direct URLs if provided in the body
+      const vehicleFileFields = [
+        'RCUpload', 'VehicleKMSPhoto', 'VehiclePhoto', 'ServiceBillPhoto', 'InsuranceCopy',
+        'FitnessCertificateUpload', 'PollutionPhoto', 'StateTaxPhoto', 'NoEntryPassCopy',
+        'VehiclePhotoFront', 'VehiclePhotoBack', 'VehiclePhotoLeftSide', 'VehiclePhotoRightSide',
+        'VehiclePhotoInterior', 'VehiclePhotoEngine', 'VehiclePhotoRoof', 'VehiclePhotoDoor'
+      ];
+
+      vehicleFileFields.forEach(field => {
+        if (!filePaths[field] && vehicle[field] && (vehicle[field].startsWith('http') || vehicle[field].includes('/uploads/'))) {
+          filePaths[field] = vehicle[field];
         }
       });
 
@@ -790,38 +804,46 @@ module.exports = (pool) => {
 
   // Update a comprehensive vehicle record
   // This route updates an existing vehicle with all Vehicle Master form fields
-  router.put('/:id', upload.fields([
-    // Standard fields
-    { name: 'vehicle_front_photo', maxCount: 1 },
-    { name: 'vehicle_side_photo', maxCount: 1 },
-    { name: 'vehicle_back_photo', maxCount: 1 },
-    { name: 'vehicle_interior_photo', maxCount: 1 },
-    { name: 'rc_copy', maxCount: 1 },
-    { name: 'insurance_copy', maxCount: 1 },
-    { name: 'fitness_copy', maxCount: 1 },
-    { name: 'permit_copy', maxCount: 1 },
-    { name: 'pollution_copy', maxCount: 1 },
-    { name: 'tax_receipt', maxCount: 1 },
-    // Frontend form fields
-    { name: 'RCUpload', maxCount: 1 },
-    { name: 'VehicleKMSPhoto', maxCount: 1 },
-    { name: 'VehiclePhoto', maxCount: 1 },
-    { name: 'ServiceBillPhoto', maxCount: 1 },
-    { name: 'InsuranceCopy', maxCount: 1 },
-    { name: 'FitnessCertificateUpload', maxCount: 1 },
-    { name: 'PollutionPhoto', maxCount: 1 },
-    { name: 'StateTaxPhoto', maxCount: 1 },
-    { name: 'NoEntryPassCopy', maxCount: 1 },
-    // New Multiple Vehicle Photos
-    { name: 'VehiclePhotoFront', maxCount: 1 },
-    { name: 'VehiclePhotoBack', maxCount: 1 },
-    { name: 'VehiclePhotoLeftSide', maxCount: 1 },
-    { name: 'VehiclePhotoRightSide', maxCount: 1 },
-    { name: 'VehiclePhotoInterior', maxCount: 1 },
-    { name: 'VehiclePhotoEngine', maxCount: 1 },
-    { name: 'VehiclePhotoRoof', maxCount: 1 },
-    { name: 'VehiclePhotoDoor', maxCount: 1 }
-  ]), (req, res, next) => {
+  router.put('/:id', (req, res, next) => {
+    // Only use multer for multipart/form-data requests
+    const contentType = req.get('Content-Type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      return upload.fields([
+        // Comprehensive fields
+        { name: 'vehicle_front_photo', maxCount: 1 },
+        { name: 'vehicle_side_photo', maxCount: 1 },
+        { name: 'vehicle_back_photo', maxCount: 1 },
+        { name: 'vehicle_interior_photo', maxCount: 1 },
+        { name: 'rc_copy', maxCount: 1 },
+        { name: 'insurance_copy', maxCount: 1 },
+        { name: 'fitness_copy', maxCount: 1 },
+        { name: 'permit_copy', maxCount: 1 },
+        { name: 'pollution_copy', maxCount: 1 },
+        { name: 'tax_receipt', maxCount: 1 },
+        // Backend compatible fields
+        { name: 'RCUpload', maxCount: 1 },
+        { name: 'VehicleKMSPhoto', maxCount: 1 },
+        { name: 'VehiclePhoto', maxCount: 1 },
+        { name: 'ServiceBillPhoto', maxCount: 1 },
+        { name: 'InsuranceCopy', maxCount: 1 },
+        { name: 'FitnessCertificateUpload', maxCount: 1 },
+        { name: 'PollutionPhoto', maxCount: 1 },
+        { name: 'StateTaxPhoto', maxCount: 1 },
+        { name: 'NoEntryPassCopy', maxCount: 1 },
+        // All photo angles
+        { name: 'VehiclePhotoFront', maxCount: 1 },
+        { name: 'VehiclePhotoBack', maxCount: 1 },
+        { name: 'VehiclePhotoLeftSide', maxCount: 1 },
+        { name: 'VehiclePhotoRightSide', maxCount: 1 },
+        { name: 'VehiclePhotoInterior', maxCount: 1 },
+        { name: 'VehiclePhotoEngine', maxCount: 1 },
+        { name: 'VehiclePhotoRoof', maxCount: 1 },
+        { name: 'VehiclePhotoDoor', maxCount: 1 }
+      ])(req, res, next);
+    } else {
+      next();
+    }
+  }, (req, res, next) => {
     // Handle multer errors with user-friendly messages
     if (req.fileValidationError) {
       return res.status(400).json({
@@ -861,270 +883,118 @@ module.exports = (pool) => {
     next();
   }, async (req, res) => {
     const { id } = req.params;
-
-
-
-    // Handle both direct object data and FormData from frontend (same as POST route)
-    let vehicle = {};
-
-    if (req.body.vehicleData) {
-      // If vehicleData is sent as JSON string (for comprehensive form)
-      vehicle = JSON.parse(req.body.vehicleData || '{}');
-    } else {
-      // If form data is sent directly (from VehicleForm.jsx)
-      vehicle = req.body;
-
-      // Map frontend field names to backend field names
-      const fieldMapping = {
-        'VehicleRegistrationNo': 'vehicle_number',
-        'VehicleChasisNo': 'chassis_number',
-        'VehicleModel': 'model',
-        'TypeOfBody': 'body_type',
-        'VehicleRegistrationDate': 'registration_date',
-        'VehicleAge': 'vehicle_age',
-        'VehicleKMS': 'current_km_reading',
-        'VehicleInsuranceCompany': 'insurance_company',
-        'VehicleInsuranceDate': 'insurance_date',
-        'VehicleInsuranceExpiry': 'insurance_expiry',
-        'VehicleFitnessCertificateIssue': 'fitness_certificate_issue',
-        'VehicleFitnessCertificateExpiry': 'fitness_expiry',
-        'VehiclePollutionDate': 'pollution_date',
-        'VehiclePollutionExpiry': 'pollution_expiry',
-        'StateTaxIssue': 'tax_issue_date',
-        'StateTaxExpiry': 'tax_paid_upto',
-        'VehicleLoadingCapacity': 'capacity_tons',
-        'GPS': 'gps_enabled',
-        'GPSCompany': 'gps_company',
-        'NoEntryPass': 'no_entry_pass',
-        'NoEntryPassStartDate': 'no_entry_pass_start_date',
-        'NoEntryPassExpiry': 'no_entry_pass_expiry',
-        'LastServicing': 'last_service_date'
-      };
-
-      // Create mapped vehicle object
-      const mappedVehicle = {};
-      Object.keys(vehicle).forEach(key => {
-        const mappedKey = fieldMapping[key] || key.toLowerCase();
-        let value = vehicle[key];
-
-        // Handle special conversions for database compatibility
-        if (key === 'GPS') {
-          // GPS: tinyint(1) - expects 0 or 1
-          value = value === 'Yes' || value === 1 || value === '1' || value === true ? 1 : 0;
-        }
-        if (key === 'NoEntryPass') {
-          // NoEntryPass: enum('Yes','No') - expects 'Yes' or 'No' string
-          value = value === 'Yes' || value === 1 || value === '1' || value === true ? 'Yes' : 'No';
-        }
-        if (key === 'TypeOfBody') {
-          // TypeOfBody: enum('Open','CBD','Container') - expects exact case match
-          // DO NOT convert to lowercase - database expects 'Open', 'CBD', 'Container'
-          const validBodyTypes = ['Open', 'CBD', 'Container'];
-          if (value && !validBodyTypes.includes(value)) {
-            // Try to match case-insensitively
-            const matchedType = validBodyTypes.find(type => type.toLowerCase() === value.toLowerCase());
-            value = matchedType || 'Open'; // Default to 'Open' if no match
-          }
-        }
-        if (key === 'VehicleAge' || key === 'VehicleKMS' || key === 'VehicleLoadingCapacity') {
-          // Numeric fields - convert string to number if needed
-          if (value !== null && value !== undefined && value !== '') {
-            const numValue = parseFloat(value);
-            value = isNaN(numValue) ? null : numValue;
-          }
-        }
-        if (key === 'FixRate' || key === 'FuelRate' || key === 'HandlingCharges') {
-          // Decimal fields - convert string to number if needed
-          if (value !== null && value !== undefined && value !== '') {
-            const numValue = parseFloat(value);
-            value = isNaN(numValue) ? null : numValue;
-          }
-        }
-
-        mappedVehicle[mappedKey] = value;
-      });
-
-      // Set required fields with defaults
-      mappedVehicle.vehicle_type = mappedVehicle.vehicle_type || 'truck';
-      mappedVehicle.body_type = mappedVehicle.body_type || 'open';
-
-      vehicle = mappedVehicle;
-    }
-
-    const dateErrors = validateDateSequence(vehicle);
-    if (dateErrors.length > 0) {
-      return res.status(400).json({ errors: dateErrors });
-    }
-
     try {
-
-
-
-      // Validate required fields (same as POST route)
-      if (!vehicle.vehicle_number) {
-        return res.status(400).json({
-          error: 'Vehicle registration number is required'
-        });
+      let vehicle;
+      if (req.get('Content-Type')?.includes('application/json')) {
+        vehicle = req.body;
+      } else {
+        // If form data is sent directly (from VehicleForm.jsx)
+        vehicle = JSON.parse(req.body.vehicleData || '{}');
       }
 
-      // Check if vehicle exists - first try lowercase table, then capitalized
-      let existingVehicle;
-      try {
-        [existingVehicle] = await pool.query('SELECT * FROM vehicles WHERE vehicle_id = ?', [id]);
-        if (existingVehicle.length === 0) {
-          // Try with capitalized table name
-          [existingVehicle] = await pool.query('SELECT * FROM Vehicle WHERE VehicleID = ?', [id]);
-        }
-      } catch (error) {
-        // Try with capitalized table name as fallback
-        [existingVehicle] = await pool.query('SELECT * FROM Vehicle WHERE VehicleID = ?', [id]);
-      }
+      console.log('🚛 VEHICLE UPDATE - Processing ID:', id);
 
-      if (existingVehicle.length === 0) {
+      // Check if vehicle exists
+      const [existingRows] = await pool.query('SELECT * FROM Vehicle WHERE VehicleID = ?', [id]);
+      if (existingRows.length === 0) {
         return res.status(404).json({ error: 'Vehicle not found' });
       }
+      const existingVehicle = existingRows[0];
 
-      // Handle file paths - keep existing files if new ones aren't provided
+      // Handle file paths - Check both multer files and direct URLs in vehicle object
       const files = req.files || {};
-      const fileFields = [
-        'RCUpload', 'VehicleKMSPhoto', 'VehiclePhoto', 'VehiclePhotoFront',
-        'VehiclePhotoBack', 'VehiclePhotoLeftSide', 'VehiclePhotoRightSide',
-        'VehiclePhotoInterior', 'VehiclePhotoEngine', 'VehiclePhotoRoof',
-        'VehiclePhotoDoor', 'ServiceBillPhoto', 'InsuranceCopy',
-        'FitnessCertificateUpload', 'PollutionPhoto', 'StateTaxPhoto', 'NoEntryPassCopy'
+      const filePaths = {};
+
+      const vehicleFileFields = [
+        'RCUpload', 'VehicleKMSPhoto', 'VehiclePhoto', 'ServiceBillPhoto', 'InsuranceCopy',
+        'FitnessCertificateUpload', 'PollutionPhoto', 'StateTaxPhoto', 'NoEntryPassCopy',
+        'VehiclePhotoFront', 'VehiclePhotoBack', 'VehiclePhotoLeftSide', 'VehiclePhotoRightSide',
+        'VehiclePhotoInterior', 'VehiclePhotoEngine', 'VehiclePhotoRoof', 'VehiclePhotoDoor'
       ];
 
-      const filePaths = {};
-      fileFields.forEach(fieldname => {
-        if (files[fieldname] && files[fieldname][0]) {
-          // New file uploaded - delete old file if exists
-          if (existingVehicle[0][fieldname] && fs.existsSync(existingVehicle[0][fieldname])) {
-            fs.unlinkSync(existingVehicle[0][fieldname]);
+      vehicleFileFields.forEach(field => {
+        // If a new file was uploaded via multer
+        if (files[field] && files[field][0]) {
+          filePaths[field] = files[field][0].path;
+          // Delete old local file if it exists
+          if (existingVehicle[field] && !existingVehicle[field].startsWith('http') && fs.existsSync(existingVehicle[field])) {
+            try { fs.unlinkSync(existingVehicle[field]); } catch (e) { console.error(`Failed to delete old file ${field}`, e); }
           }
-          filePaths[fieldname] = files[fieldname][0].path;
-        } else {
-          // No new file - keep existing file path
-          filePaths[fieldname] = existingVehicle[0][fieldname] || null;
+        }
+        // Else if a URL was provided (e.g. from Azure Direct Upload)
+        else if (vehicle[field] && typeof vehicle[field] === 'string' && (vehicle[field].startsWith('http') || vehicle[field].includes('/uploads/'))) {
+          filePaths[field] = vehicle[field];
+          // Delete old local file if it's different and exists
+          if (existingVehicle[field] && existingVehicle[field] !== vehicle[field] && !existingVehicle[field].startsWith('http') && fs.existsSync(existingVehicle[field])) {
+            try { fs.unlinkSync(existingVehicle[field]); } catch (e) { console.error(`Failed to delete old file ${field}`, e); }
+          }
+        }
+        // Else keep existing file
+        else {
+          filePaths[field] = existingVehicle[field] || null;
         }
       });
 
-      // Build comprehensive UPDATE query for capitalized Vehicle table
+      // Mapping for direct DB update fields
       const updateQuery = `
         UPDATE Vehicle SET
-          VehicleRegistrationNo = ?,
-          VehicleCode = ?,
-          VehicleChasisNo = ?,
-          VehicleModel = ?,
-          TypeOfBody = ?,
-          VehicleType = ?,
-          VehicleRegistrationDate = ?,
-          VehicleAge = ?,
-          VehicleKMS = ?,
-          VendorID = ?,
-          DriverID = ?,
-          GPS = ?,
-          GPSCompany = ?,
-          NoEntryPass = ?,
-          NoEntryPassStartDate = ?,
-          NoEntryPassExpiry = ?,
-          LastServicing = ?,
-          VehicleLoadingCapacity = ?,
-          RCUpload = ?,
-          VehicleKMSPhoto = ?,
-          VehiclePhoto = ?,
-          VehiclePhotoFront = ?,
-          VehiclePhotoBack = ?,
-          VehiclePhotoLeftSide = ?,
-          VehiclePhotoRightSide = ?,
-          VehiclePhotoInterior = ?,
-          VehiclePhotoEngine = ?,
-          VehiclePhotoRoof = ?,
-          VehiclePhotoDoor = ?,
-          ServiceBillPhoto = ?,
-          InsuranceCopy = ?,
-          FitnessCertificateUpload = ?,
-          PollutionPhoto = ?,
-          StateTaxPhoto = ?,
-          NoEntryPassCopy = ?,
-          InsuranceInfo = ?,
-          VehicleInsuranceCompany = ?,
-          VehicleInsuranceDate = ?,
-          InsuranceExpiry = ?,
-          VehicleFitnessCertificateIssue = ?,
-          FitnessExpiry = ?,
-          VehiclePollutionDate = ?,
-          PollutionExpiry = ?,
-          StateTaxIssue = ?,
-          StateTaxExpiry = ?,
-          Status = ?,
-          UpdatedAt = CURRENT_TIMESTAMP
+          VehicleRegistrationNo = ?, VehicleCode = ?, VehicleChasisNo = ?, VehicleModel = ?,
+          TypeOfBody = ?, VehicleType = ?, VehicleRegistrationDate = ?, VehicleAge = ?, VehicleKMS = ?,
+          VendorID = ?, DriverID = ?, GPS = ?, GPSCompany = ?, NoEntryPass = ?,
+          NoEntryPassStartDate = ?, NoEntryPassExpiry = ?, LastServicing = ?,
+          VehicleLoadingCapacity = ?, RCUpload = ?, VehicleKMSPhoto = ?, VehiclePhoto = ?,
+          VehiclePhotoFront = ?, VehiclePhotoBack = ?, VehiclePhotoLeftSide = ?,
+          VehiclePhotoRightSide = ?, VehiclePhotoInterior = ?, VehiclePhotoEngine = ?,
+          VehiclePhotoRoof = ?, VehiclePhotoDoor = ?, ServiceBillPhoto = ?,
+          InsuranceCopy = ?, FitnessCertificateUpload = ?, PollutionPhoto = ?,
+          StateTaxPhoto = ?, NoEntryPassCopy = ?, InsuranceInfo = ?,
+          VehicleInsuranceCompany = ?, VehicleInsuranceDate = ?, InsuranceExpiry = ?,
+          VehicleFitnessCertificateIssue = ?, FitnessExpiry = ?, VehiclePollutionDate = ?,
+          PollutionExpiry = ?, StateTaxIssue = ?, StateTaxExpiry = ?,
+          Status = ?, UpdatedAt = CURRENT_TIMESTAMP
         WHERE VehicleID = ?`;
 
-      // Map form data to database fields
-      const vehicleData = req.body;
-
-      // Convert GPS to integer (0 or 1) and NoEntryPass to string ('Yes' or 'No')
-      const convertGPS = (value) => {
-        if (value === 'Yes' || value === 'yes' || value === '1' || value === 1 || value === true) {
-          return 1;
-        }
-        return 0;
-      };
-
-      const convertNoEntryPass = (value) => {
-        if (value === 'Yes' || value === 'yes' || value === '1' || value === 1 || value === true) {
-          return 'Yes';
-        }
-        return 'No';
-      };
+      const convertGPS = (val) => (val === 'Yes' || val === 1 || val === '1' || val === true ? 1 : 0);
+      const convertNoEntry = (val) => (val === 'Yes' || val === 1 || val === '1' || val === true ? 'Yes' : 'No');
 
       const values = [
-        vehicleData.VehicleRegistrationNo || null,
-        vehicleData.VehicleCode || null,
-        vehicleData.VehicleChasisNo || null,
-        vehicleData.VehicleModel || null,
-        vehicleData.TypeOfBody || null,
-        vehicleData.VehicleType || null,
-        vehicleData.VehicleRegistrationDate || null,
-        vehicleData.VehicleAge || null,
-        vehicleData.VehicleKMS || null,
-        vehicleData.VendorID || vehicleData.vendor_id || null,
-        vehicleData.DriverID || vehicleData.driver_id || null,
-        convertGPS(vehicleData.GPS),
-        vehicleData.GPSCompany || null,
-        convertNoEntryPass(vehicleData.NoEntryPass),
-        vehicleData.NoEntryPassStartDate || null,
-        vehicleData.NoEntryPassExpiry || null,
-        vehicleData.LastServicing || null,
-        vehicleData.VehicleLoadingCapacity || null,
-        filePaths.RCUpload,
-        filePaths.VehicleKMSPhoto,
-        filePaths.VehiclePhoto,
-        filePaths.VehiclePhotoFront,
-        filePaths.VehiclePhotoBack,
-        filePaths.VehiclePhotoLeftSide,
-        filePaths.VehiclePhotoRightSide,
-        filePaths.VehiclePhotoInterior,
-        filePaths.VehiclePhotoEngine,
-        filePaths.VehiclePhotoRoof,
-        filePaths.VehiclePhotoDoor,
-        filePaths.ServiceBillPhoto,
-        filePaths.InsuranceCopy,
-        filePaths.FitnessCertificateUpload,
-        filePaths.PollutionPhoto,
-        filePaths.StateTaxPhoto,
-        filePaths.NoEntryPassCopy,
-        vehicleData.InsuranceInfo || null,
-        vehicleData.VehicleInsuranceCompany || null,
-        vehicleData.VehicleInsuranceDate || null,
-        vehicleData.InsuranceExpiry || null,
-        vehicleData.VehicleFitnessCertificateIssue || null,
-        vehicleData.FitnessExpiry || null,
-        vehicleData.VehiclePollutionDate || null,
-        vehicleData.PollutionExpiry || null,
-        vehicleData.StateTaxIssue || null,
-        vehicleData.StateTaxExpiry || null,
-        vehicleData.Status || 'Active',
+        vehicle.VehicleRegistrationNo || null,
+        vehicle.VehicleCode || null,
+        vehicle.VehicleChasisNo || null,
+        vehicle.VehicleModel || null,
+        vehicle.TypeOfBody || null,
+        vehicle.VehicleType || null,
+        vehicle.VehicleRegistrationDate || null,
+        vehicle.VehicleAge || null,
+        vehicle.VehicleKMS || null,
+        vehicle.VendorID || vehicle.vendor_id || null,
+        vehicle.DriverID || vehicle.driver_id || null,
+        convertGPS(vehicle.GPS),
+        vehicle.GPSCompany || null,
+        convertNoEntry(vehicle.NoEntryPass),
+        vehicle.NoEntryPassStartDate || null,
+        vehicle.NoEntryPassExpiry || null,
+        vehicle.LastServicing || null,
+        vehicle.VehicleLoadingCapacity || null,
+        filePaths.RCUpload, filePaths.VehicleKMSPhoto, filePaths.VehiclePhoto,
+        filePaths.VehiclePhotoFront, filePaths.VehiclePhotoBack,
+        filePaths.VehiclePhotoLeftSide, filePaths.VehiclePhotoRightSide,
+        filePaths.VehiclePhotoInterior, filePaths.VehiclePhotoEngine,
+        filePaths.VehiclePhotoRoof, filePaths.VehiclePhotoDoor,
+        filePaths.ServiceBillPhoto, filePaths.InsuranceCopy,
+        filePaths.FitnessCertificateUpload, filePaths.PollutionPhoto,
+        filePaths.StateTaxPhoto, filePaths.NoEntryPassCopy,
+        vehicle.InsuranceInfo || null,
+        vehicle.VehicleInsuranceCompany || null,
+        vehicle.VehicleInsuranceDate || null,
+        vehicle.InsuranceExpiry || null,
+        vehicle.VehicleFitnessCertificateIssue || null,
+        vehicle.FitnessExpiry || null,
+        vehicle.VehiclePollutionDate || null,
+        vehicle.PollutionExpiry || null,
+        vehicle.StateTaxIssue || null,
+        vehicle.StateTaxExpiry || null,
+        vehicle.Status || 'Active',
         id
       ];
 
@@ -1135,14 +1005,14 @@ module.exports = (pool) => {
       }
 
       // Update vehicle freight details
-      if (vehicleData.FixRate || vehicleData.FuelRate || vehicleData.HandlingCharges) {
+      if (vehicle.FixRate || vehicle.FuelRate || vehicle.HandlingCharges) {
         const [existingFreight] = await pool.query('SELECT * FROM vehicle_freight WHERE VehicleID = ?', [id]);
         if (existingFreight.length > 0) {
           const freightQuery = 'UPDATE vehicle_freight SET FixRate = ?, FuelRate = ?, HandlingCharges = ? WHERE VehicleID = ?';
-          await pool.query(freightQuery, [vehicleData.FixRate, vehicleData.FuelRate, vehicleData.HandlingCharges, id]);
+          await pool.query(freightQuery, [vehicle.FixRate, vehicle.FuelRate, vehicle.HandlingCharges, id]);
         } else {
           const freightQuery = 'INSERT INTO vehicle_freight (VehicleID, FixRate, FuelRate, HandlingCharges) VALUES (?, ?, ?, ?)';
-          await pool.query(freightQuery, [id, vehicleData.FixRate, vehicleData.FuelRate, vehicleData.HandlingCharges]);
+          await pool.query(freightQuery, [id, vehicle.FixRate, vehicle.FuelRate, vehicle.HandlingCharges]);
         }
       }
 
