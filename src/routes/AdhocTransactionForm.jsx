@@ -114,12 +114,12 @@ const AdhocTransactionForm = () => {
 
   useEffect(() => {
     const fetchInitialData = async () => {
-        try {
-            const customerRes = await customerAPI.getAll();
-            setCustomers(customerRes.data.data.map(c => ({ ...c, value: c.CustomerID, label: c.Name })));
-        } catch (error) {
-            console.error("Error fetching customers:", error);
-        }
+      try {
+        const customerRes = await customerAPI.getAll();
+        setCustomers(customerRes.data.data.map(c => ({ ...c, value: c.CustomerID, label: c.Name })));
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+      }
     };
     fetchInitialData();
     fetchTransactions();

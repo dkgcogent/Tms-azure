@@ -8,10 +8,11 @@ import VehiclePhotosSection from '../components/vehicle/sections/VehiclePhotosSe
 import DocumentsSection from '../components/vehicle/sections/DocumentsSection';
 import GPSPermitSection from '../components/vehicle/sections/GPSPermitSection';
 import FreightSection from '../components/vehicle/sections/FreightSection';
+import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import './VehicleForm.css';
 
 const VehicleFormRefactored = () => {
-  const { vehicleData, setVehicleData, vehicles, files, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingVehicle, setEditingVehicle, dateFilter, setDateFilter, modalImage, setModalImage, showModal, setShowModal, resetForm, handleInputChange, handleFileChange, generateVehicleCode, fetchVehicles, getExpiryStatus, handleEdit, handleDelete, handleFileDelete, handleExportVehicles, handleDateFilterApply, handleDateFilterClear } = useVehicleForm();
+  const { vehicleData, setVehicleData, vehicles, files, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingVehicle, setEditingVehicle, dateFilter, setDateFilter, modalImage, setModalImage, showModal, setShowModal, resetForm, handleInputChange, handleFileChange, generateVehicleCode, fetchVehicles, getExpiryStatus, handleEdit, handleDelete, handleFileDelete, handleExportVehicles, handleDateFilterApply, handleDateFilterClear, hasDraft, restoreDraft, clearDraft } = useVehicleForm();
   const { validateForm, validateBeforeSubmit } = useVehicleValidation();
 
   const handleSubmit = useCallback(async (e) => {
@@ -28,6 +29,7 @@ const VehicleFormRefactored = () => {
 
       editingVehicle ? await vehicleAPI.update(editingVehicle.VehicleID, formData) : await vehicleAPI.create(formData);
       apiHelpers.showSuccess(`Vehicle ${editingVehicle ? 'updated' : 'created'} successfully!`);
+      clearDraft();
       resetForm();
       await fetchVehicles();
     } catch (error) {
@@ -35,7 +37,7 @@ const VehicleFormRefactored = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [files, editingVehicle, resetForm, fetchVehicles]);
+  }, [files, editingVehicle, resetForm, fetchVehicles, clearDraft]);
 
   const vehicleColumns = [
     { key: 'VehicleRegistrationNo', label: 'Registration No', sortable: true },
@@ -52,6 +54,7 @@ const VehicleFormRefactored = () => {
       <div className="form-header">
         <h1>🚛 Vehicle Master</h1>
         <p>Comprehensive vehicle onboarding and management system</p>
+        <RestoreDraftNotification isVisible={hasDraft && !editingVehicle} onRestore={restoreDraft} onClear={clearDraft} />
         {editingVehicle && (
           <div className="edit-notice">
             <span className="edit-notice-text">Editing: <strong className="edit-notice-item">{editingVehicle.VehicleRegistrationNo}</strong></span>

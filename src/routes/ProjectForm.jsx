@@ -421,7 +421,7 @@ const ProjectForm = () => {
     if (projectData.StartDate && projectData.EndDate) {
       const startDate = new Date(projectData.StartDate);
       const endDate = new Date(projectData.EndDate);
-      
+
       if (endDate <= startDate) {
         newErrors.EndDate = 'End date must be after start date';
       }
@@ -888,42 +888,42 @@ const ProjectForm = () => {
   };
 
   const projectColumns = [
-    { 
-      key: 'ProjectName', 
-      label: 'Project Name', 
+    {
+      key: 'ProjectName',
+      label: 'Project Name',
       sortable: true,
       minWidth: '200px'
     },
-    { 
-      key: 'CustomerName', 
-      label: 'Customer', 
+    {
+      key: 'CustomerName',
+      label: 'Customer',
       sortable: true,
       minWidth: '150px'
     },
-    { 
-      key: 'ProjectValue', 
-      label: 'Value', 
+    {
+      key: 'ProjectValue',
+      label: 'Value',
       sortable: true,
       minWidth: '120px',
       render: (value) => formatCurrency(value)
     },
-    { 
-      key: 'StartDate', 
-      label: 'Start Date', 
+    {
+      key: 'StartDate',
+      label: 'Start Date',
       sortable: true,
       minWidth: '120px',
       render: (value) => formatDate(value)
     },
-    { 
-      key: 'EndDate', 
-      label: 'End Date', 
+    {
+      key: 'EndDate',
+      label: 'End Date',
       sortable: true,
       minWidth: '120px',
       render: (value) => formatDate(value)
     },
-    { 
-      key: 'Status', 
-      label: 'Status', 
+    {
+      key: 'Status',
+      label: 'Status',
       sortable: true,
       minWidth: '100px',
       render: (value) => (

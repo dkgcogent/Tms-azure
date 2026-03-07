@@ -107,7 +107,7 @@ const BillingForm = () => {
     const quantity = parseFloat(billingData.Quantity) || 0;
     const rate = parseFloat(billingData.Rate) || 0;
     const amount = quantity * rate;
-    
+
     const cgst = amount * 0.09; // 9% CGST
     const sgst = amount * 0.09; // 9% SGST
     const totalAmount = amount + cgst + sgst;
@@ -211,7 +211,7 @@ const BillingForm = () => {
 
       // Refresh billing records
       await fetchInitialData();
-      
+
       // Reset form
       setBillingData({
         InvoiceNo: '',
@@ -300,7 +300,7 @@ const BillingForm = () => {
 
       // Refresh payment records
       await fetchInitialData();
-      
+
       // Reset form
       setPaymentData({
         BillingID: '',

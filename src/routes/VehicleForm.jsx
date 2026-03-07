@@ -6,6 +6,9 @@ import SearchableDropdown from '../components/SearchableDropdown';
 import DocumentUpload from '../components/DocumentUpload';
 
 import useFormValidation from '../hooks/useFormValidation';
+import useFormDraft from '../hooks/useFormDraft';
+import RestoreDraftNotification from '../components/RestoreDraftNotification';
+import authService from '../services/authService';
 import './VehicleForm.css';
 
 // Simple date formatting function
@@ -561,8 +564,27 @@ const VehicleForm = () => {
   const [modalImage, setModalImage] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-  // New state for enhanced features
   const [vehiclePhotos, setVehiclePhotos] = useState({});
+
+  // Draft Management
+  const user = authService.getUser();
+  const userId = user?.UserID || user?.id || 'anonymous';
+  const { hasDraft, getDraft, saveDraft, clearDraft } = useFormDraft('vehicle-form', userId);
+
+  const restoreDraft = () => {
+    const draft = getDraft();
+    if (draft) {
+      setVehicleData(draft);
+      apiHelpers.showSuccess('Progress restored successfully!');
+    }
+  };
+
+  // Auto-save draft whenever vehicleData changes (only in add mode)
+  useEffect(() => {
+    if (!editingVehicle && JSON.stringify(vehicleData) !== JSON.stringify(getInitialState())) {
+      saveDraft(vehicleData);
+    }
+  }, [vehicleData, editingVehicle, saveDraft]);
 
   // Expiry date reminder logic with red flag popups
   const checkExpiryDates = (vehicleData) => {
@@ -1179,6 +1201,7 @@ const VehicleForm = () => {
         apiHelpers.showSuccess('Vehicle created successfully!');
       }
 
+      clearDraft();
       resetForm();
       await fetchVehicles();
     } catch (error) {
@@ -1663,6 +1686,8 @@ const VehicleForm = () => {
     },
   ];
 
+
+
   return (
     <div className="vehicle-form-container">
       {/* Header */}
@@ -1670,7 +1695,7 @@ const VehicleForm = () => {
         <h1>🚛 Vehicle Master</h1>
         <p>Comprehensive vehicle onboarding and management system</p>
 
-
+        <RestoreDraftNotification isVisible={hasDraft && !editingVehicle} onRestore={restoreDraft} onClear={clearDraft} />
 
         {/* Edit Mode Notice */}
         {editingVehicle && (

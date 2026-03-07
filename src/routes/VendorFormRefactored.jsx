@@ -4,6 +4,7 @@ import { useVendorForm } from '../hooks/useVendorForm';
 import { useVendorValidation } from '../hooks/useVendorValidation';
 import useFormValidation from '../hooks/useFormValidation';
 import DataTable from '../components/DataTable';
+import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import ValidationErrorModal from '../components/ValidationErrorModal';
 import BasicInfoSection from '../components/vendor/sections/BasicInfoSection';
 import PersonalDocsSection from '../components/vendor/sections/PersonalDocsSection';
@@ -12,7 +13,7 @@ import BankDetailsSection from '../components/vendor/sections/BankDetailsSection
 import './VendorForm.css';
 
 const VendorFormRefactored = () => {
-  const { vendorData, setVendorData, bankDetails, setBankDetails, files, setFiles, vendors, projects, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingVendor, setEditingVendor, dateFilter, setDateFilter, resetForm, handleInputChange, handleFileChange, handleAddressChange, getAddressData, fetchVendors, handleEdit, handleDelete, handleFileDelete } = useVendorForm();
+  const { vendorData, setVendorData, bankDetails, setBankDetails, files, setFiles, vendors, projects, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingVendor, setEditingVendor, dateFilter, setDateFilter, resetForm, handleInputChange, handleFileChange, handleAddressChange, getAddressData, fetchVendors, handleEdit, handleDelete, handleFileDelete, hasDraft, restoreDraft, clearDraft } = useVendorForm();
   const { validateForm } = useVendorValidation();
   const [modalImage, setModalImage] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -45,6 +46,7 @@ const VendorFormRefactored = () => {
 
       editingVendor ? await vendorAPI.update(editingVendor.vendor_id ?? editingVendor.VendorID, formData) : await vendorAPI.create(formData);
       apiHelpers.showSuccess(`Vendor ${editingVendor ? 'updated' : 'created'} successfully!`);
+      clearDraft();
       resetForm();
       await fetchVendors();
     } catch (error) {
@@ -122,6 +124,7 @@ const VendorFormRefactored = () => {
       </div>
 
       <div className="form-layout-card">
+        <RestoreDraftNotification isVisible={hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
         <form onSubmit={handleSubmit} className="form-content" encType="multipart/form-data">
           <BasicInfoSection {...commonSectionProps} handleAddressChange={handleAddressChange} getAddressData={getAddressData} projects={projects} />
           <PersonalDocsSection {...commonSectionProps} />
@@ -156,7 +159,7 @@ const VendorFormRefactored = () => {
         </div>
       )}
 
-      <ValidationErrorModal isOpen={showErrorModal} onClose={closeErrorModal} errorSummary={errorSummary} onGoToField={goToField} onTryAgain={() => handleSubmit({ preventDefault: () => {} })} />
+      <ValidationErrorModal isOpen={showErrorModal} onClose={closeErrorModal} errorSummary={errorSummary} onGoToField={goToField} onTryAgain={() => handleSubmit({ preventDefault: () => { } })} />
     </div>
   );
 };

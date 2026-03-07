@@ -96,45 +96,45 @@ const initializeCalculatedData = () => {
 export const useDailyVehicleTransactionForm = () => {
   // Master data (Grey Section)
   const [masterData, setMasterData] = useState(initializeMasterData);
-  
+
   // State for multiple drivers (for Fixed type)
   const [selectedDrivers, setSelectedDrivers] = useState([]);
-  
+
   // Daily transaction data (Blue Section)
   const [transactionData, setTransactionData] = useState(initializeTransactionData);
-  
+
   // System calculations (Yellow Section)
   const [calculatedData, setCalculatedData] = useState(initializeCalculatedData);
-  
+
   // Supervisor section (Orange Section)
   const [supervisorData, setSupervisorData] = useState({ Remarks: '', TripClose: false });
-  
+
   // State for all file uploads
   const [files, setFiles] = useState({
     DriverAadharDoc: null, DriverLicenceDoc: null, TollExpensesDoc: null,
     ParkingChargesDoc: null, OpeningKMImage: null, ClosingKMImage: null
   });
-  
+
   const [transactions, setTransactions] = useState([]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Date filter state
   const [dateFilter, setDateFilter] = useState({ fromDate: '', toDate: '' });
   const [editingTransaction, setEditingTransaction] = useState(null);
-  
+
   // Dropdown options
   const [customers, setCustomers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [vendors, setVendors] = useState([]);
-  
+
   // UI state for dropdowns
   const [isProjectDropdownVisible, setIsProjectDropdownVisible] = useState(false);
   const [availableProjects, setAvailableProjects] = useState([]);
-  
+
   // Internal IDs to submit to API
   const [ids, setIds] = useState({ CustomerID: '', ProjectID: '', VendorID: '' });
 
@@ -172,7 +172,7 @@ export const useDailyVehicleTransactionForm = () => {
   // Auto-calculate Total Duty Hours for Adhoc/Replacement
   useEffect(() => {
     if ((masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') &&
-        transactionData.ArrivalTimeAtHub && transactionData.OutTimeFromHub) {
+      transactionData.ArrivalTimeAtHub && transactionData.OutTimeFromHub) {
       try {
         const convertTimeForCalculation = (timeStr) => {
           if (!timeStr) return null;
@@ -379,7 +379,7 @@ export const useDailyVehicleTransactionForm = () => {
     customers, setCustomers, projects, setProjects, vehicles, setVehicles, drivers, setDrivers,
     vendors, setVendors, isProjectDropdownVisible, setIsProjectDropdownVisible,
     availableProjects, setAvailableProjects, ids, setIds,
-    
+
     // Functions
     loadDropdownOptions, fetchTransactions, resetForm, getCurrentDate, formatDateForInput,
     convertTo12Hour, convertTo24Hour, generateAdvanceRequestNo

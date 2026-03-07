@@ -9,6 +9,9 @@ import DocumentUpload from '../components/DocumentUpload';
 import ValidatedInput from '../components/ValidatedInput';
 import ValidationErrorModal from '../components/ValidationErrorModal';
 import useFormValidation from '../hooks/useFormValidation';
+import useFormDraft from '../hooks/useFormDraft';
+import RestoreDraftNotification from '../components/RestoreDraftNotification';
+import authService from '../services/authService';
 import './DriverForm.css';
 // Simple date formatting function
 const formatDateForInput = (dateString) => {
@@ -142,6 +145,29 @@ const DriverForm = () => {
   // State for modal viewer
   const [modalImage, setModalImage] = useState(null);
   const [showModal, setShowModal] = useState(false);
+
+  // Draft Management
+  const user = authService.getUser() || {};
+  const userId = user?.UserID || user?.id || 'anonymous';
+  const { hasDraft, getDraft, saveDraft, clearDraft } = useFormDraft('driver-form', userId);
+
+  const restoreDraft = () => {
+    const draft = getDraft();
+    if (draft) {
+      if (draft.driverData) setDriverData(draft.driverData);
+      apiHelpers.showSuccess('Progress restored successfully!');
+    }
+  };
+
+  // Auto-save draft
+  useEffect(() => {
+    if (!editingDriver) {
+      const isDriverDataChanged = JSON.stringify(driverData) !== JSON.stringify(getInitialState());
+      if (isDriverDataChanged) {
+        saveDraft({ driverData });
+      }
+    }
+  }, [driverData, editingDriver, saveDraft]);
 
   useEffect(() => {
     fetchDrivers();
@@ -600,6 +626,7 @@ const DriverForm = () => {
       }
 
       resetForm();
+      if (!editingDriver) clearDraft();
       await fetchDrivers();
     } catch (error) {
       apiHelpers.showError(error, 'Failed to save driver');
@@ -812,6 +839,7 @@ const DriverForm = () => {
 
   return (
     <div className="driver-form-container">
+      <RestoreDraftNotification isVisible={hasDraft && !editingDriver} onRestore={restoreDraft} onClear={clearDraft} />
       {/* Header */}
       <div className="form-header">
         <h1>👨‍💼 Driver Management</h1>

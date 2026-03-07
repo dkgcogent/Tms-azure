@@ -127,20 +127,20 @@ const FixedTransactionForm = () => {
 
   useEffect(() => {
     const fetchInitialData = async () => {
-        try {
-            const [customerRes, vehicleRes, driverRes, vendorRes] = await Promise.all([
-                customerAPI.getAll(),
-                vehicleAPI.getAll(),
-                driverAPI.getAll(),
-                vendorAPI.getAll(),
-            ]);
-            setCustomers(customerRes.data.data.map(c => ({ ...c, value: c.CustomerID, label: c.Name })));
-            setVehicles(vehicleRes.data.data);
-            setDrivers(driverRes.data.data);
-            setVendors(vendorRes.data.data);
-        } catch (error) {
-            console.error("Error fetching initial data:", error);
-        }
+      try {
+        const [customerRes, vehicleRes, driverRes, vendorRes] = await Promise.all([
+          customerAPI.getAll(),
+          vehicleAPI.getAll(),
+          driverAPI.getAll(),
+          vendorAPI.getAll(),
+        ]);
+        setCustomers(customerRes.data.data.map(c => ({ ...c, value: c.CustomerID, label: c.Name })));
+        setVehicles(vehicleRes.data.data);
+        setDrivers(driverRes.data.data);
+        setVendors(vendorRes.data.data);
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+      }
     };
     fetchInitialData();
     fetchTransactions();
@@ -275,12 +275,12 @@ const FixedTransactionForm = () => {
     // Validate time format for HH:MM (24-hour format)
     const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
     if (transactionData.ArrivalTimeAtHub && !timeRegex.test(transactionData.ArrivalTimeAtHub)) {
-        newErrors.ArrivalTimeAtHub = 'Invalid format. Use HH:MM.';
-        errorFields.push('ArrivalTimeAtHub');
+      newErrors.ArrivalTimeAtHub = 'Invalid format. Use HH:MM.';
+      errorFields.push('ArrivalTimeAtHub');
     }
     if (transactionData.ReturnReportingTime && !timeRegex.test(transactionData.ReturnReportingTime)) {
-        newErrors.ReturnReportingTime = 'Invalid format. Use HH:MM.';
-        errorFields.push('ReturnReportingTime');
+      newErrors.ReturnReportingTime = 'Invalid format. Use HH:MM.';
+      errorFields.push('ReturnReportingTime');
     }
 
     // New validation logic for return time
@@ -346,7 +346,7 @@ const FixedTransactionForm = () => {
         ArrivalTimeAtHub: transactionData.ArrivalTimeAtHub,
         ReturnReportingTime: transactionData.ReturnReportingTime,
       };
-      
+
       delete payload.Date;
 
       if (editingTransaction) {
@@ -382,31 +382,31 @@ const FixedTransactionForm = () => {
   const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
     setMasterData({
-        TypeOfTransaction: 'Fixed',
-        Customer: transaction.CustomerName || '',
-        Project: transaction.ProjectName || '',
-        VehicleNo: transaction.VehicleIDs ? JSON.parse(transaction.VehicleIDs) : [],
-        VendorName: transaction.VendorName || ''
+      TypeOfTransaction: 'Fixed',
+      Customer: transaction.CustomerName || '',
+      Project: transaction.ProjectName || '',
+      VehicleNo: transaction.VehicleIDs ? JSON.parse(transaction.VehicleIDs) : [],
+      VendorName: transaction.VendorName || ''
     });
 
     setTransactionData({
-        ...initialTransactionData,
-        ...transaction,
-        Date: formatDateForInput(transaction.TransactionDate),
-        ArrivalTimeAtHub: transaction.ArrivalTimeAtHub,
-        ReturnReportingTime: transaction.ReturnReportingTime,
+      ...initialTransactionData,
+      ...transaction,
+      Date: formatDateForInput(transaction.TransactionDate),
+      ArrivalTimeAtHub: transaction.ArrivalTimeAtHub,
+      ReturnReportingTime: transaction.ReturnReportingTime,
     });
     setIds({ ...ids, ...transaction });
     if (transaction.VehicleIDs) {
-        try {
-            const vehicleIds = JSON.parse(transaction.VehicleIDs);
-            const tags = vehicles
-                .filter(v => vehicleIds.includes(v.VehicleID.toString()))
-                .map(v => ({ id: v.VehicleID, registrationNo: v.VehicleRegistrationNo, type: v.VehicleType }));
-            setSelectedVehicleTags(tags);
-        } catch (e) {
-            console.warn('Could not parse VehicleIDs:', transaction.VehicleIDs);
-        }
+      try {
+        const vehicleIds = JSON.parse(transaction.VehicleIDs);
+        const tags = vehicles
+          .filter(v => vehicleIds.includes(v.VehicleID.toString()))
+          .map(v => ({ id: v.VehicleID, registrationNo: v.VehicleRegistrationNo, type: v.VehicleType }));
+        setSelectedVehicleTags(tags);
+      } catch (e) {
+        console.warn('Could not parse VehicleIDs:', transaction.VehicleIDs);
+      }
     }
   };
 
@@ -504,14 +504,14 @@ const FixedTransactionForm = () => {
           </div>
 
           <div className="form-row">
-              <div className="form-group">
-                  <label>Duty Hours</label>
-                  <input type="number" name="TotalDutyHours" value={transactionData.TotalDutyHours} readOnly className="readonly-field" />
-              </div>
-              <div className="form-group">
-                  <label>Overtime Cost Per Hour</label>
-                  <input type="number" name="OvertimeCostPerHour" value={transactionData.OvertimeCostPerHour} onChange={handleTransactionDataChange} step="0.01" />
-              </div>
+            <div className="form-group">
+              <label>Duty Hours</label>
+              <input type="number" name="TotalDutyHours" value={transactionData.TotalDutyHours} readOnly className="readonly-field" />
+            </div>
+            <div className="form-group">
+              <label>Overtime Cost Per Hour</label>
+              <input type="number" name="OvertimeCostPerHour" value={transactionData.OvertimeCostPerHour} onChange={handleTransactionDataChange} step="0.01" />
+            </div>
           </div>
 
           <div className="form-group">

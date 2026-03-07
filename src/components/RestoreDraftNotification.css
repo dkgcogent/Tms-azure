@@ -1,0 +1,126 @@
+.restore-draft-container {
+  margin-bottom: 2rem;
+  animation: slideDownFadeIn 0.5s ease;
+  width: 100%;
+}
+
+.restore-draft-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f2fe 100%);
+  border: 1px solid #cce4ff;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  gap: 1.5rem;
+}
+
+.restore-draft-content {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.restore-draft-icon {
+  width: 48px;
+  height: 48px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.25);
+}
+
+.restore-draft-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.restore-draft-title {
+  font-weight: 700;
+  color: #1a1a1a;
+  font-size: 1.1rem;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+.restore-draft-desc {
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.restore-draft-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.restore-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+}
+
+.restore-btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.restore-btn-primary:hover {
+  background-color: #0069d9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+.restore-btn-secondary {
+  background-color: #ffffff;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+.restore-btn-secondary:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
+.me-2 {
+  margin-right: 0.5rem;
+}
+
+@keyframes slideDownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .restore-draft-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .restore-draft-actions {
+    width: 100%;
+  }
+  
+  .restore-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

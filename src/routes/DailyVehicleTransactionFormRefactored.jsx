@@ -20,7 +20,7 @@ const DailyVehicleTransactionFormRefactored = () => {
     customers, setCustomers, projects, setProjects, vehicles, setVehicles, drivers, setDrivers,
     vendors, setVendors, isProjectDropdownVisible, setIsProjectDropdownVisible,
     availableProjects, setAvailableProjects, ids, setIds,
-    
+
     // Functions
     loadDropdownOptions, fetchTransactions, resetForm, getCurrentDate, formatDateForInput,
     convertTo12Hour, convertTo24Hour, generateAdvanceRequestNo
@@ -407,7 +407,7 @@ const DailyVehicleTransactionFormRefactored = () => {
   return (
     <div className="daily-vehicle-transaction-form">
       <h2>Daily Vehicle Transaction Form</h2>
-      
+
       <form onSubmit={handleSubmit}>
         <div className="form-container">
           {/* Master Data Section */}

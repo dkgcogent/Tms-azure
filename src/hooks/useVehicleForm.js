@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { vehicleAPI, vendorAPI, driverAPI, apiHelpers } from '../services/api';
+import useFormDraft from './useFormDraft';
+import authService from '../services/authService';
 
 const INITIAL_STATE = { VehicleRegistrationNo: '', VehicleCode: '', vendor_id: '', driver_id: '', RCUpload: null, VehicleChasisNo: '', VehicleModel: '', TypeOfBody: 'Open', VehicleType: '', VehicleRegistrationDate: '', VehicleAge: 0, VehicleKMS: '', VehicleKMSPhoto: null, VehiclePhotoFront: null, VehiclePhotoBack: null, VehiclePhotoLeftSide: null, VehiclePhotoRightSide: null, VehiclePhotoInterior: null, VehiclePhotoEngine: null, VehiclePhotoRoof: null, VehiclePhotoDoor: null, LastServicing: '', ServiceBillPhoto: null, VehicleInsuranceCompany: '', VehicleInsuranceDate: '', VehicleInsuranceExpiry: '', InsuranceCopy: null, VehicleFitnessCertificateIssue: '', VehicleFitnessCertificateExpiry: '', FitnessCertificateUpload: null, VehiclePollutionDate: '', VehiclePollutionExpiry: '', PollutionPhoto: null, StateTaxIssue: '', StateTaxExpiry: '', StateTaxPhoto: null, VehicleLoadingCapacity: '', GPS: 'No', GPSCompany: '', NoEntryPass: 'No', NoEntryPassStartDate: '', NoEntryPassExpiry: '', NoEntryPassCopy: null, FixRate: '', FuelRate: '', HandlingCharges: '' };
 
@@ -29,6 +31,26 @@ export const useVehicleForm = () => {
   const [modalImage, setModalImage] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Draft Management
+  const user = authService.getUser();
+  const userId = user?.UserID || user?.id || 'anonymous';
+  const { hasDraft, getDraft, saveDraft, clearDraft } = useFormDraft('vehicle-form', userId);
+
+  const restoreDraft = useCallback(() => {
+    const draft = getDraft();
+    if (draft) {
+      setVehicleData(draft);
+      apiHelpers.showSuccess('Progress restored successfully!');
+    }
+  }, [getDraft]);
+
+  // Auto-save draft whenever vehicleData changes (only in add mode)
+  useEffect(() => {
+    if (!editingVehicle && JSON.stringify(vehicleData) !== JSON.stringify(INITIAL_STATE)) {
+      saveDraft(vehicleData);
+    }
+  }, [vehicleData, editingVehicle, saveDraft]);
+
   const resetForm = useCallback(() => {
     setVehicleData(INITIAL_STATE);
     setErrors({});
@@ -51,7 +73,7 @@ export const useVehicleForm = () => {
   const generateVehicleCode = useCallback(async () => {
     try {
       if (!vehicleData.vendor_id || !vehicleData.VehicleRegistrationNo) return;
-      
+
       const vendorResponse = await vendorAPI.getAll();
       const vendor = vendorResponse.data?.find(v => v.VendorID == vehicleData.vendor_id);
       if (!vendor) throw new Error(`Vendor not found with ID: ${vehicleData.vendor_id}`);
@@ -228,7 +250,7 @@ export const useVehicleForm = () => {
       console.log('🗓️ Date filter applied to export:', { fromDate: dateFilter.fromDate, toDate: dateFilter.toDate });
 
       const loadingToast = createToast('🔄 Exporting vehicles... Please wait', '#007bff');
-      
+
       const link = document.createElement('a');
       Object.assign(link, { href: exportUrl, download: `Vehicle_Master_${new Date().toISOString().slice(0, 10)}.xlsx`, target: '_blank' });
       document.body.appendChild(link);
@@ -256,5 +278,5 @@ export const useVehicleForm = () => {
   useEffect(() => { vehicleData.VehicleRegistrationDate && setVehicleData(prev => ({ ...prev, VehicleAge: calculateAge(vehicleData.VehicleRegistrationDate) })); }, [vehicleData.VehicleRegistrationDate]);
   useEffect(() => { vehicleData && Object.keys(vehicleData).length > 0 && checkExpiryDates(vehicleData); }, [vehicleData.VehicleInsuranceExpiry, vehicleData.VehicleFitnessCertificateExpiry, vehicleData.VehiclePollutionExpiry, vehicleData.StateTaxExpiry, vehicleData.NoEntryPassExpiry, checkExpiryDates]);
 
-  return { vehicleData, setVehicleData, vehicles, files, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingVehicle, setEditingVehicle, dateFilter, setDateFilter, modalImage, setModalImage, showModal, setShowModal, resetForm, handleInputChange, handleFileChange, generateVehicleCode, fetchVehicles, getExpiryStatus, handleEdit, handleDelete, handleFileDelete, handleExportVehicles, handleDateFilterApply, handleDateFilterClear };
+  return { vehicleData, setVehicleData, vehicles, files, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingVehicle, setEditingVehicle, dateFilter, setDateFilter, modalImage, setModalImage, showModal, setShowModal, resetForm, handleInputChange, handleFileChange, generateVehicleCode, fetchVehicles, getExpiryStatus, handleEdit, handleDelete, handleFileDelete, handleExportVehicles, handleDateFilterApply, handleDateFilterClear, hasDraft, restoreDraft, clearDraft };
 };

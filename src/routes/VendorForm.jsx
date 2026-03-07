@@ -9,6 +9,9 @@ import BankDetails from '../components/BankDetails';
 import ValidationErrorModal from '../components/ValidationErrorModal';
 import useFormValidation from '../hooks/useFormValidation';
 import Dropdown from '../components/Dropdown';
+import useFormDraft from '../hooks/useFormDraft';
+import RestoreDraftNotification from '../components/RestoreDraftNotification';
+import authService from '../services/authService';
 import './VendorForm.css';
 
 const VendorForm = () => {
@@ -154,6 +157,33 @@ const VendorForm = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [editingVendor, setEditingVendor] = useState(null);
+
+  // Draft Management
+  const user = authService.getUser();
+  const userId = user?.UserID || user?.id || 'anonymous';
+  const { hasDraft, getDraft, saveDraft, clearDraft } = useFormDraft('vendor-form', userId);
+
+  const restoreDraft = () => {
+    const draft = getDraft();
+    if (draft) {
+      if (draft.vendorData) setVendorData(draft.vendorData);
+      if (draft.bankDetails) setBankDetails(draft.bankDetails);
+      apiHelpers.showSuccess('Progress restored successfully!');
+    }
+  };
+
+  // Auto-save draft
+  useEffect(() => {
+    if (!editingVendor) {
+      const isVendorDataChanged = JSON.stringify(vendorData) !== JSON.stringify(getInitialState());
+      const isBankDetailsChanged = JSON.stringify(bankDetails) !== JSON.stringify({
+        account_holder_name: '', account_number: '', ifsc_code: '', bank_name: '', branch_name: '', branch_address: '', city: '', state: ''
+      });
+      if (isVendorDataChanged || isBankDetailsChanged) {
+        saveDraft({ vendorData, bankDetails });
+      }
+    }
+  }, [vendorData, bankDetails, editingVendor, saveDraft]);
 
   useEffect(() => {
     fetchVendors();
@@ -796,6 +826,7 @@ const VendorForm = () => {
         apiHelpers.showSuccess('Vendor created successfully!');
       }
 
+      clearDraft();
       resetForm();
       await fetchVendors();
     } catch (error) {
@@ -1040,6 +1071,7 @@ const VendorForm = () => {
 
       {/* Form Section */}
       <div className="form-layout-card">
+        <RestoreDraftNotification isVisible={hasDraft} onRestore={restoreDraft} onClear={clearDraft} />
         <form onSubmit={handleSubmit} className="form-content" encType="multipart/form-data">
           {/* ===================================== */}
           {/* SECTION 1: BASIC INFORMATION */}

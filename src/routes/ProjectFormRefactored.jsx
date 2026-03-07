@@ -6,13 +6,14 @@ import DataTable from '../components/DataTable';
 
 import ProjectDetailsSection from '../components/project/sections/ProjectDetailsSection';
 import ProjectTimelineSection from '../components/project/sections/ProjectTimelineSection';
+import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import './ProjectForm.css';
 
 const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString('en-IN') : '-';
 const formatCurrency = (amount) => amount ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount) : '₹0';
 
 const ProjectFormRefactored = () => {
-  const { projectData, setProjectData, projects, customers, locations, selectedCustomer, setSelectedCustomer, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingProject, setEditingProject, dateFilter, setDateFilter, resetForm, handleInputChange, handleLocationChange, handleCustomerChange, fetchProjects, formatDateForInput } = useProjectForm();
+  const { projectData, setProjectData, projects, customers, locations, selectedCustomer, setSelectedCustomer, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingProject, setEditingProject, dateFilter, setDateFilter, resetForm, handleInputChange, handleLocationChange, handleCustomerChange, fetchProjects, formatDateForInput, hasDraft, restoreDraft, clearDraft } = useProjectForm();
   const { validateForm } = useProjectValidation();
 
   const handleDateFilterApply = useCallback(async () => {
@@ -119,6 +120,7 @@ const ProjectFormRefactored = () => {
         const response = await projectAPI.create(formData);
         const generatedProjectCode = response.data?.ProjectCode;
         generatedProjectCode ? (setProjectData(prev => ({ ...prev, ProjectCode: generatedProjectCode })), apiHelpers.showSuccess(`Project "${projectData.ProjectName}" has been added successfully! Generated Code: ${generatedProjectCode}`)) : apiHelpers.showSuccess(`Project "${projectData.ProjectName}" has been added successfully!`);
+        clearDraft();
       }
 
       await fetchProjects();
@@ -127,7 +129,7 @@ const ProjectFormRefactored = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [projectData, validateForm, setErrors, setIsSubmitting, locations, editingProject, setProjectData, resetForm, fetchProjects]);
+  }, [projectData, validateForm, setErrors, setIsSubmitting, locations, editingProject, setProjectData, resetForm, fetchProjects, clearDraft]);
 
   const handleEdit = useCallback(async (project) => {
     try {
@@ -184,6 +186,7 @@ const ProjectFormRefactored = () => {
             <button type="button" onClick={resetForm} className="cancel-edit-btn">Cancel Edit</button>
           </div>
         )}
+        <RestoreDraftNotification isVisible={hasDraft && !editingProject} onRestore={restoreDraft} onClear={clearDraft} />
       </div>
 
       <div className="project-form">

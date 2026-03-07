@@ -11,6 +11,9 @@ import DocumentActionModal from '../components/DocumentActionModal';
 import { showWarning } from '../components/Notification';
 import useFormValidation from '../hooks/useFormValidation';
 import Dropdown from '../components/Dropdown';
+import useFormDraft from '../hooks/useFormDraft';
+import authService from '../services/authService';
+import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import './CustomerForm.css';
 
 // Utility function to format date for input fields
@@ -115,7 +118,7 @@ const CustomerForm = () => {
     RatesAnnexureFile: null,
     YearlyEscalationClause: 'No',
     GSTNo: '',
-    GSTRate: '',
+    GSTRate: '0',
     TypeOfBilling: 'RCM',
     BillingTenure: '',
     BillingFromDate: '',
@@ -187,6 +190,37 @@ const CustomerForm = () => {
 
   // Track files marked for deletion (will be deleted on form submit)
   const [filesToDelete, setFilesToDelete] = useState([]);
+
+  // Draft Management
+  const user = authService.getUser();
+  const userId = user?.UserID || user?.id || 'anonymous';
+  const { hasDraft, getDraft, saveDraft, clearDraft } = useFormDraft('add-customer', userId);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  const restoreDraft = () => {
+    const draft = getDraft();
+    if (draft) {
+      setCustomerData(draft);
+      setDraftRestored(true);
+      apiHelpers.showSuccess('Progress restored successfully!');
+    }
+  };
+
+  const handleClearDraft = () => {
+    clearDraft();
+    setDraftRestored(true);
+    // Optionally reset the form to truly clear any typed data if they pressed discard
+    // resetForm(); 
+  };
+
+  // Auto-save draft whenever customerData changes (only in add mode)
+  useEffect(() => {
+    if (!editingCustomer && Object.keys(customerData).length > 0) {
+      if (JSON.stringify(customerData) !== JSON.stringify(getInitialState())) {
+        saveDraft(customerData);
+      }
+    }
+  }, [customerData, editingCustomer, saveDraft]);
 
   // Date filter state
   const [dateFilter, setDateFilter] = useState({
@@ -1645,6 +1679,9 @@ const CustomerForm = () => {
         } else {
           apiHelpers.showSuccess(`Customer "${validatedData.Name}" has been added successfully!`);
         }
+
+        // Clear draft on successful submission
+        clearDraft();
       }
       await loadCustomers();
       // Don't reset form immediately for new customers so they can see the generated code
@@ -2572,6 +2609,7 @@ const CustomerForm = () => {
         <h1>👥 CRM</h1>
         <p>Add and manage customer details, agreements, and billing information.</p>
 
+        <RestoreDraftNotification isVisible={hasDraft && !editingCustomer && !draftRestored} onRestore={restoreDraft} onClear={handleClearDraft} />
 
         {editingCustomer && (
           <div className="edit-notice">

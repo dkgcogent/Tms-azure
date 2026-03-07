@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { customerAPI, projectAPI, locationAPI, apiHelpers } from '../services/api';
+import useFormDraft from './useFormDraft';
+import authService from '../services/authService';
 
 const INITIAL_STATE = { ProjectName: '', CustomerID: '', ProjectCode: '', ProjectDescription: '', LocationID: '', ProjectValue: '', StartDate: '', EndDate: '', Status: 'Active' };
 const formatDateForInput = (dateString) => dateString ? new Date(new Date(dateString).getTime() + new Date(dateString).getTimezoneOffset() * 60000).toISOString().split('T')[0] : '';
@@ -16,6 +18,26 @@ export const useProjectForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [dateFilter, setDateFilter] = useState({ fromDate: '', toDate: '' });
+
+  // Draft Management
+  const user = authService.getUser();
+  const userId = user?.UserID || user?.id || 'anonymous';
+  const { hasDraft, getDraft, saveDraft, clearDraft } = useFormDraft('project-form', userId);
+
+  const restoreDraft = useCallback(() => {
+    const draft = getDraft();
+    if (draft) {
+      setProjectData(draft);
+      apiHelpers.showSuccess('Progress restored successfully!');
+    }
+  }, [getDraft]);
+
+  // Auto-save draft whenever projectData changes (only in add mode)
+  useEffect(() => {
+    if (!editingProject && JSON.stringify(projectData) !== JSON.stringify(INITIAL_STATE)) {
+      saveDraft(projectData);
+    }
+  }, [projectData, editingProject, saveDraft]);
 
   const resetForm = useCallback(() => {
     setProjectData(INITIAL_STATE);
@@ -145,5 +167,5 @@ export const useProjectForm = () => {
   useEffect(() => { fetchProjects(); loadCustomers(); }, [fetchProjects, loadCustomers]);
   useEffect(() => { selectedCustomer && customerSites.length > 0 && loadLocations(selectedCustomer.CustomerID); }, [customerSites, selectedCustomer, loadLocations]);
 
-  return { projectData, setProjectData, projects, setProjects, customers, locations, customerSites, selectedCustomer, setSelectedCustomer, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, setIsLoading, editingProject, setEditingProject, dateFilter, setDateFilter, resetForm, handleInputChange, handleLocationChange, handleCustomerChange, fetchProjects, loadCustomers, loadLocations, loadCustomerSites, generateProjectCode, formatDateForInput };
+  return { projectData, setProjectData, projects, setProjects, customers, locations, customerSites, selectedCustomer, setSelectedCustomer, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, setIsLoading, editingProject, setEditingProject, dateFilter, setDateFilter, resetForm, handleInputChange, handleLocationChange, handleCustomerChange, fetchProjects, loadCustomers, loadLocations, loadCustomerSites, generateProjectCode, formatDateForInput, hasDraft, restoreDraft, clearDraft };
 };

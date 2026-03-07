@@ -77,7 +77,7 @@ const DriverFormRefactored = () => {
       console.log('🗓️ Date filter applied to export:', { fromDate: dateFilter.fromDate, toDate: dateFilter.toDate });
 
       const loadingToast = createToast('🔄 Exporting drivers... Please wait', '#007bff');
-      
+
       const link = document.createElement('a');
       Object.assign(link, { href: exportUrl, download: `Driver_Master_${new Date().toISOString().slice(0, 10)}.xlsx`, target: '_blank' });
       document.body.appendChild(link);
@@ -121,7 +121,7 @@ const DriverFormRefactored = () => {
           <DriverDetailsSection {...commonSectionProps} vendors={vendors} handleVendorSelection={handleVendorSelection} />
           <LicenseMedicalSection {...commonSectionProps} />
           <PhotoAddressSection {...commonSectionProps} handleFileChange={handleFileChange} handleFileDelete={handleFileDelete} handleAddressChange={handleAddressChange} getAddressData={getAddressData} files={files} editingDriver={editingDriver} />
-          
+
           <div className="form-actions">
             <button type="submit" disabled={isSubmitting} className="submit-btn">
               {isSubmitting ? 'Processing...' : editingDriver ? 'Update Driver' : 'Add Driver'}
@@ -150,7 +150,7 @@ const DriverFormRefactored = () => {
         </div>
       )}
 
-      <ValidationErrorModal isOpen={showErrorModal} onClose={closeErrorModal} errorSummary={errorSummary} onGoToField={goToField} onTryAgain={() => handleSubmit({ preventDefault: () => {} })} />
+      <ValidationErrorModal isOpen={showErrorModal} onClose={closeErrorModal} errorSummary={errorSummary} onGoToField={goToField} onTryAgain={() => handleSubmit({ preventDefault: () => { } })} />
     </div>
   );
 };

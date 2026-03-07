@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { vendorAPI, projectAPI, apiHelpers } from '../services/api';
+import useFormDraft from './useFormDraft';
+import authService from '../services/authService';
 
 const INITIAL_STATE = { vendor_name: '', vendor_mobile_no: '', project_id: '', house_flat_no: '', street_locality: '', city: '', state: '', pin_code: '', country: 'India', vendor_alternate_no: '', vendor_aadhar: '', vendor_pan: '', vendor_company_name: '', vendor_company_udhyam: '', vendor_company_pan: '', vendor_company_gst: '', type_of_company: 'Proprietorship', start_date_of_company: '', address_of_company: '', bank_details: '', vendor_photo_url: null, vendor_aadhar_doc_url: null, vendor_pan_doc_url: null, vendor_company_udhyam_doc_url: null, vendor_company_pan_doc_url: null, vendor_company_gst_doc_url: null, company_legal_docs_url: null, bank_cheque_upload_url: null, address_of_company_house_flat_no: '', address_of_company_street_locality: '', address_of_company_city: '', address_of_company_state: '', address_of_company_pin_code: '', address_of_company_country: 'India' };
 const INITIAL_BANK_DETAILS = { account_holder_name: '', account_number: '', ifsc_code: '', bank_name: '', branch_name: '', branch_address: '', city: '', state: '' };
@@ -16,6 +18,31 @@ export const useVendorForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [editingVendor, setEditingVendor] = useState(null);
   const [dateFilter, setDateFilter] = useState({ fromDate: '', toDate: '' });
+
+  // Draft Management
+  const user = authService.getUser();
+  const userId = user?.UserID || user?.id || 'anonymous';
+  const { hasDraft, getDraft, saveDraft, clearDraft } = useFormDraft('vendor-form', userId);
+
+  const restoreDraft = useCallback(() => {
+    const draft = getDraft();
+    if (draft) {
+      if (draft.vendorData) setVendorData(draft.vendorData);
+      if (draft.bankDetails) setBankDetails(draft.bankDetails);
+      apiHelpers.showSuccess('Progress restored successfully!');
+    }
+  }, [getDraft]);
+
+  // Auto-save draft
+  useEffect(() => {
+    if (!editingVendor) {
+      const isVendorDataChanged = JSON.stringify(vendorData) !== JSON.stringify(INITIAL_STATE);
+      const isBankDetailsChanged = JSON.stringify(bankDetails) !== JSON.stringify(INITIAL_BANK_DETAILS);
+      if (isVendorDataChanged || isBankDetailsChanged) {
+        saveDraft({ vendorData, bankDetails });
+      }
+    }
+  }, [vendorData, bankDetails, editingVendor, saveDraft]);
 
   const parseCompanyAddress = useCallback((combinedAddress) => {
     if (!combinedAddress) return { address_of_company_house_flat_no: '', address_of_company_street_locality: '', address_of_company_city: '', address_of_company_state: '', address_of_company_pin_code: '', address_of_company_country: 'India' };
@@ -123,5 +150,5 @@ export const useVendorForm = () => {
 
   useEffect(() => { fetchVendors(); fetchProjects(); }, [fetchVendors, fetchProjects]);
 
-  return { vendorData, setVendorData, bankDetails, setBankDetails, files, setFiles, vendors, projects, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingVendor, setEditingVendor, dateFilter, setDateFilter, resetForm, handleInputChange, handleFileChange, handleAddressChange, getAddressData, fetchVendors, fetchProjects, handleEdit, handleDelete, handleFileDelete, parseCompanyAddress };
+  return { vendorData, setVendorData, bankDetails, setBankDetails, files, setFiles, vendors, projects, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingVendor, setEditingVendor, dateFilter, setDateFilter, resetForm, handleInputChange, handleFileChange, handleAddressChange, getAddressData, fetchVendors, fetchProjects, handleEdit, handleDelete, handleFileDelete, parseCompanyAddress, hasDraft, restoreDraft, clearDraft };
 };
