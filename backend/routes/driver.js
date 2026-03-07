@@ -133,16 +133,7 @@ module.exports = (pool) => {
   // Create a new driver with photo upload
   // This route creates a new driver record in the database using the data provided in the request body.
   // It responds with a 201 status code and the newly created driver's data, including the generated ID.
-  router.post('/', (req, res, next) => {
-    // Only use multer for multipart/form-data requests
-    const contentType = req.get('Content-Type') || '';
-    if (contentType.includes('multipart/form-data')) {
-      return upload.single('DriverPhoto')(req, res, next);
-    } else {
-      // Skip multer for JSON requests
-      next();
-    }
-  }, (req, res, next) => {
+  router.post('/', upload.single('DriverPhoto'), (req, res, next) => {
     // Handle multer errors with user-friendly messages
     if (req.fileValidationError) {
       return res.status(400).json({
@@ -192,16 +183,13 @@ module.exports = (pool) => {
     }
 
     try {
-      // Handle photo upload if provided (from req.file if multipart, or req.body if JSON/Azure)
+      // Handle photo upload if provided
       let photoPath = null;
       if (req.file) {
         photoPath = req.file.path;
-        console.log('🚗 DRIVER API - Photo uploaded (Local/Multer):', photoPath);
-      } else if (driver.DriverPhoto && typeof driver.DriverPhoto === 'string') {
-        photoPath = driver.DriverPhoto;
-        console.log('🚗 DRIVER API - Photo URL provided (Azure/JSON):', photoPath);
+        console.log('🚗 DRIVER API - Photo uploaded:', photoPath);
       } else {
-        console.log('🚗 DRIVER API - No photo provided');
+        console.log('🚗 DRIVER API - No photo uploaded');
       }
 
       console.log('🚗 DRIVER API - Creating driver with data:', {
@@ -255,16 +243,7 @@ module.exports = (pool) => {
   // Update a driver
   // This route updates an existing driver record identified by the provided ID with new data from the request body.
   // It responds with the updated driver data if successful, or a 404 error if the driver is not found.
-  router.put('/:id', (req, res, next) => {
-    // Only use multer for multipart/form-data requests
-    const contentType = req.get('Content-Type') || '';
-    if (contentType.includes('multipart/form-data')) {
-      return upload.single('DriverPhoto')(req, res, next);
-    } else {
-      // Skip multer for JSON requests
-      next();
-    }
-  }, (req, res, next) => {
+  router.put('/:id', upload.single('DriverPhoto'), (req, res, next) => {
     // Handle multer errors with user-friendly messages
     if (req.fileValidationError) {
       return res.status(400).json({
@@ -332,7 +311,7 @@ module.exports = (pool) => {
       let photoPath = null;
 
       if (req.file) {
-        // New file uploaded via Multer
+        // New file uploaded - delete old file if exists AND is local
         if (existingDriver[0].DriverPhoto) {
           const oldPath = existingDriver[0].DriverPhoto;
           if (!oldPath.startsWith('http') && fs.existsSync(oldPath)) {
@@ -340,11 +319,7 @@ module.exports = (pool) => {
           }
         }
         photoPath = req.file.path;
-        console.log('🚗 DRIVER UPDATE - New photo uploaded (Local/Multer):', photoPath);
-      } else if (driver.DriverPhoto && typeof driver.DriverPhoto === 'string' && driver.DriverPhoto.startsWith('http')) {
-        // New file uploaded via Azure/URL
-        photoPath = driver.DriverPhoto;
-        console.log('🚗 DRIVER UPDATE - New photo URL provided (Azure/JSON):', photoPath);
+        console.log('🚗 DRIVER UPDATE - New photo uploaded:', photoPath);
       } else {
         // No new file - keep existing photo
         photoPath = existingDriver[0].DriverPhoto || null;

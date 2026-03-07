@@ -12,7 +12,6 @@ import useFormValidation from '../hooks/useFormValidation';
 import useFormDraft from '../hooks/useFormDraft';
 import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import authService from '../services/authService';
-import { uploadFileDirectly } from '../utils/azureUpload';
 import './DriverForm.css';
 // Simple date formatting function
 const formatDateForInput = (dateString) => {
@@ -570,51 +569,59 @@ const DriverForm = () => {
         setFilesToDelete([]);
       }
 
-      // Step 1: Upload files to Azure directly if present
-      // This bypasses Vercel's 4.5MB request limit
-      let azurePhotoUrl = null;
-      if (files.DriverPhoto && files.DriverPhoto instanceof File) {
-        try {
-          console.log('☁️ DRIVER FORM - Uploading photo to Azure directly...', files.DriverPhoto.name);
-          azurePhotoUrl = await uploadFileDirectly(files.DriverPhoto, 'drivers');
-          console.log('✅ DRIVER FORM - Azure upload successful:', azurePhotoUrl);
-        } catch (uploadError) {
-          console.error('❌ DRIVER FORM - Azure upload failed:', uploadError);
-          apiHelpers.showError(uploadError, 'Failed to upload photo to storage. Please try again.');
-          setIsSubmitting(false);
-          return;
-        }
+      // Create FormData for file upload support
+      const formData = new FormData();
+
+      // Add text fields - only add non-empty values to preserve existing data
+      if (driverData.DriverName && driverData.DriverName.trim()) {
+        formData.append('DriverName', driverData.DriverName.trim());
+      }
+      if (driverData.DriverLicenceNo && driverData.DriverLicenceNo.trim()) {
+        formData.append('DriverLicenceNo', driverData.DriverLicenceNo.trim());
+      }
+      if (driverData.DriverMobileNo && driverData.DriverMobileNo.trim()) {
+        formData.append('DriverMobileNo', driverData.DriverMobileNo.trim());
+      }
+      if (driverData.DriverAddress && driverData.DriverAddress.trim()) {
+        formData.append('DriverAddress', driverData.DriverAddress.trim());
+      }
+      if (driverData.DriverLicenceIssueDate) {
+        formData.append('DriverLicenceIssueDate', driverData.DriverLicenceIssueDate);
+      }
+      if (driverData.DriverLicenceExpiryDate) {
+        formData.append('DriverLicenceExpiryDate', driverData.DriverLicenceExpiryDate);
+      }
+      if (driverData.DriverMedicalDate) {
+        formData.append('DriverMedicalDate', driverData.DriverMedicalDate);
+      }
+      formData.append('DriverSameAsVendor', driverData.DriverSameAsVendor || 'Separate');
+      if (driverData.DriverAlternateNo && driverData.DriverAlternateNo.trim()) {
+        formData.append('DriverAlternateNo', driverData.DriverAlternateNo.trim());
+      }
+      if (driverData.DriverTotalExperience) {
+        formData.append('DriverTotalExperience', driverData.DriverTotalExperience);
+      }
+      if (driverData.vendor_id) {
+        formData.append('VendorID', driverData.vendor_id);
       }
 
-      // Step 2: Prepare the payload
-      // We'll send a JSON payload if we have an Azure URL, which is much safer for Vercel
-      const payload = {
-        DriverName: driverData.DriverName?.trim(),
-        DriverLicenceNo: driverData.DriverLicenceNo?.trim(),
-        DriverMobileNo: driverData.DriverMobileNo?.trim(),
-        DriverAddress: driverData.DriverAddress?.trim(),
-        house_flat_no: driverData.house_flat_no,
-        street_locality: driverData.street_locality,
-        city: driverData.city,
-        state: driverData.state,
-        pin_code: driverData.pin_code,
-        country: driverData.country || 'India',
-        DriverLicenceIssueDate: driverData.DriverLicenceIssueDate,
-        DriverLicenceExpiryDate: driverData.DriverLicenceExpiryDate,
-        DriverMedicalDate: driverData.DriverMedicalDate,
-        DriverSameAsVendor: driverData.DriverSameAsVendor || 'Separate',
-        DriverAlternateNo: driverData.DriverAlternateNo?.trim(),
-        DriverTotalExperience: driverData.DriverTotalExperience,
-        VendorID: driverData.vendor_id || null,
-        // If we have an Azure URL, pass it as DriverPhoto string
-        ...(azurePhotoUrl ? { DriverPhoto: azurePhotoUrl } : {})
-      };
+
+
+      // Add file only if a new file is selected (following Vendor Form pattern)
+      if (files.DriverPhoto && files.DriverPhoto.name) {
+        formData.append('DriverPhoto', files.DriverPhoto);
+        console.log('📁 DRIVER FORM - Adding new photo to FormData:', files.DriverPhoto.name);
+      }
+      // Note: If no new file is selected, we don't send any file data
+      // The backend will preserve the existing photo automatically
+
+
 
       if (editingDriver) {
-        await driverAPI.update(editingDriver.DriverID, payload);
+        await driverAPI.update(editingDriver.DriverID, formData);
         apiHelpers.showSuccess('Driver updated successfully!');
       } else {
-        await driverAPI.create(payload);
+        await driverAPI.create(formData);
         apiHelpers.showSuccess('Driver created successfully!');
       }
 
