@@ -278,6 +278,20 @@ export const adhocTransactionAPI = {
 
 
 
+// SAS Upload API — used by the frontend to get a short-lived Azure SAS URL
+// so files can be uploaded directly from the browser to Azure Blob Storage,
+// bypassing Vercel's ~4.5 MB serverless function body limit.
+export const sasUploadAPI = {
+  /**
+   * Generate a SAS upload URL for a file.
+   * @param {string} fileName   - Original file name (e.g. "photo.jpg")
+   * @param {string} fileType   - MIME type  (e.g. "image/jpeg")
+   * @param {string} entityType - Blob folder (e.g. "vehicles", "customers")
+   */
+  generate: (fileName, fileType, entityType = 'misc') =>
+    api.post('/sas-upload/generate', { fileName, fileType, entityType }),
+};
+
 // Billing API
 export const billingAPI = {
   getAll: () => api.get('/billing'),
