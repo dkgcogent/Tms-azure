@@ -133,7 +133,16 @@ module.exports = (pool) => {
   // Create a new driver with photo upload
   // This route creates a new driver record in the database using the data provided in the request body.
   // It responds with a 201 status code and the newly created driver's data, including the generated ID.
-  router.post('/', upload.single('DriverPhoto'), (req, res, next) => {
+  router.post('/', (req, res, next) => {
+    // Only use multer for multipart/form-data requests
+    const contentType = req.get('Content-Type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      return upload.single('DriverPhoto')(req, res, next);
+    } else {
+      // Skip multer for JSON requests
+      next();
+    }
+  }, (req, res, next) => {
     // Handle multer errors with user-friendly messages
     if (req.fileValidationError) {
       return res.status(400).json({
@@ -183,14 +192,14 @@ module.exports = (pool) => {
     }
 
     try {
-      // Handle photo: prefer Azure blob URL string, fall back to multer file upload
+      // Handle photo upload if provided (from req.file if multipart, or req.body if JSON/Azure)
       let photoPath = null;
       if (req.file) {
         photoPath = req.file.path;
-        console.log('🚗 DRIVER API - Photo uploaded via multer:', photoPath);
-      } else if (driver.DriverPhoto && typeof driver.DriverPhoto === 'string' && driver.DriverPhoto.startsWith('http')) {
-        photoPath = driver.DriverPhoto; // Azure blob URL sent directly from frontend
-        console.log('🚗 DRIVER API - Photo received as Azure blob URL:', photoPath);
+        console.log('🚗 DRIVER API - Photo uploaded (Local/Multer):', photoPath);
+      } else if (driver.DriverPhoto && typeof driver.DriverPhoto === 'string') {
+        photoPath = driver.DriverPhoto;
+        console.log('🚗 DRIVER API - Photo URL provided (Azure/JSON):', photoPath);
       } else {
         console.log('🚗 DRIVER API - No photo provided');
       }
@@ -246,7 +255,16 @@ module.exports = (pool) => {
   // Update a driver
   // This route updates an existing driver record identified by the provided ID with new data from the request body.
   // It responds with the updated driver data if successful, or a 404 error if the driver is not found.
-  router.put('/:id', upload.single('DriverPhoto'), (req, res, next) => {
+  router.put('/:id', (req, res, next) => {
+    // Only use multer for multipart/form-data requests
+    const contentType = req.get('Content-Type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      return upload.single('DriverPhoto')(req, res, next);
+    } else {
+      // Skip multer for JSON requests
+      next();
+    }
+  }, (req, res, next) => {
     // Handle multer errors with user-friendly messages
     if (req.fileValidationError) {
       return res.status(400).json({
@@ -310,11 +328,11 @@ module.exports = (pool) => {
         return res.status(404).json({ error: 'Driver not found' });
       }
 
-      // Handle photo: prefer Azure blob URL string, fall back to multer file, else keep existing
+      // Handle photo upload if provided
       let photoPath = null;
 
       if (req.file) {
-        // New file uploaded via multer - delete old local file if exists
+        // New file uploaded via Multer
         if (existingDriver[0].DriverPhoto) {
           const oldPath = existingDriver[0].DriverPhoto;
           if (!oldPath.startsWith('http') && fs.existsSync(oldPath)) {
@@ -322,11 +340,11 @@ module.exports = (pool) => {
           }
         }
         photoPath = req.file.path;
-        console.log('🚗 DRIVER UPDATE - New photo uploaded via multer:', photoPath);
+        console.log('🚗 DRIVER UPDATE - New photo uploaded (Local/Multer):', photoPath);
       } else if (driver.DriverPhoto && typeof driver.DriverPhoto === 'string' && driver.DriverPhoto.startsWith('http')) {
-        // Azure blob URL sent directly from frontend
+        // New file uploaded via Azure/URL
         photoPath = driver.DriverPhoto;
-        console.log('🚗 DRIVER UPDATE - New photo as Azure blob URL:', photoPath);
+        console.log('🚗 DRIVER UPDATE - New photo URL provided (Azure/JSON):', photoPath);
       } else {
         // No new file - keep existing photo
         photoPath = existingDriver[0].DriverPhoto || null;

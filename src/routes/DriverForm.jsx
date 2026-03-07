@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { driverAPI, vendorAPI, apiHelpers } from '../services/api';
-import { uploadFileDirectly } from '../utils/azureUpload';
 import DataTable from '../components/DataTable';
 import Dropdown from '../components/Dropdown';
 import SearchableDropdown from '../components/SearchableDropdown';
@@ -13,6 +12,7 @@ import useFormValidation from '../hooks/useFormValidation';
 import useFormDraft from '../hooks/useFormDraft';
 import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import authService from '../services/authService';
+import { uploadFileDirectly } from '../utils/azureUpload';
 import './DriverForm.css';
 // Simple date formatting function
 const formatDateForInput = (dateString) => {
@@ -562,48 +562,53 @@ const DriverForm = () => {
             console.log('✅ File deleted successfully:', fileToDelete.fieldName);
           } catch (error) {
             console.error('❌ Failed to delete file:', fileToDelete.fieldName, error);
+            // Continue with other deletions even if one fails
           }
         }
+
+        // Clear the marked deletions after processing
         setFilesToDelete([]);
       }
 
-      // ── Upload DriverPhoto directly to Azure (bypasses Vercel 4.5 MB limit) ──
-      let driverPhotoBlobUrl = null;
+      // Step 1: Upload files to Azure directly if present
+      // This bypasses Vercel's 4.5MB request limit
+      let azurePhotoUrl = null;
       if (files.DriverPhoto && files.DriverPhoto instanceof File) {
-        console.log('☁️ DRIVER FORM - Uploading photo directly to Azure:', files.DriverPhoto.name);
-        driverPhotoBlobUrl = await uploadFileDirectly(files.DriverPhoto, 'drivers');
-        console.log('✅ DRIVER FORM - Photo uploaded to Azure:', driverPhotoBlobUrl);
+        try {
+          console.log('☁️ DRIVER FORM - Uploading photo to Azure directly...', files.DriverPhoto.name);
+          azurePhotoUrl = await uploadFileDirectly(files.DriverPhoto, 'drivers');
+          console.log('✅ DRIVER FORM - Azure upload successful:', azurePhotoUrl);
+        } catch (uploadError) {
+          console.error('❌ DRIVER FORM - Azure upload failed:', uploadError);
+          apiHelpers.showError(uploadError, 'Failed to upload photo to storage. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
       }
 
-      // ── Build a plain JSON payload (no file binary in the body) ──────────────
-      const payload = {};
-
-      if (driverData.DriverName && driverData.DriverName.trim())
-        payload.DriverName = driverData.DriverName.trim();
-      if (driverData.DriverLicenceNo && driverData.DriverLicenceNo.trim())
-        payload.DriverLicenceNo = driverData.DriverLicenceNo.trim();
-      if (driverData.DriverMobileNo && driverData.DriverMobileNo.trim())
-        payload.DriverMobileNo = driverData.DriverMobileNo.trim();
-      if (driverData.DriverAddress && driverData.DriverAddress.trim())
-        payload.DriverAddress = driverData.DriverAddress.trim();
-      if (driverData.DriverLicenceIssueDate)
-        payload.DriverLicenceIssueDate = driverData.DriverLicenceIssueDate;
-      if (driverData.DriverLicenceExpiryDate)
-        payload.DriverLicenceExpiryDate = driverData.DriverLicenceExpiryDate;
-      if (driverData.DriverMedicalDate)
-        payload.DriverMedicalDate = driverData.DriverMedicalDate;
-      payload.DriverSameAsVendor = driverData.DriverSameAsVendor || 'Separate';
-      if (driverData.DriverAlternateNo && driverData.DriverAlternateNo.trim())
-        payload.DriverAlternateNo = driverData.DriverAlternateNo.trim();
-      if (driverData.DriverTotalExperience)
-        payload.DriverTotalExperience = driverData.DriverTotalExperience;
-      if (driverData.vendor_id)
-        payload.VendorID = driverData.vendor_id;
-
-      // Pass the Azure blob URL as a plain string field — no file binary!
-      if (driverPhotoBlobUrl) {
-        payload.DriverPhoto = driverPhotoBlobUrl;
-      }
+      // Step 2: Prepare the payload
+      // We'll send a JSON payload if we have an Azure URL, which is much safer for Vercel
+      const payload = {
+        DriverName: driverData.DriverName?.trim(),
+        DriverLicenceNo: driverData.DriverLicenceNo?.trim(),
+        DriverMobileNo: driverData.DriverMobileNo?.trim(),
+        DriverAddress: driverData.DriverAddress?.trim(),
+        house_flat_no: driverData.house_flat_no,
+        street_locality: driverData.street_locality,
+        city: driverData.city,
+        state: driverData.state,
+        pin_code: driverData.pin_code,
+        country: driverData.country || 'India',
+        DriverLicenceIssueDate: driverData.DriverLicenceIssueDate,
+        DriverLicenceExpiryDate: driverData.DriverLicenceExpiryDate,
+        DriverMedicalDate: driverData.DriverMedicalDate,
+        DriverSameAsVendor: driverData.DriverSameAsVendor || 'Separate',
+        DriverAlternateNo: driverData.DriverAlternateNo?.trim(),
+        DriverTotalExperience: driverData.DriverTotalExperience,
+        VendorID: driverData.vendor_id || null,
+        // If we have an Azure URL, pass it as DriverPhoto string
+        ...(azurePhotoUrl ? { DriverPhoto: azurePhotoUrl } : {})
+      };
 
       if (editingDriver) {
         await driverAPI.update(editingDriver.DriverID, payload);

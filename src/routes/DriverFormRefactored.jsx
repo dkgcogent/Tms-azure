@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { driverAPI, apiHelpers } from '../services/api';
-import { uploadFileDirectly } from '../utils/azureUpload';
 import { useDriverForm } from '../hooks/useDriverForm';
 import { useDriverValidation } from '../hooks/useDriverValidation';
 import DataTable from '../components/DataTable';
@@ -34,27 +33,14 @@ const DriverFormRefactored = () => {
 
   const submitDriverData = useCallback(async (validatedData) => {
     try {
-      // ── Upload DriverPhoto directly to Azure (bypasses Vercel 4.5 MB limit) ──
-      let driverPhotoBlobUrl = null;
-      if (files.DriverPhoto instanceof File) {
-        console.log('☁️ DRIVER FORM - Uploading photo directly to Azure:', files.DriverPhoto.name);
-        driverPhotoBlobUrl = await uploadFileDirectly(files.DriverPhoto, 'drivers');
-        console.log('✅ DRIVER FORM - Photo uploaded to Azure:', driverPhotoBlobUrl);
-      }
+      const formData = new FormData();
+      ['DriverName', 'DriverLicenceNo', 'DriverMobileNo', 'DriverAddress', 'DriverLicenceIssueDate', 'DriverLicenceExpiryDate', 'DriverMedicalDate', 'DriverAlternateNo', 'DriverTotalExperience'].forEach(field => { driverData[field] && driverData[field].toString().trim() && formData.append(field, driverData[field].toString().trim()); });
 
-      // ── Build a plain JSON payload (no file binary in the body) ──────────────
-      const payload = {};
-      ['DriverName', 'DriverLicenceNo', 'DriverMobileNo', 'DriverAddress', 'DriverLicenceIssueDate', 'DriverLicenceExpiryDate', 'DriverMedicalDate', 'DriverAlternateNo', 'DriverTotalExperience'].forEach(field => {
-        if (driverData[field] && driverData[field].toString().trim()) {
-          payload[field] = driverData[field].toString().trim();
-        }
-      });
-      payload.DriverSameAsVendor = driverData.DriverSameAsVendor || 'Separate';
-      if (driverData.vendor_id) payload.VendorID = driverData.vendor_id;
-      // Pass the Azure blob URL as a plain string — no file binary!
-      if (driverPhotoBlobUrl) payload.DriverPhoto = driverPhotoBlobUrl;
+      formData.append('DriverSameAsVendor', driverData.DriverSameAsVendor || 'Separate');
+      driverData.vendor_id && formData.append('VendorID', driverData.vendor_id);
+      files.DriverPhoto?.name && formData.append('DriverPhoto', files.DriverPhoto);
 
-      editingDriver ? await driverAPI.update(editingDriver.DriverID, payload) : await driverAPI.create(payload);
+      editingDriver ? await driverAPI.update(editingDriver.DriverID, formData) : await driverAPI.create(formData);
       apiHelpers.showSuccess(`Driver ${editingDriver ? 'updated' : 'created'} successfully!`);
       resetForm();
       await fetchDrivers();
