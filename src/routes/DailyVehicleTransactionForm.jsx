@@ -8,6 +8,7 @@ import DocumentUpload from '../components/DocumentUpload';
 import TimeInput12Hour from '../components/TimeInput12Hour';
 
 import { validateChronologicalTimes, calculateDutyHours, getTimeFieldsMetadata } from '../utils/timeValidation';
+import { uploadFilesDirectly } from '../utils/azureUpload';
 
 import './DailyVehicleTransactionForm.css';
 
@@ -2368,110 +2369,59 @@ const DailyVehicleTransactionForm = () => {
 
       console.log('🚀 Payload being sent:', JSON.stringify(payload, null, 2));
 
-      // Check if there are any file uploads (following Vendor Form pattern)
-      const hasFiles = files.DriverAadharDoc instanceof File ||
-        files.DriverLicenceDoc instanceof File ||
-        files.TollExpensesDoc instanceof File ||
-        files.ParkingChargesDoc instanceof File ||
-        files.OpeningKMImage instanceof File ||
-        files.ClosingKMImage instanceof File;
+      // Handle file uploads directly to Azure
+      console.log('🚀 Checking for files to upload directly to Azure...');
 
-      if (hasFiles) {
-        // Use FormData for file uploads
-        const formData = new FormData();
+      // Identify files to upload
+      const filesToUpload = {};
+      if (files.DriverAadharDoc instanceof File) filesToUpload.DriverAadharDoc = files.DriverAadharDoc;
+      if (files.DriverLicenceDoc instanceof File) filesToUpload.DriverLicenceDoc = files.DriverLicenceDoc;
+      if (files.TollExpensesDoc instanceof File) filesToUpload.TollExpensesDoc = files.TollExpensesDoc;
+      if (files.ParkingChargesDoc instanceof File) filesToUpload.ParkingChargesDoc = files.ParkingChargesDoc;
 
-        // Add all payload fields to FormData
-        Object.keys(payload).forEach(key => {
-          if (payload[key] !== null && payload[key] !== undefined) {
-            formData.append(key, payload[key]);
-          }
+      // Add KM image files based on transaction type
+      if (masterData.TypeOfTransaction === 'Fixed') {
+        if (files.OpeningKMImage instanceof File) filesToUpload.OpeningKMImage = files.OpeningKMImage;
+        if (files.ClosingKMImage instanceof File) filesToUpload.ClosingKMImage = files.ClosingKMImage;
+      } else if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
+        if (files.OpeningKMImage instanceof File) filesToUpload.OpeningKMImageAdhoc = files.OpeningKMImage;
+        if (files.ClosingKMImage instanceof File) filesToUpload.ClosingKMImageAdhoc = files.ClosingKMImage;
+      }
+
+      // If there are files, upload them directly to Azure first
+      if (Object.keys(filesToUpload).length > 0) {
+        console.log(`🚀 Uploading ${Object.keys(filesToUpload).length} files to Azure...`);
+        const azureUrls = await uploadFilesDirectly(filesToUpload);
+        console.log('✅ Azure upload complete:', azureUrls);
+
+        // Update payload with Azure URLs
+        Object.keys(azureUrls).forEach(key => {
+          payload[key] = azureUrls[key];
         });
+      }
 
-        // Add file fields (following Vendor Form pattern)
-        if (files.DriverAadharDoc instanceof File) {
-          formData.append('DriverAadharDoc', files.DriverAadharDoc);
+      // Final cleanup of payload: remove any remaining File objects that weren't uploaded
+      Object.keys(payload).forEach(key => {
+        if (payload[key] instanceof File) {
+          delete payload[key];
         }
-        if (files.DriverLicenceDoc instanceof File) {
-          formData.append('DriverLicenceDoc', files.DriverLicenceDoc);
-        }
-        if (files.TollExpensesDoc instanceof File) {
-          formData.append('TollExpensesDoc', files.TollExpensesDoc);
-        }
-        if (files.ParkingChargesDoc instanceof File) {
-          formData.append('ParkingChargesDoc', files.ParkingChargesDoc);
-        }
+      });
 
-        // Add KM image files based on transaction type
-        if (masterData.TypeOfTransaction === 'Fixed') {
-          if (files.OpeningKMImage instanceof File) {
-            formData.append('OpeningKMImage', files.OpeningKMImage);
-          }
-          if (files.ClosingKMImage instanceof File) {
-            formData.append('ClosingKMImage', files.ClosingKMImage);
-          }
-        } else if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
-          if (files.OpeningKMImage instanceof File) {
-            formData.append('OpeningKMImageAdhoc', files.OpeningKMImage);
-          }
-          if (files.ClosingKMImage instanceof File) {
-            formData.append('ClosingKMImageAdhoc', files.ClosingKMImage);
-          }
-        }
+      console.log('🚀 Final JSON payload:', JSON.stringify(payload, null, 2));
 
-        console.log('🚀 Sending FormData with files');
-
-        // Note: For file uploads, we use the combined API which has ID mapping logic
-        // This ensures file uploads work correctly for all transaction types
-        if (editingTransaction) {
-          console.log('🔧 UPDATING TRANSACTION WITH FILES:', editingTransaction.TransactionID);
-          console.log('🔧 Editing Transaction Object:', editingTransaction);
-          await vehicleTransactionAPI.updateWithFiles(editingTransaction.TransactionID, formData);
-          apiHelpers.showSuccess('Transaction updated successfully');
-
-          // After successful update with files, refresh the current editing transaction data
-          console.log('🔧 REFRESHING EDITED TRANSACTION DATA after file update');
-          await handleEdit(editingTransaction);
-        } else {
-          await vehicleTransactionAPI.createWithFiles(formData);
-          apiHelpers.showSuccess('Transaction created successfully');
-
-          // Reset form after successful creation
-          resetForm();
-        }
+      // Use the appropriate API based on the action (Create vs Update)
+      if (editingTransaction) {
+        console.log('🔧 UPDATING TRANSACTION:', editingTransaction.TransactionID);
+        // Use the combined API's update method for all transaction types with JSON payload
+        await vehicleTransactionAPI.update(editingTransaction.TransactionID, payload);
+        apiHelpers.showSuccess('Transaction updated successfully');
+        await handleEdit(editingTransaction);
       } else {
-        // Use regular JSON payload
-        if (editingTransaction) {
-          console.log('🔧 UPDATING TRANSACTION:', editingTransaction.TransactionID);
-          console.log('🔧 Transaction Type:', masterData.TypeOfTransaction);
-          console.log('🔧 Editing Transaction Object:', editingTransaction);
-          console.log('🔧 FINAL PAYLOAD BEING SENT:', JSON.stringify(payload, null, 2));
-
-          // Use the correct API endpoint based on transaction type
-          if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
-            // Use adhoc API for adhoc/replacement transactions
-            await adhocTransactionAPI.update(editingTransaction.TransactionID, payload);
-          } else {
-            // Use combined API for fixed transactions
-            await vehicleTransactionAPI.update(editingTransaction.TransactionID, payload);
-          }
-          apiHelpers.showSuccess('Transaction updated successfully');
-
-          // After successful update, refresh the current editing transaction data
-          console.log('🔧 REFRESHING EDITED TRANSACTION DATA after update');
-          await handleEdit(editingTransaction);
-
-        } else {
-          // For creation, use the appropriate API
-          if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
-            await adhocTransactionAPI.create(payload);
-          } else {
-            await vehicleTransactionAPI.create(payload);
-          }
-          apiHelpers.showSuccess('Transaction created successfully');
-
-          // Reset form only for new transactions
-          resetForm();
-        }
+        console.log('🚀 CREATING NEW TRANSACTION');
+        // Use the combined API's create method for consistent behavior
+        await vehicleTransactionAPI.create(payload);
+        apiHelpers.showSuccess('Transaction created successfully');
+        resetForm();
       }
 
       // Always refresh the transaction list

@@ -12,6 +12,7 @@ import Dropdown from '../components/Dropdown';
 import useFormDraft from '../hooks/useFormDraft';
 import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import authService from '../services/authService';
+import { uploadFilesDirectly } from '../utils/azureUpload';
 import './VendorForm.css';
 
 const VendorForm = () => {
@@ -728,7 +729,6 @@ const VendorForm = () => {
 
   // Separate function for actual data submission
   const submitVendorData = async (validatedData) => {
-
     try {
       // If editing, delete marked files first before updating
       if (editingVendor && filesToDelete.length > 0) {
@@ -741,23 +741,40 @@ const VendorForm = () => {
             console.log('✅ File deleted successfully:', fileToDelete.fieldName);
           } catch (error) {
             console.error('❌ Error deleting file:', fileToDelete.fieldName, error);
-            // Continue with other deletions even if one fails
           }
         }
-
-        // Clear the marked deletions after processing
         setFilesToDelete([]);
       }
 
-      // Create FormData for file uploads
-      const formData = new FormData();
+      console.log('☁️ VENDOR FORM - Starting direct Azure uploads...');
 
-      // Prepare vendor data using validated data
+      // Get all files from the files state that are actual File objects
+      const filesToUpload = {};
+      Object.keys(files).forEach(key => {
+        if (files[key] instanceof File) {
+          filesToUpload[key] = files[key];
+        }
+      });
+
+      let azureUrls = {};
+      if (Object.keys(filesToUpload).length > 0) {
+        try {
+          azureUrls = await uploadFilesDirectly(filesToUpload, 'vendors');
+          console.log('✅ VENDOR FORM - All Azure uploads successful:', azureUrls);
+        } catch (uploadError) {
+          console.error('❌ VENDOR FORM - Azure upload failed:', uploadError);
+          apiHelpers.showError('Cloud upload failed. Please check your connection.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Prepare simple JSON payload
       const vendorPayload = {
         vendor_name: validatedData.vendor_name?.trim() || vendorData.vendor_name.trim(),
         vendor_mobile_no: validatedData.vendor_mobile_no?.trim() || vendorData.vendor_mobile_no.trim(),
-        project_id: vendorData.project_id || null, // Project assignment
-        // Combine address fields for backward compatibility
+        project_id: vendorData.project_id || null,
+        // Combine address fields
         vendor_address: `${vendorData.house_flat_no.trim()}, ${vendorData.street_locality.trim()}, ${vendorData.city.trim()}, ${vendorData.state.trim()}, ${vendorData.pin_code.trim()}${vendorData.country.trim() ? ', ' + vendorData.country.trim() : ''}`,
         // Individual address fields
         house_flat_no: vendorData.house_flat_no.trim(),
@@ -775,10 +792,9 @@ const VendorForm = () => {
         vendor_company_gst: vendorData.vendor_company_gst.trim().toUpperCase() || null,
         type_of_company: vendorData.type_of_company,
         start_date_of_company: vendorData.start_date_of_company || null,
-        // Combine company address fields into single field for database
         address_of_company: `${vendorData.address_of_company_house_flat_no || ''}, ${vendorData.address_of_company_street_locality || ''}, ${vendorData.address_of_company_city || ''}, ${vendorData.address_of_company_state || ''}, ${vendorData.address_of_company_pin_code || ''}${vendorData.address_of_company_country && vendorData.address_of_company_country !== 'India' ? ', ' + vendorData.address_of_company_country : ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',').trim() || null,
         bank_details: vendorData.bank_details.trim() || null,
-        // Structured Bank Details
+        // Bank details
         account_holder_name: bankDetails.account_holder_name.trim() || null,
         account_number: bankDetails.account_number.trim() || null,
         ifsc_code: bankDetails.ifsc_code.trim() || null,
@@ -787,42 +803,15 @@ const VendorForm = () => {
         branch_address: bankDetails.branch_address.trim() || null,
         bank_city: bankDetails.city.trim() || null,
         bank_state: bankDetails.state.trim() || null,
+        // Add the Azure URLs
+        ...azureUrls
       };
 
-      // Add vendor data as JSON string (for backends expecting nested JSON)
-      formData.append('vendorData', JSON.stringify(vendorPayload));
-
-      // Also add flattened fields (for backends expecting top-level form fields)
-      Object.entries(vendorPayload).forEach(([k, v]) => {
-        if (v !== undefined && v !== null && v !== '') {
-          formData.append(k, v);
-        }
-        // Skip null/undefined/empty values to preserve existing data in database
-      });
-
-      // Add files only if selected
-      console.log('🔍 VENDOR UPDATE - files state:', files);
-      Object.keys(files).forEach(fileKey => {
-        if (files[fileKey]) {
-          console.log(`🔍 VENDOR UPDATE - Adding file ${fileKey}:`, files[fileKey]);
-          formData.append(fileKey, files[fileKey]);
-        } else {
-          console.log(`🔍 VENDOR UPDATE - Skipping empty file ${fileKey}`);
-        }
-      });
-
-      // Debug: Log what's being sent to backend
-      console.log('🔍 VENDOR UPDATE - FormData contents:');
-      for (let [key, value] of formData.entries()) {
-        console.log(`  ${key}:`, value);
-      }
-
       if (editingVendor) {
-        console.log('🔍 VENDOR UPDATE - Updating vendor ID:', editingVendor.vendor_id ?? editingVendor.VendorID);
-        await vendorAPI.update(editingVendor.vendor_id ?? editingVendor.VendorID, formData);
+        await vendorAPI.update(editingVendor.vendor_id ?? editingVendor.VendorID, vendorPayload);
         apiHelpers.showSuccess('Vendor updated successfully!');
       } else {
-        await vendorAPI.create(formData);
+        await vendorAPI.create(vendorPayload);
         apiHelpers.showSuccess('Vendor created successfully!');
       }
 
@@ -831,14 +820,7 @@ const VendorForm = () => {
       await fetchVendors();
     } catch (error) {
       console.error('🚨 VENDOR SUBMIT ERROR:', error);
-      console.error('🚨 ERROR RESPONSE:', error.response?.data);
-
-      // Check if it's a file upload error and provide specific guidance
-      if (error.response?.status === 400 && error.response?.data?.message === 'File Upload Error') {
-        apiHelpers.showError(error, error.response.data.error || 'File upload failed');
-      } else {
-        apiHelpers.showError(error, 'Failed to save vendor');
-      }
+      apiHelpers.showError(error, 'Failed to save vendor');
     } finally {
       setIsSubmitting(false);
     }

@@ -25,6 +25,42 @@ const upload = createUploadMiddleware('transactions');
 // system calculations, and supervisor remarks.
 
 module.exports = (pool) => {
+  // Helper to delete a file from local or Azure
+  const deleteFileHelper = async (filePath) => {
+    if (!filePath) return;
+    if (filePath.startsWith('http')) {
+      try {
+        const { BlobServiceClient } = require("@azure/storage-blob");
+        const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+        const containerName = process.env.AZURE_CONTAINER_NAME || process.env.container_name || 'tmsfiles';
+        if (connectionString) {
+          const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+          const containerClient = blobServiceClient.getContainerClient(containerName);
+          const urlObj = new URL(filePath);
+          const pathParts = urlObj.pathname.split('/').filter(Boolean);
+          // Assuming the URL format is /container/blob-path
+          const blobName = pathParts.slice(1).join('/');
+          await containerClient.getBlockBlobClient(blobName).deleteIfExists();
+          console.log('✅ Azure blob deleted successfully:', blobName);
+        }
+      } catch (azureErr) {
+        console.warn('⚠️ Azure delete failed:', azureErr.message);
+      }
+    } else {
+      try {
+        // Handle both simple filename and relative paths
+        const relativePath = filePath.includes('/') ? filePath : `transactions/${filePath}`;
+        const fullPath = uploadsManager.getFullPath(relativePath);
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+          console.log('✅ File deleted from filesystem:', fullPath);
+        }
+      } catch (fsErr) {
+        console.warn('⚠️ FS delete failed:', fsErr.message);
+      }
+    }
+  };
+
   // Get all daily vehicle transactions with pagination and date filtering
   router.get('/', async (req, res) => {
     try {
@@ -708,16 +744,79 @@ module.exports = (pool) => {
     next();
   }, async (req, res) => {
     try {
-      const {
-        // Master Details (IDs only - names are fetched from related tables)
-        CustomerID,
-        ProjectID,
-        VehicleIDs, // JSON array of vehicle IDs (for both single and multiple)
-        DriverIDs,  // JSON array of driver IDs (for both single and multiple)
-        VendorID,
-        ReplacementDriverID,
+      const transaction = req.body;
+      const files = req.files || {};
 
-        // Daily Transaction Details
+      console.log('🚀 CREATE TRANSACTION - Request Body:', transaction);
+      console.log('🚀 CREATE TRANSACTION - TripType:', transaction.TripType);
+
+      const TripType = transaction.TripType || 'Fixed';
+
+      // Clean IDs
+      const CustomerID = transaction.CustomerID && transaction.CustomerID !== '' && !isNaN(transaction.CustomerID) ? parseInt(transaction.CustomerID) : null;
+      const ProjectID = transaction.ProjectID && transaction.ProjectID !== '' && !isNaN(transaction.ProjectID) ? parseInt(transaction.ProjectID) : null;
+      const VendorID = transaction.VendorID && transaction.VendorID !== '' && !isNaN(transaction.VendorID) ? parseInt(transaction.VendorID) : null;
+      const ReplacementDriverID = transaction.ReplacementDriverID && transaction.ReplacementDriverID !== '' && !isNaN(transaction.ReplacementDriverID) ? parseInt(transaction.ReplacementDriverID) : null;
+
+      // Handle JSON fields for Fixed type
+      let VehicleIDs = transaction.VehicleIDs;
+      let DriverIDs = transaction.DriverIDs;
+      if (TripType === 'Fixed') {
+        if (typeof VehicleIDs === 'string') {
+          try { VehicleIDs = JSON.parse(VehicleIDs); } catch (e) {
+            console.error('Error parsing VehicleIDs:', e);
+            VehicleIDs = [];
+          }
+        }
+        if (typeof DriverIDs === 'string') {
+          try { DriverIDs = JSON.parse(DriverIDs); } catch (e) {
+            console.error('Error parsing DriverIDs:', e);
+            DriverIDs = [];
+          }
+        }
+      }
+
+      // Shared helpers for file storage - prioritize direct URLs or use multer files
+      const getFilePath = (fieldName, entityType) => {
+        // 1. Check if a direct URL was provided in the JSON body
+        if (transaction[fieldName] && typeof transaction[fieldName] === 'string' && transaction[fieldName].startsWith('http')) {
+          return transaction[fieldName];
+        }
+        // 2. Otherwise use the file from multer if available
+        if (files[fieldName] && files[fieldName][0]) {
+          const file = files[fieldName][0];
+          if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
+            return file.path;
+          }
+          return uploadsManager.getRelativePath(entityType, file.filename);
+        }
+        return null;
+      };
+
+      const DriverAadharDoc = getFilePath('DriverAadharDoc', 'transactions');
+      const DriverLicenceDoc = getFilePath('DriverLicenceDoc', 'transactions');
+      const TollExpensesDoc = getFilePath('TollExpensesDoc', 'transactions');
+      const ParkingChargesDoc = getFilePath('ParkingChargesDoc', 'transactions');
+
+      // Handle KM image uploads
+      const OpeningKMImage = getFilePath('OpeningKMImage', 'transactions');
+      const ClosingKMImage = getFilePath('ClosingKMImage', 'transactions');
+      const OpeningKMImageAdhoc = getFilePath('OpeningKMImageAdhoc', 'transactions');
+      const ClosingKMImageAdhoc = getFilePath('ClosingKMImageAdhoc', 'transactions');
+
+      // Verify newly uploaded files
+      const uploadedFiles = [DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc, OpeningKMImage, ClosingKMImage, OpeningKMImageAdhoc, ClosingKMImageAdhoc].filter(Boolean);
+      for (const filePath of uploadedFiles) {
+        if (filePath.startsWith('http')) continue;
+        const fullPath = uploadsManager.getFullPath(filePath);
+        if (!fs.existsSync(fullPath)) {
+          console.error('❌ Uploaded file not found during create:', fullPath);
+          return res.status(500).json({ error: 'File upload failed - file not accessible' });
+        }
+      }
+
+      // Destinations for form fields
+      const {
         TransactionDate,
         ArrivalTimeAtHub,
         InTimeByCust,
@@ -778,7 +877,6 @@ module.exports = (pool) => {
         EmployeeDetailsBalance,
         ReplacementDriverName,
         ReplacementDriverNo,
-        TripClose,
 
         // Master data fields
         CompanyName,
@@ -787,51 +885,12 @@ module.exports = (pool) => {
         CustomerSite,
 
         // Additional fields
-        TripType = 'Fixed',
         Shift,
         Remarks,
         Status = 'Pending'
-      } = req.body;
+      } = transaction;
 
-      // Shared helpers for file storage
-      const getStoragePath = (fileArray, entityType) => {
-        if (!fileArray || !fileArray[0]) return null;
-        const file = fileArray[0];
-        if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
-          return file.path;
-        }
-        return uploadsManager.getRelativePath(entityType, file.filename);
-      };
-
-      // Handle file uploads - store relative paths for database
-      const files = req.files || {};
-      const DriverAadharDoc = getStoragePath(files.DriverAadharDoc, 'transactions');
-      const DriverLicenceDoc = getStoragePath(files.DriverLicenceDoc, 'transactions');
-      const TollExpensesDoc = getStoragePath(files.TollExpensesDoc, 'transactions');
-      const ParkingChargesDoc = getStoragePath(files.ParkingChargesDoc, 'transactions');
-
-      // Handle KM image uploads
-      const OpeningKMImage = getStoragePath(files.OpeningKMImage, 'transactions');
-      const ClosingKMImage = getStoragePath(files.ClosingKMImage, 'transactions');
-      const OpeningKMImageAdhoc = getStoragePath(files.OpeningKMImageAdhoc, 'transactions');
-      const ClosingKMImageAdhoc = getStoragePath(files.ClosingKMImageAdhoc, 'transactions');
-
-      // Verify uploaded files exist and are accessible
-      const uploadedFiles = [DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc, OpeningKMImage, ClosingKMImage, OpeningKMImageAdhoc, ClosingKMImageAdhoc].filter(Boolean);
-      for (const filePath of uploadedFiles) {
-        if (filePath.startsWith('http')) continue;
-        const fullPath = uploadsManager.getFullPath(filePath);
-        if (!fs.existsSync(fullPath)) {
-          console.error('❌ Uploaded file not found:', fullPath);
-          return res.status(500).json({ error: 'File upload failed - file not accessible' });
-        }
-        console.log('✅ Verified uploaded file:', filePath);
-      }
-
-      // Handle empty string values that should be null for integer fields
-      const cleanCustomerID = CustomerID && CustomerID !== '' ? CustomerID : null;
-      const cleanProjectID = ProjectID && ProjectID !== '' ? ProjectID : null;
-      const cleanVendorID = VendorID && VendorID !== '' ? VendorID : null;
+      const TripClose = convertToBoolean(transaction.TripClose);
 
       // Validate required fields based on transaction type
       if (TripType === 'Fixed') {
@@ -1219,19 +1278,102 @@ module.exports = (pool) => {
   }, async (req, res) => {
     const { id } = req.params;
     try {
-      console.log('🔧 PUT request received for transaction ID:', id);
-      console.log('🔧 Request body:', req.body);
+      const transaction = req.body;
+      const files = req.files || {};
 
-      // Extract fields from request body (same as POST endpoint)
+      console.log('🔧 UPDATE TRANSACTION - ID:', id);
+      console.log('🔧 Request Body:', transaction);
+
+      const TripType = transaction.TripType || 'Fixed';
+
+      // Clean IDs
+      const CustomerID = transaction.CustomerID && transaction.CustomerID !== '' && !isNaN(transaction.CustomerID) ? parseInt(transaction.CustomerID) : null;
+      const ProjectID = transaction.ProjectID && transaction.ProjectID !== '' && !isNaN(transaction.ProjectID) ? parseInt(transaction.ProjectID) : null;
+      const VendorID = transaction.VendorID && transaction.VendorID !== '' && !isNaN(transaction.VendorID) ? parseInt(transaction.VendorID) : null;
+      const ReplacementDriverID = transaction.ReplacementDriverID && transaction.ReplacementDriverID !== '' && !isNaN(transaction.ReplacementDriverID) ? parseInt(transaction.ReplacementDriverID) : null;
+
+      const originalTransactionID = parseInt(id);
+
+      // Identify the table and existing record
+      let transactionTable = null;
+      let existingRecord = null;
+
+      // First check fixed_transactions
+      const [fixedCheck] = await pool.query(`
+        SELECT * FROM fixed_transactions WHERE TransactionID = ?
+      `, [originalTransactionID]);
+
+      if (fixedCheck.length > 0) {
+        transactionTable = 'fixed_transactions';
+        existingRecord = fixedCheck[0];
+      } else {
+        // Then check adhoc_transactions
+        const [adhocCheck] = await pool.query(`
+          SELECT * FROM adhoc_transactions WHERE TransactionID = ?
+        `, [originalTransactionID]);
+
+        if (adhocCheck.length > 0) {
+          transactionTable = 'adhoc_transactions';
+          existingRecord = adhocCheck[0];
+        }
+      }
+
+      if (!transactionTable) {
+        return res.status(404).json({ error: 'Transaction not found with ID: ' + id });
+      }
+
+      // Shared helpers for file storage - prioritize direct URLs or use multer files
+      const getFilePath = (fieldName, entityType) => {
+        // 1. Check if a direct URL was provided in the JSON body
+        if (transaction[fieldName] && typeof transaction[fieldName] === 'string' && transaction[fieldName].startsWith('http')) {
+          return transaction[fieldName];
+        }
+        // 2. Otherwise use the file from multer if available
+        if (files[fieldName] && files[fieldName][0]) {
+          const file = files[fieldName][0];
+          if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
+            return file.path;
+          }
+          return uploadsManager.getRelativePath(entityType, file.filename);
+        }
+        // 3. Fallback to existing file if not updating
+        return existingRecord[fieldName];
+      };
+
+      const DriverAadharDoc = getFilePath('DriverAadharDoc', 'transactions');
+      const DriverLicenceDoc = getFilePath('DriverLicenceDoc', 'transactions');
+      const TollExpensesDoc = getFilePath('TollExpensesDoc', 'transactions');
+      const ParkingChargesDoc = getFilePath('ParkingChargesDoc', 'transactions');
+
+      // Handle KM image uploads
+      const OpeningKMImage = getFilePath('OpeningKMImage', 'transactions');
+      const ClosingKMImage = getFilePath('ClosingKMImage', 'transactions');
+      const OpeningKMImageAdhoc = getFilePath('OpeningKMImageAdhoc', 'transactions');
+      const ClosingKMImageAdhoc = getFilePath('ClosingKMImageAdhoc', 'transactions');
+
+      // If a new direct URL is provided, delete the old local file
+      const fileFields = ['DriverAadharDoc', 'DriverLicenceDoc', 'TollExpensesDoc', 'ParkingChargesDoc'];
+      // Different KM image fields based on table
+      if (transactionTable === 'fixed_transactions') {
+        fileFields.push('OpeningKMImage', 'ClosingKMImage');
+      } else {
+        fileFields.push('OpeningKMImageAdhoc', 'ClosingKMImageAdhoc');
+      }
+
+      for (const field of fileFields) {
+        const newValue = field === 'OpeningKMImageAdhoc' ? OpeningKMImageAdhoc :
+          field === 'ClosingKMImageAdhoc' ? ClosingKMImageAdhoc :
+            field === 'OpeningKMImage' ? OpeningKMImage :
+              field === 'ClosingKMImage' ? ClosingKMImage : getFilePath(field, 'transactions');
+
+        if (newValue && typeof newValue === 'string' && newValue.startsWith('http')) {
+          if (existingRecord[field] && !existingRecord[field].startsWith('http')) {
+            await deleteFileHelper(existingRecord[field]);
+          }
+        }
+      }
+
       const {
-        // Master Details (IDs only - names are fetched from related tables)
-        CustomerID,
-        ProjectID,
-        VehicleIDs, // JSON array of vehicle IDs (for both single and multiple)
-        DriverIDs,  // JSON array of driver IDs (for both single and multiple)
-        VendorID,
-
-        // Daily Transaction Details
         TransactionDate,
         TripNo,
         ArrivalTimeAtHub,
@@ -1254,12 +1396,6 @@ module.exports = (pool) => {
         TotalDeliveriesDone,
         TotalDutyHours,
 
-        // Additional fields
-        TripType = 'Fixed',
-        Shift,
-        Remarks,
-        Status = 'Pending',
-
         // Financial fields
         VFreightFix,
         TollExpenses,
@@ -1278,96 +1414,31 @@ module.exports = (pool) => {
         ReplacementDriverName,
         ReplacementDriverNo,
 
-        // Trip close
-        TripClose
-      } = req.body;
+        // Adhoc specific fields
+        FixKm,
+        VFreightVariable,
+        TotalFreight,
+        LoadingCharges,
+        UnloadingCharges,
+        OtherCharges,
+        OtherChargesRemarks,
+        VehicleNumber,
+        VendorName,
+        VendorNumber,
+        DriverName,
+        DriverNumber,
+        DriverAadharNumber,
+        DriverLicenceNumber,
 
-      // Handle empty string values that should be null for integer fields
-      // Also handle non-numeric values (like company names) that should be null
-      // For updates, if CustomerID is null/invalid, we should preserve the existing value (don't update it)
-      const cleanCustomerID = CustomerID && CustomerID !== '' && !isNaN(CustomerID) ? parseInt(CustomerID) : null;
-      const cleanProjectID = ProjectID && ProjectID !== '' && !isNaN(ProjectID) ? parseInt(ProjectID) : null;
-      const cleanVendorID = VendorID && VendorID !== '' && !isNaN(VendorID) ? parseInt(VendorID) : null;
+        // Additional fields
+        Shift,
+        Remarks,
+        Status = 'Pending'
+      } = transaction;
 
-      console.log('🔧 Cleaning CustomerID:', CustomerID, '→', cleanCustomerID);
-      console.log('🔧 Cleaning ProjectID:', ProjectID, '→', cleanProjectID);
-      console.log('🔧 Cleaning VendorID:', VendorID, '→', cleanVendorID);
+      const TripClose = convertToBoolean(transaction.TripClose);
 
-      // For updates, if CustomerID is null, we need to preserve the existing value
-      // Let's fetch the current CustomerID from the database
-      let preservedCustomerID = cleanCustomerID;
-      if (cleanCustomerID === null) {
-        console.log('🔧 CustomerID is null, fetching existing value from database');
-        try {
-          const [existingRows] = await pool.query('SELECT CustomerID FROM fixed_transactions WHERE TransactionID = ?', [originalTransactionID]);
-          if (existingRows.length > 0) {
-            preservedCustomerID = existingRows[0].CustomerID;
-            console.log('🔧 Preserved existing CustomerID:', preservedCustomerID);
-          }
-        } catch (error) {
-          console.error('🔧 Error fetching existing CustomerID:', error);
-        }
-        // The UPDATE query will handle preserving the existing CustomerID if the new one is null.
-      }
-
-      // Since GET endpoint now uses original TransactionIDs, we use the ID directly
-      const originalTransactionID = parseInt(id);
-
-      // First check if it exists in fixed_transactions
-      const [fixedCheck] = await pool.query(`
-        SELECT TransactionID, TripType FROM fixed_transactions WHERE TransactionID = ?
-      `, [originalTransactionID]);
-
-      // Then check adhoc_transactions
-      const [adhocCheck] = await pool.query(`
-        SELECT TransactionID, TripType FROM adhoc_transactions WHERE TransactionID = ?
-      `, [originalTransactionID]);
-
-      let transactionTable = null;
-      let existingTransaction = null;
-
-      if (fixedCheck.length > 0) {
-        transactionTable = 'fixed_transactions';
-        existingTransaction = fixedCheck[0];
-        console.log('🔧 Found transaction in fixed_transactions:', originalTransactionID);
-      } else if (adhocCheck.length > 0) {
-        transactionTable = 'adhoc_transactions';
-        existingTransaction = adhocCheck[0];
-        console.log('🔧 Found transaction in adhoc_transactions:', originalTransactionID);
-      } else {
-        return res.status(404).json({ error: 'Transaction not found with ID: ' + id });
-      }
-
-      console.log('🔧 Using original TransactionID:', originalTransactionID, 'in table:', transactionTable);
-      console.log('🔧 Transaction Type:', existingTransaction.TripType);
-
-      // Shared helpers for file storage
-      const getStoragePath = (fileArray, entityType) => {
-        if (!fileArray || !fileArray[0]) return null;
-        const file = fileArray[0];
-        if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
-          return file.path;
-        }
-        return uploadsManager.getRelativePath(entityType, file.filename);
-      };
-
-      // Handle file uploads - store relative paths for database
-      const files = req.files || {};
-      const DriverAadharDoc = getStoragePath(files.DriverAadharDoc, 'transactions');
-      const DriverLicenceDoc = getStoragePath(files.DriverLicenceDoc, 'transactions');
-      const TollExpensesDoc = getStoragePath(files.TollExpensesDoc, 'transactions');
-      const ParkingChargesDoc = getStoragePath(files.ParkingChargesDoc, 'transactions');
-
-      // Handle KM image uploads
-      const OpeningKMImage = getStoragePath(files.OpeningKMImage, 'transactions');
-      const ClosingKMImage = getStoragePath(files.ClosingKMImage, 'transactions');
-      const OpeningKMImageAdhoc = getStoragePath(files.OpeningKMImageAdhoc, 'transactions');
-      const ClosingKMImageAdhoc = getStoragePath(files.ClosingKMImageAdhoc, 'transactions');
-
-      console.log('🔧 Document files:', { DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc });
-      console.log('🔧 KM Image files:', { OpeningKMImage, ClosingKMImage, OpeningKMImageAdhoc, ClosingKMImageAdhoc });
-
-      // Verify uploaded files exist and are accessible
+      // Verify newly uploaded files
       const uploadedFiles = [DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc, OpeningKMImage, ClosingKMImage, OpeningKMImageAdhoc, ClosingKMImageAdhoc].filter(Boolean);
       for (const filePath of uploadedFiles) {
         if (filePath.startsWith('http')) continue;
@@ -1376,7 +1447,23 @@ module.exports = (pool) => {
           console.error('❌ Uploaded file not found during update:', fullPath);
           return res.status(500).json({ error: 'File upload failed - file not accessible' });
         }
-        console.log('✅ Verified uploaded file during update:', filePath);
+      }
+
+      // Preserve IDs if not provided
+      const preservedCustomerID = CustomerID !== null ? CustomerID : existingRecord.CustomerID;
+      const preservedProjectID = ProjectID !== null ? ProjectID : existingRecord.ProjectID;
+      const preservedVendorID = VendorID !== null ? VendorID : existingRecord.VendorID;
+
+      // Handle JSON fields for Fixed type
+      let VehicleIDs = transaction.VehicleIDs;
+      let DriverIDs = transaction.DriverIDs;
+      if (transactionTable === 'fixed_transactions') {
+        if (typeof VehicleIDs === 'string') {
+          try { VehicleIDs = JSON.parse(VehicleIDs); } catch (e) { VehicleIDs = existingRecord.VehicleIDs; }
+        }
+        if (typeof DriverIDs === 'string') {
+          try { DriverIDs = JSON.parse(DriverIDs); } catch (e) { DriverIDs = existingRecord.DriverIDs; }
+        }
       }
 
       // Build update query based on table type
@@ -1403,11 +1490,11 @@ module.exports = (pool) => {
           TripType || 'Fixed',
           TransactionDate,
           TripNo || null,
-          preservedCustomerID, // Use preserved CustomerID (existing value if null)
-          cleanProjectID, // Use cleaned ProjectID
+          preservedCustomerID,
+          preservedProjectID,
           VehicleIDs,
           DriverIDs,
-          cleanVendorID, // Use cleaned VendorID
+          preservedVendorID,
           ArrivalTimeAtHub,
           InTimeByCust,
           OutTimeFromHub,
@@ -1443,7 +1530,7 @@ module.exports = (pool) => {
           OpeningKMImage,
           ClosingKMImage,
           Remarks,
-          convertToBoolean(TripClose) ? 1 : 0,
+          TripClose ? 1 : 0,
           Status || 'Pending',
           originalTransactionID
         ];
@@ -1459,68 +1546,68 @@ module.exports = (pool) => {
             OpeningKM = ?, ClosingKM = ?, TotalShipmentsForDeliveries = ?, TotalShipmentDeliveriesAttempted = ?, TotalShipmentDeliveriesDone = ?,
             TotalDutyHours = ?, VFreightFix = ?, FixKm = ?, VFreightVariable = ?, TotalFreight = ?,
             TollExpenses = ?, ParkingCharges = ?, LoadingCharges = ?, UnloadingCharges = ?, OtherCharges = ?, OtherChargesRemarks = ?,
-            DriverAadharDoc = COALESCE(?, DriverAadharDoc), DriverLicenceDoc = COALESCE(?, DriverLicenceDoc),
-            TollExpensesDoc = COALESCE(?, TollExpensesDoc), ParkingChargesDoc = COALESCE(?, ParkingChargesDoc),
-            OpeningKMImage = COALESCE(?, OpeningKMImage), ClosingKMImage = COALESCE(?, ClosingKMImage),
+            DriverAadharDoc = ?, DriverLicenceDoc = ?,
+            TollExpensesDoc = ?, ParkingChargesDoc = ?,
+            OpeningKMImage = ?, ClosingKMImage = ?,
             Remarks = ?, TripClose = ?, Status = ?, UpdatedAt = CURRENT_TIMESTAMP
           WHERE TransactionID = ?
         `;
 
         // Calculate TotalFreight if freight values are provided
-        const vFreightFix = parseFloat(req.body.VFreightFix) || 0;
-        const vFreightVariable = parseFloat(req.body.VFreightVariable) || 0;
-        const totalFreight = vFreightFix + vFreightVariable;
+        const vFreightFixVal = parseFloat(VFreightFix) || 0;
+        const vFreightVariableVal = parseFloat(VFreightVariable) || 0;
+        const totalFreightVal = vFreightFixVal + vFreightVariableVal;
 
         values = [
-          req.body.TripType || 'Adhoc',
-          req.body.TransactionDate,
-          req.body.CustomerID,
-          req.body.ProjectID,
-          req.body.TripNo,
-          req.body.VehicleNumber,
-          req.body.VehicleType,
-          req.body.VendorName,
-          req.body.VendorNumber,
-          req.body.DriverName,
-          req.body.DriverNumber,
-          req.body.DriverAadharNumber,
-          req.body.DriverLicenceNumber,
-          req.body.ArrivalTimeAtHub,
-          req.body.InTimeByCust,
-          req.body.OutTimeFromHub,
-          req.body.ReturnReportingTime,
-          req.body.OutTimeFrom,
-          req.body.VehicleReportingAtHub,
-          req.body.VehicleEntryInHub,
-          req.body.VehicleOutFromHubForDelivery,
-          req.body.VehicleReturnAtHub,
-          req.body.VehicleEnteredAtHubReturn,
-          req.body.VehicleOutFromHubFinal,
-          req.body.OpeningKM,
-          req.body.ClosingKM,
-          req.body.TotalShipmentsForDeliveries,
-          req.body.TotalShipmentDeliveriesAttempted,
-          req.body.TotalShipmentDeliveriesDone,
-          req.body.TotalDutyHours,
-          req.body.VFreightFix,
-          req.body.FixKm,
-          req.body.VFreightVariable,
-          totalFreight > 0 ? totalFreight : null,
-          req.body.TollExpenses,
-          req.body.ParkingCharges,
-          req.body.LoadingCharges,
-          req.body.UnloadingCharges,
-          req.body.OtherCharges,
-          req.body.OtherChargesRemarks,
+          TripType || 'Adhoc',
+          TransactionDate,
+          preservedCustomerID,
+          preservedProjectID,
+          TripNo,
+          VehicleNumber,
+          VehicleType,
+          VendorName,
+          VendorNumber,
+          DriverName,
+          DriverNumber,
+          DriverAadharNumber,
+          DriverLicenceNumber,
+          ArrivalTimeAtHub,
+          InTimeByCust,
+          OutTimeFromHub,
+          ReturnReportingTime,
+          OutTimeFrom,
+          VehicleReportingAtHub,
+          VehicleEntryInHub,
+          VehicleOutFromHubForDelivery,
+          VehicleReturnAtHub,
+          VehicleEnteredAtHubReturn,
+          VehicleOutFromHubFinal,
+          OpeningKM,
+          ClosingKM,
+          TotalShipmentsForDeliveries,
+          TotalShipmentDeliveriesAttempted,
+          TotalShipmentDeliveriesDone,
+          TotalDutyHours,
+          VFreightFix,
+          FixKm,
+          VFreightVariable,
+          totalFreightVal > 0 ? totalFreightVal : null,
+          TollExpenses,
+          ParkingCharges,
+          LoadingCharges,
+          UnloadingCharges,
+          OtherCharges,
+          OtherChargesRemarks,
           DriverAadharDoc,
           DriverLicenceDoc,
           TollExpensesDoc,
           ParkingChargesDoc,
           OpeningKMImageAdhoc,
           ClosingKMImageAdhoc,
-          req.body.Remarks,
-          convertToBoolean(req.body.TripClose) ? 1 : 0,
-          req.body.Status || 'Pending',
+          Remarks,
+          TripClose ? 1 : 0,
+          Status || 'Pending',
           originalTransactionID
         ];
       }

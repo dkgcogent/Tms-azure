@@ -356,6 +356,9 @@ export const apiHelpers = {
   handleError: (error, defaultMessage = 'An error occurred') => {
     // Handle network errors
     if (!error.response) {
+      if (error.message?.includes('Azure upload failed') || error.message?.includes('Azure blob upload')) {
+        return 'Cloud Storage Error: Access Denied or Network Error. Please ensure Azure CORS is configured correctly.';
+      }
       if (error.code === 'ECONNREFUSED' || error.message?.includes('Network Error')) {
         return ERROR_MESSAGES.NETWORK_ERROR;
       }
@@ -365,7 +368,7 @@ export const apiHelpers = {
       if (error.code === 'ETIMEDOUT') {
         return ERROR_MESSAGES.CONNECTION_TIMEOUT;
       }
-      return ERROR_MESSAGES.NETWORK_ERROR;
+      return error.message || ERROR_MESSAGES.NETWORK_ERROR;
     }
 
     // Handle HTTP status codes

@@ -12,6 +12,7 @@ import useFormValidation from '../hooks/useFormValidation';
 import useFormDraft from '../hooks/useFormDraft';
 import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import authService from '../services/authService';
+import { uploadFileDirectly } from '../utils/azureUpload';
 import './DriverForm.css';
 // Simple date formatting function
 const formatDateForInput = (dateString) => {
@@ -546,7 +547,6 @@ const DriverForm = () => {
 
   // Separate function for actual data submission
   const submitDriverData = async (validatedData) => {
-
     setIsSubmitting(true);
 
     try {
@@ -561,67 +561,55 @@ const DriverForm = () => {
             console.log('✅ File deleted successfully:', fileToDelete.fieldName);
           } catch (error) {
             console.error('❌ Failed to delete file:', fileToDelete.fieldName, error);
-            // Continue with other deletions even if one fails
           }
         }
-
-        // Clear the marked deletions after processing
         setFilesToDelete([]);
       }
 
-      // Create FormData for file upload support
-      const formData = new FormData();
-
-      // Add text fields - only add non-empty values to preserve existing data
-      if (driverData.DriverName && driverData.DriverName.trim()) {
-        formData.append('DriverName', driverData.DriverName.trim());
-      }
-      if (driverData.DriverLicenceNo && driverData.DriverLicenceNo.trim()) {
-        formData.append('DriverLicenceNo', driverData.DriverLicenceNo.trim());
-      }
-      if (driverData.DriverMobileNo && driverData.DriverMobileNo.trim()) {
-        formData.append('DriverMobileNo', driverData.DriverMobileNo.trim());
-      }
-      if (driverData.DriverAddress && driverData.DriverAddress.trim()) {
-        formData.append('DriverAddress', driverData.DriverAddress.trim());
-      }
-      if (driverData.DriverLicenceIssueDate) {
-        formData.append('DriverLicenceIssueDate', driverData.DriverLicenceIssueDate);
-      }
-      if (driverData.DriverLicenceExpiryDate) {
-        formData.append('DriverLicenceExpiryDate', driverData.DriverLicenceExpiryDate);
-      }
-      if (driverData.DriverMedicalDate) {
-        formData.append('DriverMedicalDate', driverData.DriverMedicalDate);
-      }
-      formData.append('DriverSameAsVendor', driverData.DriverSameAsVendor || 'Separate');
-      if (driverData.DriverAlternateNo && driverData.DriverAlternateNo.trim()) {
-        formData.append('DriverAlternateNo', driverData.DriverAlternateNo.trim());
-      }
-      if (driverData.DriverTotalExperience) {
-        formData.append('DriverTotalExperience', driverData.DriverTotalExperience);
-      }
-      if (driverData.vendor_id) {
-        formData.append('VendorID', driverData.vendor_id);
-      }
-
-
-
-      // Add file only if a new file is selected (following Vendor Form pattern)
+      // Handle direct file upload to Azure Blob Storage
+      let driverPhotoUrl = null;
       if (files.DriverPhoto && files.DriverPhoto.name) {
-        formData.append('DriverPhoto', files.DriverPhoto);
-        console.log('📁 DRIVER FORM - Adding new photo to FormData:', files.DriverPhoto.name);
+        console.log('☁️ DRIVER FORM - Uploading photo directly to Azure:', files.DriverPhoto.name);
+        try {
+          driverPhotoUrl = await uploadFileDirectly(files.DriverPhoto, 'drivers');
+          console.log('✅ DRIVER FORM - Azure upload successful:', driverPhotoUrl);
+        } catch (uploadError) {
+          console.error('❌ DRIVER FORM - Azure upload failed:', uploadError);
+          apiHelpers.showError('Cloud upload failed. Please check your connection.');
+          setIsSubmitting(false);
+          return;
+        }
       }
-      // Note: If no new file is selected, we don't send any file data
-      // The backend will preserve the existing photo automatically
 
-
+      // Prepare simple JSON payload instead of FormData
+      const driverPayload = {
+        DriverName: driverData.DriverName?.trim() || '',
+        DriverLicenceNo: driverData.DriverLicenceNo?.trim() || '',
+        DriverMobileNo: driverData.DriverMobileNo?.trim() || '',
+        DriverAddress: driverData.DriverAddress?.trim() || '',
+        DriverLicenceIssueDate: driverData.DriverLicenceIssueDate || null,
+        DriverLicenceExpiryDate: driverData.DriverLicenceExpiryDate || null,
+        DriverMedicalDate: driverData.DriverMedicalDate || null,
+        DriverSameAsVendor: driverData.DriverSameAsVendor || 'Separate',
+        DriverAlternateNo: driverData.DriverAlternateNo?.trim() || null,
+        DriverTotalExperience: driverData.DriverTotalExperience || null,
+        VendorID: driverData.vendor_id || null,
+        // Individual address fields
+        house_flat_no: driverData.house_flat_no || null,
+        street_locality: driverData.street_locality || null,
+        city: driverData.city || null,
+        state: driverData.state || null,
+        pin_code: driverData.pin_code || null,
+        country: driverData.country || 'India',
+        // Add the Azure URL if we just uploaded a new file
+        DriverPhoto: driverPhotoUrl
+      };
 
       if (editingDriver) {
-        await driverAPI.update(editingDriver.DriverID, formData);
+        await driverAPI.update(editingDriver.DriverID, driverPayload);
         apiHelpers.showSuccess('Driver updated successfully!');
       } else {
-        await driverAPI.create(formData);
+        await driverAPI.create(driverPayload);
         apiHelpers.showSuccess('Driver created successfully!');
       }
 
@@ -629,6 +617,7 @@ const DriverForm = () => {
       if (!editingDriver) clearDraft();
       await fetchDrivers();
     } catch (error) {
+      console.error('❌ DRIVER FORM - Submit Error:', error);
       apiHelpers.showError(error, 'Failed to save driver');
     } finally {
       setIsSubmitting(false);

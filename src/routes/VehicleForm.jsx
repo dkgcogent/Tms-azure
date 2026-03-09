@@ -9,6 +9,7 @@ import useFormValidation from '../hooks/useFormValidation';
 import useFormDraft from '../hooks/useFormDraft';
 import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import authService from '../services/authService';
+import { uploadFileDirectly, uploadFilesDirectly } from '../utils/azureUpload';
 import './VehicleForm.css';
 
 // Simple date formatting function
@@ -1173,31 +1174,48 @@ const VehicleForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Create FormData for file uploads
-      const formData = new FormData();
+      console.log('☁️ VEHICLE FORM - Starting direct Azure uploads for all files...');
 
-      // Add all non-file form data (use validatedData instead of vehicleData)
-      Object.keys(validatedData).forEach(key => {
-        if (!(validatedData[key] instanceof File) && validatedData[key] !== null && validatedData[key] !== undefined && validatedData[key] !== '') {
-          // Add non-file data only if it has a value
-          formData.append(key, validatedData[key]);
-        }
-        // Skip null/undefined/empty values to preserve existing data in database
-      });
-
-      // Add files from separate files state (following Vendor Form pattern)
+      // Get all files that need to be uploaded
+      const filesToUpload = {};
       Object.keys(files).forEach(fieldName => {
         if (files[fieldName] && files[fieldName] instanceof File) {
-          formData.append(fieldName, files[fieldName]);
-          console.log(`📁 VEHICLE FORM - Adding file to FormData: ${fieldName} = ${files[fieldName].name}`);
+          filesToUpload[fieldName] = files[fieldName];
+        }
+      });
+
+      let azureUrls = {};
+      if (Object.keys(filesToUpload).length > 0) {
+        try {
+          // Upload all files in parallel (or sequentially if many files)
+          azureUrls = await uploadFilesDirectly(filesToUpload, 'vehicles');
+          console.log('✅ VEHICLE FORM - All Azure uploads successful:', azureUrls);
+        } catch (uploadError) {
+          console.error('❌ VEHICLE FORM - Azure upload failed:', uploadError);
+          apiHelpers.showError('Cloud upload failed. Please check your connection.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Prepare simple JSON payload instead of FormData
+      const vehiclePayload = {
+        ...validatedData, // Contains all textual fields
+        ...azureUrls      // Contains the new Azure URLs for any newly uploaded files
+      };
+
+      // Ensure we don't send File objects in our JSON payload
+      Object.keys(vehiclePayload).forEach(key => {
+        if (vehiclePayload[key] instanceof File) {
+          delete vehiclePayload[key];
         }
       });
 
       if (editingVehicle) {
-        const response = await vehicleAPI.update(editingVehicle.VehicleID, formData);
+        await vehicleAPI.update(editingVehicle.VehicleID, vehiclePayload);
         apiHelpers.showSuccess('Vehicle updated successfully!');
       } else {
-        await vehicleAPI.create(formData);
+        await vehicleAPI.create(vehiclePayload);
         apiHelpers.showSuccess('Vehicle created successfully!');
       }
 
@@ -1205,6 +1223,7 @@ const VehicleForm = () => {
       resetForm();
       await fetchVehicles();
     } catch (error) {
+      console.error('❌ VEHICLE FORM - Submit Error:', error);
       apiHelpers.showError(error, 'Failed to save vehicle');
     } finally {
       setIsSubmitting(false);

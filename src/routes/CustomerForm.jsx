@@ -14,6 +14,7 @@ import Dropdown from '../components/Dropdown';
 import useFormDraft from '../hooks/useFormDraft';
 import authService from '../services/authService';
 import RestoreDraftNotification from '../components/RestoreDraftNotification';
+import { uploadFilesDirectly } from '../utils/azureUpload';
 import './CustomerForm.css';
 
 // Utility function to format date for input fields
@@ -1598,75 +1599,87 @@ const CustomerForm = () => {
   // Separate function for actual data submission
   const submitCustomerData = async (validatedData) => {
     try {
-      // If editing, delete marked files first before updating
+      setIsSubmitting(true);
+
+      // If editing, delete marked files first
       if (editingCustomer && filesToDelete.length > 0) {
         console.log('🗑️ CUSTOMER UPDATE - Deleting marked files:', filesToDelete);
-
-        // Parallelize deletions for better performance
         await Promise.all(filesToDelete.map(async (fileToDelete) => {
           try {
-            console.log('🗑️ Deleting file:', fileToDelete.fieldName);
             await customerAPI.deleteFile(editingCustomer.CustomerID, fileToDelete.fieldName);
-            console.log('✅ File deleted successfully:', fileToDelete.fieldName);
           } catch (error) {
             console.error('❌ Failed to delete file:', fileToDelete.fieldName, error);
-            // Continue with other deletions even if one fails
           }
         }));
-
-        // Clear the marked deletions after processing
         setFilesToDelete([]);
       }
 
-      // Create a FormData object to handle file uploads
-      const formData = new FormData();
+      // 1. Identify files to upload
+      const filesToUpload = {};
+      const fileFields = [
+        'AgreementFile', 'BGFile', 'BGReceivingFile', 'POFile',
+        'RatesAnnexureFile', 'MISFormatFile', 'KPISLAFile', 'PerformanceReportFile'
+      ];
+
+      fileFields.forEach(field => {
+        if (validatedData[field] instanceof File) {
+          filesToUpload[field] = validatedData[field];
+        }
+      });
+
+      // 2. Upload files directly to Azure if any
+      let azureUrls = {};
+      if (Object.keys(filesToUpload).length > 0) {
+        console.log('🚀 Uploading files directly to Azure:', Object.keys(filesToUpload));
+        azureUrls = await uploadFilesDirectly(filesToUpload);
+        console.log('✅ Files uploaded successfully. URLs:', azureUrls);
+      }
+
+      // 3. Prepare the payload as JSON
+      const payload = { ...validatedData };
+
+      // Replace File objects with Azure URLs
+      Object.keys(azureUrls).forEach(field => {
+        payload[field] = azureUrls[field];
+      });
+
+      // Format Locations as string for the backend (if needed, or backend can handle it)
+      if (payload.Locations) {
+        payload.Locations = payload.Locations
+          .map(loc => loc.location)
+          .filter(loc => loc.trim() !== '')
+          .join(', ');
+      }
+
+      // Format CustomerSite as string
+      if (payload.CustomerSite) {
+        payload.CustomerSite = payload.CustomerSite
+          .filter(locationGroup => locationGroup.location?.trim())
+          .flatMap(locationGroup =>
+            locationGroup.sites
+              .filter(site => site?.trim())
+              .map(site => `${locationGroup.location.trim()} - ${site.trim()}`)
+          )
+          .join(', ');
+      }
+
+      // Also remove any remaining File objects that weren't uploaded (e.g. if they were null or already strings)
+      fileFields.forEach(field => {
+        if (payload[field] instanceof File && !azureUrls[field]) {
+          delete payload[field];
+        }
+      });
 
       // For new customers, don't set CustomerCode - let backend generate it
-      // Remove any existing CustomerCode to ensure backend generates it
-      if (!editingCustomer && validatedData.CustomerCode) {
-        delete validatedData.CustomerCode;
+      if (!editingCustomer && payload.CustomerCode) {
+        delete payload.CustomerCode;
       }
 
-      // Use validatedData instead of customerData to ensure latest validated values
-      for (const key in validatedData) {
-        if (validatedData[key] instanceof File) {
-          formData.append(key, validatedData[key], validatedData[key].name);
-        } else if (key === 'Locations') {
-          // Convert locations array to comma-separated string
-          const locationsString = validatedData.Locations
-            .map(loc => loc.location)
-            .filter(loc => loc.trim() !== '')
-            .join(', ');
-          formData.append(key, locationsString);
-        } else if (key === 'CustomerSite') {
-          // Convert nested customer sites structure to formatted string
-          // Structure: [{ location: 'Delhi', sites: ['Dwarka Sec 21', 'Dwarka Sec 20'] }]
-          // Output: "Delhi - Dwarka Sec 21, Delhi - Dwarka Sec 20"
-          const sitesString = validatedData.CustomerSite
-            .filter(locationGroup => locationGroup.location?.trim())
-            .flatMap(locationGroup =>
-              locationGroup.sites
-                .filter(site => site?.trim())
-                .map(site => `${locationGroup.location.trim()} - ${site.trim()}`)
-            )
-            .join(', ');
-          formData.append(key, sitesString);
-        } else if (Array.isArray(validatedData[key]) || (typeof validatedData[key] === 'object' && validatedData[key] !== null)) {
-          // Convert arrays and objects to JSON strings
-          formData.append(key, JSON.stringify(validatedData[key]));
-        } else {
-          formData.append(key, validatedData[key]);
-        }
-      }
-
-      setIsSubmitting(true);
       if (editingCustomer) {
-        await customerAPI.update(editingCustomer.CustomerID, formData);
-        apiHelpers.showSuccess(`Customer "${validatedData.Name}" has been updated successfully!`);
+        await customerAPI.update(editingCustomer.CustomerID, payload);
+        apiHelpers.showSuccess(`Customer "${payload.Name}" has been updated successfully!`);
       } else {
-        // Capture the response to get the generated CustomerCode
-        const response = await customerAPI.create(formData);
-
+        const response = await customerAPI.create(payload);
         const generatedCustomerCode = response.data?.CustomerCode;
 
         if (generatedCustomerCode) {

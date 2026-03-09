@@ -325,8 +325,6 @@ module.exports = (pool) => {
   };
 
   // Create a new customer
-  // This route creates a new customer record in the database using the data provided in the request body.
-  // It responds with a 201 status code and the newly created customer's data, including the generated ID.
   router.post('/', upload.fields([
     { name: 'AgreementFile', maxCount: 1 },
     { name: 'BGFile', maxCount: 1 },
@@ -337,27 +335,34 @@ module.exports = (pool) => {
     { name: 'KPISLAFile', maxCount: 1 },
     { name: 'PerformanceReportFile', maxCount: 1 }
   ]), async (req, res) => {
-    const customer = req.body;
+    let customer = req.body;
     const files = req.files;
+
+    // Handle JSON payload (already parsed by express.json())
+    if (req.headers['content-type']?.includes('application/json')) {
+      customer = req.body;
+      console.log('📦 Customer POST - Received JSON payload');
+    }
 
     console.log('🚀 POST /api/customers - Start processing');
     console.log('📦 Body fields:', Object.keys(customer));
     console.log('📂 Files received:', Object.keys(files || {}));
 
-    // Map frontend field names to backend database column names (only for top-level customer fields)
-    // IMPORTANT: Only map top-level customer fields, not nested contact address fields
-    if (customer.pin_code && typeof customer.pin_code === 'string') customer.CustomerPinCode = customer.pin_code;
-    if (customer.house_flat_no && typeof customer.house_flat_no === 'string') customer.HouseFlatNo = customer.house_flat_no;
-    if (customer.street_locality && typeof customer.street_locality === 'string') customer.StreetLocality = customer.street_locality;
-    if (customer.city && typeof customer.city === 'string') customer.CustomerCity = customer.city;
-    if (customer.state && typeof customer.state === 'string') customer.CustomerState = customer.state;
-    if (customer.country && typeof customer.country === 'string') customer.CustomerCountry = customer.country;
+    // Map frontend field names to backend database column names
+    if (customer.pin_code) customer.CustomerPinCode = customer.pin_code;
+    if (customer.house_flat_no) customer.HouseFlatNo = customer.house_flat_no;
+    if (customer.street_locality) customer.StreetLocality = customer.street_locality;
+    if (customer.city) customer.CustomerCity = customer.city;
+    if (customer.state) customer.CustomerState = customer.state;
+    if (customer.country) customer.CustomerCountry = customer.country;
 
     // Handle new contact structure
-    if (customer.PrimaryContact && typeof customer.PrimaryContact === 'string') {
+    if (customer.PrimaryContact) {
       try {
-        const primaryContact = JSON.parse(customer.PrimaryContact);
-        // Map primary contact fields to existing database fields
+        const primaryContact = typeof customer.PrimaryContact === 'string'
+          ? JSON.parse(customer.PrimaryContact)
+          : customer.PrimaryContact;
+
         customer.CustomerMobileNo = primaryContact.CustomerMobileNo || null;
         customer.AlternateMobileNo = primaryContact.AlternateMobileNo || null;
         customer.CustomerEmail = primaryContact.CustomerEmail || null;
@@ -368,10 +373,12 @@ module.exports = (pool) => {
       }
     }
 
-    if (customer.AdditionalContacts && typeof customer.AdditionalContacts === 'string') {
+    if (customer.AdditionalContacts) {
       try {
-        const additionalContacts = JSON.parse(customer.AdditionalContacts);
-        // Split into office addresses and key contacts
+        const additionalContacts = typeof customer.AdditionalContacts === 'string'
+          ? JSON.parse(customer.AdditionalContacts)
+          : customer.AdditionalContacts;
+
         customer.CustomerOfficeAddress = additionalContacts.filter(c => c.ContactType === 'Office Address');
         customer.CustomerKeyContact = additionalContacts.filter(c => c.ContactType === 'Key Contact');
       } catch (e) {
@@ -379,20 +386,13 @@ module.exports = (pool) => {
       }
     }
 
-    // Handle legacy contact structure (for backward compatibility)
-    if (customer.CustomerOfficeAddress && typeof customer.CustomerOfficeAddress === 'string') {
-      customer.CustomerOfficeAddress = JSON.parse(customer.CustomerOfficeAddress);
-    }
-    if (customer.CustomerKeyContact && typeof customer.CustomerKeyContact === 'string') {
-      customer.CustomerKeyContact = JSON.parse(customer.CustomerKeyContact);
-    }
-    if (customer.CustomerCogentContact && typeof customer.CustomerCogentContact === 'string') {
-      customer.CustomerCogentContact = JSON.parse(customer.CustomerCogentContact);
-    }
+    // Handle JSON strings for legacy compatibility if they are still strings
+    if (typeof customer.CustomerOfficeAddress === 'string') customer.CustomerOfficeAddress = JSON.parse(customer.CustomerOfficeAddress);
+    if (typeof customer.CustomerKeyContact === 'string') customer.CustomerKeyContact = JSON.parse(customer.CustomerKeyContact);
+    if (typeof customer.CustomerCogentContact === 'string') customer.CustomerCogentContact = JSON.parse(customer.CustomerCogentContact);
 
     const dateErrors = validateDateSequence(customer);
     if (dateErrors.length > 0) {
-      console.warn('⚠️ Date validation failed:', dateErrors);
       return res.status(400).json({ errors: dateErrors });
     }
 
@@ -464,18 +464,28 @@ module.exports = (pool) => {
         }
       }
 
-      // Handle file paths - store relative paths or Azure URLs for database
-      const filePaths = {};
+      // Handle file paths - prioritize direct Azure URLs from JSON body
+      const filePaths = {
+        AgreementFile: customer.AgreementFile || null,
+        BGFile: customer.BGFile || null,
+        BGReceivingFile: customer.BGReceivingFile || null,
+        POFile: customer.POFile || null,
+        RatesAnnexureFile: customer.RatesAnnexureFile || null,
+        MISFormatFile: customer.MISFormatFile || null,
+        KPISLAFile: customer.KPISLAFile || null,
+        PerformanceReportFile: customer.PerformanceReportFile || null
+      };
 
+      // Fallback to multer files if direct URLs weren't provided
       if (files) {
-        if (files.AgreementFile) filePaths.AgreementFile = getStoragePath(files.AgreementFile, 'customers');
-        if (files.BGFile) filePaths.BGFile = getStoragePath(files.BGFile, 'customers');
-        if (files.BGReceivingFile) filePaths.BGReceivingFile = getStoragePath(files.BGReceivingFile, 'customers');
-        if (files.POFile) filePaths.POFile = getStoragePath(files.POFile, 'customers');
-        if (files.RatesAnnexureFile) filePaths.RatesAnnexureFile = getStoragePath(files.RatesAnnexureFile, 'customers');
-        if (files.MISFormatFile) filePaths.MISFormatFile = getStoragePath(files.MISFormatFile, 'customers');
-        if (files.KPISLAFile) filePaths.KPISLAFile = getStoragePath(files.KPISLAFile, 'customers');
-        if (files.PerformanceReportFile) filePaths.PerformanceReportFile = getStoragePath(files.PerformanceReportFile, 'customers');
+        if (!filePaths.AgreementFile && files.AgreementFile) filePaths.AgreementFile = getStoragePath(files.AgreementFile, 'customers');
+        if (!filePaths.BGFile && files.BGFile) filePaths.BGFile = getStoragePath(files.BGFile, 'customers');
+        if (!filePaths.BGReceivingFile && files.BGReceivingFile) filePaths.BGReceivingFile = getStoragePath(files.BGReceivingFile, 'customers');
+        if (!filePaths.POFile && files.POFile) filePaths.POFile = getStoragePath(files.POFile, 'customers');
+        if (!filePaths.RatesAnnexureFile && files.RatesAnnexureFile) filePaths.RatesAnnexureFile = getStoragePath(files.RatesAnnexureFile, 'customers');
+        if (!filePaths.MISFormatFile && files.MISFormatFile) filePaths.MISFormatFile = getStoragePath(files.MISFormatFile, 'customers');
+        if (!filePaths.KPISLAFile && files.KPISLAFile) filePaths.KPISLAFile = getStoragePath(files.KPISLAFile, 'customers');
+        if (!filePaths.PerformanceReportFile && files.PerformanceReportFile) filePaths.PerformanceReportFile = getStoragePath(files.PerformanceReportFile, 'customers');
       }
 
       // Verify uploaded files exist and are accessible
@@ -917,8 +927,6 @@ module.exports = (pool) => {
   });
 
   // Update a customer
-  // This route updates an existing customer record identified by the provided ID with new data from the request body.
-  // It responds with the updated customer data if successful, or a 404 error if the customer is not found.
   router.put('/:id', upload.fields([
     { name: 'AgreementFile', maxCount: 1 },
     { name: 'BGFile', maxCount: 1 },
@@ -930,31 +938,50 @@ module.exports = (pool) => {
     { name: 'PerformanceReportFile', maxCount: 1 }
   ]), async (req, res) => {
     const { id } = req.params;
-    const customer = req.body;
+    let customer = req.body;
     const files = req.files;
 
-    // Map frontend field names to backend database column names (only for top-level customer fields)
-    // IMPORTANT: Only map top-level customer fields, not nested contact address fields
-    if (customer.pin_code && typeof customer.pin_code === 'string') customer.CustomerPinCode = customer.pin_code;
-    if (customer.house_flat_no && typeof customer.house_flat_no === 'string') customer.HouseFlatNo = customer.house_flat_no;
-    if (customer.street_locality && typeof customer.street_locality === 'string') customer.StreetLocality = customer.street_locality;
-    if (customer.city && typeof customer.city === 'string') customer.CustomerCity = customer.city;
-    if (customer.state && typeof customer.state === 'string') customer.CustomerState = customer.state;
-    if (customer.country && typeof customer.country === 'string') customer.CustomerCountry = customer.country;
-
-    // CustomerSite is now handled as a simple string, no JSON parsing needed
-    if (customer.CustomerOfficeAddress && typeof customer.CustomerOfficeAddress === 'string') {
-      customer.CustomerOfficeAddress = JSON.parse(customer.CustomerOfficeAddress);
-    }
-    if (customer.CustomerKeyContact && typeof customer.CustomerKeyContact === 'string') {
-      customer.CustomerKeyContact = JSON.parse(customer.CustomerKeyContact);
-    }
-    if (customer.CustomerCogentContact && typeof customer.CustomerCogentContact === 'string') {
-      customer.CustomerCogentContact = JSON.parse(customer.CustomerCogentContact);
+    // Handle JSON payload
+    if (req.headers['content-type']?.includes('application/json')) {
+      customer = req.body;
+      console.log('📦 Customer PUT - Received JSON payload');
     }
 
     console.log('🔧 Customer UPDATE request for ID:', id);
-    console.log('📝 Customer data received:', customer);
+
+    // Map frontend field names to backend database column names
+    if (customer.pin_code) customer.CustomerPinCode = customer.pin_code;
+    if (customer.house_flat_no) customer.HouseFlatNo = customer.house_flat_no;
+    if (customer.street_locality) customer.StreetLocality = customer.street_locality;
+    if (customer.city) customer.CustomerCity = customer.city;
+    if (customer.state) customer.CustomerState = customer.state;
+    if (customer.country) customer.CustomerCountry = customer.country;
+
+    // Parsing JSON fields if they are strings
+    if (typeof customer.PrimaryContact === 'string') {
+      try {
+        const pc = JSON.parse(customer.PrimaryContact);
+        customer.CustomerMobileNo = pc.CustomerMobileNo || null;
+        customer.AlternateMobileNo = pc.AlternateMobileNo || null;
+        customer.CustomerEmail = pc.CustomerEmail || null;
+        customer.CustomerContactPerson = pc.CustomerContactPerson || null;
+        customer.CustomerGroup = pc.CustomerGroup || null;
+      } catch (e) { console.warn('JSON parse error primary contact'); }
+    }
+    if (typeof customer.AdditionalContacts === 'string') {
+      try {
+        const ac = JSON.parse(customer.AdditionalContacts);
+        customer.CustomerOfficeAddress = ac.filter(c => c.ContactType === 'Office Address');
+        customer.CustomerKeyContact = ac.filter(c => c.ContactType === 'Key Contact');
+      } catch (e) { console.warn('JSON parse error additional contacts'); }
+    } else if (Array.isArray(customer.AdditionalContacts)) {
+      customer.CustomerOfficeAddress = customer.AdditionalContacts.filter(c => c.ContactType === 'Office Address');
+      customer.CustomerKeyContact = customer.AdditionalContacts.filter(c => c.ContactType === 'Key Contact');
+    }
+
+    if (typeof customer.CustomerOfficeAddress === 'string') customer.CustomerOfficeAddress = JSON.parse(customer.CustomerOfficeAddress);
+    if (typeof customer.CustomerKeyContact === 'string') customer.CustomerKeyContact = JSON.parse(customer.CustomerKeyContact);
+    if (typeof customer.CustomerCogentContact === 'string') customer.CustomerCogentContact = JSON.parse(customer.CustomerCogentContact);
 
     const dateErrors = validateDateSequence(customer);
     if (dateErrors.length > 0) {
@@ -963,82 +990,80 @@ module.exports = (pool) => {
 
     try {
       // Check if customer exists
-      const [existingCustomer] = await pool.query(
+      const [existingCustomerRows] = await pool.query(
         'SELECT * FROM Customer WHERE CustomerID = ?',
         [id]
       );
 
-      if (existingCustomer.length === 0) {
+      if (existingCustomerRows.length === 0) {
         return res.status(404).json({ error: 'Customer not found' });
       }
 
-      // Check if CustomerCode is being changed and if it conflicts with another customer
-      if (customer.CustomerCode !== existingCustomer[0].CustomerCode) {
-        const [codeCheck] = await pool.query(
-          'SELECT CustomerID FROM Customer WHERE CustomerCode = ? AND CustomerID != ?',
-          [customer.CustomerCode, id]
-        );
+      const existingCustomer = existingCustomerRows[0];
 
-        if (codeCheck.length > 0) {
-          return res.status(400).json({ error: 'Customer code already exists' });
+      // Handle file paths - prioritize provided direct URLs or keep existing
+      const filePaths = {
+        AgreementFile: customer.AgreementFile || existingCustomer.AgreementFile,
+        BGFile: customer.BGFile || existingCustomer.BGFile,
+        BGReceivingFile: customer.BGReceivingFile || existingCustomer.BGReceivingFile,
+        POFile: customer.POFile || existingCustomer.POFile,
+        RatesAnnexureFile: customer.RatesAnnexureFile || existingCustomer.RatesAnnexureFile,
+        MISFormatFile: customer.MISFormatFile || existingCustomer.MISFormatFile,
+        KPISLAFile: customer.KPISLAFile || existingCustomer.KPISLAFile,
+        PerformanceReportFile: customer.PerformanceReportFile || existingCustomer.PerformanceReportFile
+      };
+
+      // If a new direct URL is provided, we might want to delete the old local file
+      const fileFields = ['AgreementFile', 'BGFile', 'BGReceivingFile', 'POFile', 'RatesAnnexureFile', 'MISFormatFile', 'KPISLAFile', 'PerformanceReportFile'];
+      for (const field of fileFields) {
+        if (customer[field] && typeof customer[field] === 'string' && customer[field].startsWith('http') && existingCustomer[field] && !existingCustomer[field].startsWith('http')) {
+          await deleteFileHelper(existingCustomer[field]);
         }
       }
 
-      // Handle file paths - keep existing files if no new files uploaded
-      const filePaths = {
-        AgreementFile: existingCustomer[0].AgreementFile,
-        BGFile: existingCustomer[0].BGFile,
-        BGReceivingFile: existingCustomer[0].BGReceivingFile,
-        POFile: existingCustomer[0].POFile,
-        RatesAnnexureFile: existingCustomer[0].RatesAnnexureFile,
-        MISFormatFile: existingCustomer[0].MISFormatFile,
-        KPISLAFile: existingCustomer[0].KPISLAFile,
-        PerformanceReportFile: existingCustomer[0].PerformanceReportFile
-      };
-
       if (files) {
         if (files.AgreementFile) {
-          if (existingCustomer[0].AgreementFile) await deleteFileHelper(existingCustomer[0].AgreementFile);
+          if (existingCustomer.AgreementFile) await deleteFileHelper(existingCustomer.AgreementFile);
           filePaths.AgreementFile = getStoragePath(files.AgreementFile, 'customers');
         }
         if (files.BGFile) {
-          if (existingCustomer[0].BGFile) await deleteFileHelper(existingCustomer[0].BGFile);
+          if (existingCustomer.BGFile) await deleteFileHelper(existingCustomer.BGFile);
           filePaths.BGFile = getStoragePath(files.BGFile, 'customers');
         }
         if (files.BGReceivingFile) {
-          if (existingCustomer[0].BGReceivingFile) await deleteFileHelper(existingCustomer[0].BGReceivingFile);
+          if (existingCustomer.BGReceivingFile) await deleteFileHelper(existingCustomer.BGReceivingFile);
           filePaths.BGReceivingFile = getStoragePath(files.BGReceivingFile, 'customers');
         }
         if (files.POFile) {
-          if (existingCustomer[0].POFile) await deleteFileHelper(existingCustomer[0].POFile);
+          if (existingCustomer.POFile) await deleteFileHelper(existingCustomer.POFile);
           filePaths.POFile = getStoragePath(files.POFile, 'customers');
         }
         if (files.RatesAnnexureFile) {
-          if (existingCustomer[0].RatesAnnexureFile) await deleteFileHelper(existingCustomer[0].RatesAnnexureFile);
+          if (existingCustomer.RatesAnnexureFile) await deleteFileHelper(existingCustomer.RatesAnnexureFile);
           filePaths.RatesAnnexureFile = getStoragePath(files.RatesAnnexureFile, 'customers');
         }
         if (files.MISFormatFile) {
-          if (existingCustomer[0].MISFormatFile) await deleteFileHelper(existingCustomer[0].MISFormatFile);
+          if (existingCustomer.MISFormatFile) await deleteFileHelper(existingCustomer.MISFormatFile);
           filePaths.MISFormatFile = getStoragePath(files.MISFormatFile, 'customers');
         }
         if (files.KPISLAFile) {
-          if (existingCustomer[0].KPISLAFile) await deleteFileHelper(existingCustomer[0].KPISLAFile);
+          if (existingCustomer.KPISLAFile) await deleteFileHelper(existingCustomer.KPISLAFile);
           filePaths.KPISLAFile = getStoragePath(files.KPISLAFile, 'customers');
         }
         if (files.PerformanceReportFile) {
-          if (existingCustomer[0].PerformanceReportFile) await deleteFileHelper(existingCustomer[0].PerformanceReportFile);
+          if (existingCustomer.PerformanceReportFile) await deleteFileHelper(existingCustomer.PerformanceReportFile);
           filePaths.PerformanceReportFile = getStoragePath(files.PerformanceReportFile, 'customers');
         }
+      }
 
-        // Verify newly uploaded files
-        for (const fieldName in files) {
-          const filePath = filePaths[fieldName];
-          if (filePath && !filePath.startsWith('http')) {
-            const fullPath = uploadsManager.getFullPath(filePath);
-            if (!fs.existsSync(fullPath)) {
-              console.error('❌ Uploaded customer file not found during update:', fullPath);
-              return res.status(500).json({ error: 'File upload failed - file not accessible' });
-            }
+      // Verify newly uploaded files
+      for (const fieldName in files) {
+        const filePath = filePaths[fieldName];
+        if (filePath && !filePath.startsWith('http')) {
+          const fullPath = uploadsManager.getFullPath(filePath);
+          if (!fs.existsSync(fullPath)) {
+            console.error('❌ Uploaded customer file not found during update:', fullPath);
+            return res.status(500).json({ error: 'File upload failed - file not accessible' });
           }
         }
       }
@@ -1101,8 +1126,8 @@ module.exports = (pool) => {
       });
 
       // Fallback for MasterCustomerName and Name to prevent "Column cannot be null" error
-      const masterNameValue = (processedCustomer.MasterCustomerName || processedCustomer.Name || existingCustomer[0].MasterCustomerName || 'Default Master').trim();
-      const companyNameValue = (processedCustomer.Name || masterNameValue || existingCustomer[0].Name).trim();
+      const masterNameValue = (processedCustomer.MasterCustomerName || processedCustomer.Name || existingCustomer.MasterCustomerName || 'Default Master').trim();
+      const companyNameValue = (processedCustomer.Name || masterNameValue || existingCustomer.Name).trim();
 
       await pool.query(`
         UPDATE Customer SET

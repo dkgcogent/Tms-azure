@@ -1202,3 +1202,37 @@ SyntaxError: Missing catch or finally after try
     at require (node:internal/modules/helpers:147:16)
     at Object.<anonymous> (D:\tms 1\Tms-azure\server.js:80:23)
 
+[2026-03-09T06:30:27.789Z] UNCAUGHT EXCEPTION: Missing catch or finally after try
+Stack: D:\tms 1\Tms-azure\backend\routes\customer.js:1070
+    }
+    ^
+
+SyntaxError: Missing catch or finally after try
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\tms 1\Tms-azure\server.js:78:24)
+
+[2026-03-09T06:34:16.967Z] UNCAUGHT EXCEPTION: Identifier 'files' has already been declared
+Stack: D:\tms 1\Tms-azure\backend\routes\dailyVehicleTransactions.js:1387
+      const files = req.files || {};
+            ^
+
+SyntaxError: Identifier 'files' has already been declared
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\tms 1\Tms-azure\server.js:87:39)
+
