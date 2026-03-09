@@ -37,21 +37,34 @@ import api from '../services/api';
  * @returns {Promise<{sasUrl: string, blobUrl: string, blobName: string}>}
  */
 export async function getSasUploadUrl(file, entityType = 'misc') {
-    const response = await api.post('/sas-upload/generate', {
-        fileName: file.name,
-        fileType: file.type || 'application/octet-stream',
-        entityType,
-    });
+    try {
+        const response = await api.post('/sas-upload/generate', {
+            fileName: file.name,
+            fileType: file.type || 'application/octet-stream',
+            entityType,
+        });
 
-    if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Failed to get SAS upload URL');
+        if (!response.data?.success) {
+            throw new Error(response.data?.error || 'Failed to get SAS upload URL');
+        }
+
+        return {
+            sasUrl: response.data.sasUrl,    // PUT target (has token)
+            blobUrl: response.data.blobUrl,  // Permanent URL (no token) — store in DB
+            blobName: response.data.blobName,
+        };
+    } catch (error) {
+        // Extract detailed error from server if available
+        const serverError = error.response?.data?.error;
+        const serverDetails = error.response?.data?.details;
+
+        if (serverError) {
+            console.error('❌ SAS Generate Error:', serverError, serverDetails || '');
+            throw new Error(`${serverError}${serverDetails ? ': ' + serverDetails : ''}`);
+        }
+
+        throw error;
     }
-
-    return {
-        sasUrl: response.data.sasUrl,    // PUT target (has token)
-        blobUrl: response.data.blobUrl,  // Permanent URL (no token) — store in DB
-        blobName: response.data.blobName,
-    };
 }
 
 // ─── Step 2: PUT the file directly to Azure ──────────────────────────────────
