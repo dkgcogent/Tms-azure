@@ -88,13 +88,22 @@ module.exports = () => {
             // ── Azure credentials ────────────────────────────────────────────────
             const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
             const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
-            const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
+            const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME || process.env.AZURE_CONTAINER_NAME;
 
-            if (!accountName || !accountKey) {
-                console.error('❌ SAS Upload: Missing Azure Storage credentials.');
+            if (!accountName || !accountKey || !containerName) {
+                const missing = [];
+                if (!accountName) missing.push('AZURE_STORAGE_ACCOUNT_NAME');
+                if (!accountKey) missing.push('AZURE_STORAGE_ACCOUNT_KEY');
+                if (!containerName) missing.push('AZURE_STORAGE_CONTAINER_NAME');
+
+                console.error(`❌ SAS Upload: Missing Azure Storage credentials: ${missing.join(', ')}`);
                 return res
                     .status(500)
-                    .json({ success: false, error: 'Storage service is not configured.' });
+                    .json({
+                        success: false,
+                        error: 'Storage service is not configured on the server.',
+                        details: `Missing environment variables: ${missing.join(', ')}`
+                    });
             }
 
             // ── Build blob name ──────────────────────────────────────────────────
