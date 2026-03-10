@@ -807,6 +807,7 @@ module.exports = (pool) => {
               IFNULL(c.CustomerCode, 'N/A') as CustomerCode,
               IFNULL(p.CustomerID, 'N/A') as CustomerID,
               IFNULL(p.ProjectCode, 'N/A') as ProjectCode,
+              IFNULL(p.Location, 'N/A') as Location,
               IFNULL(p.ProjectDescription, 'N/A') as ProjectDescription,
               IFNULL(p.ProjectValue, 'N/A') as ProjectValue,
               IFNULL(DATE_FORMAT(p.StartDate, '%Y-%m-%d'), 'N/A') as StartDate,
@@ -826,6 +827,7 @@ module.exports = (pool) => {
             'Customer Code': 'CustomerCode',
             'Customer ID': 'CustomerID',
             'Project Code': 'ProjectCode',
+            'Location': 'Location',
             'Description': 'ProjectDescription',
             'Project Value': 'ProjectValue',
             'Start Date': 'StartDate',
@@ -1029,9 +1031,9 @@ module.exports = (pool) => {
 
     } catch (error) {
       console.error('Export error:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Failed to export data',
-        details: error.message 
+        details: error.message
       });
     }
   });

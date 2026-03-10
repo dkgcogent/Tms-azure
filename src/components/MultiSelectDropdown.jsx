@@ -118,7 +118,7 @@ const MultiSelectDropdown = ({
     return `${selectedValues.length} selected`;
   };
 
-  const isAllSelected = filteredOptions.length > 0 && 
+  const isAllSelected = filteredOptions.length > 0 &&
     filteredOptions.every(option => selectedValues.includes(option[valueKey]));
 
   return (
@@ -131,7 +131,7 @@ const MultiSelectDropdown = ({
       </div>
 
       {isOpen && (
-        <div className="multi-select-dropdown-menu" style={{ maxHeight }}>
+        <div className="multi-select-dropdown-menu">
           {showSearch && (
             <div className="multi-select-search">
               <input
@@ -166,7 +166,7 @@ const MultiSelectDropdown = ({
             </div>
           )}
 
-          <div className="multi-select-options">
+          <div className="multi-select-options" style={{ maxHeight }}>
             {filteredOptions.length === 0 ? (
               <div className="multi-select-no-options">
                 {searchTerm ? 'No matching options' : 'No options available'}
@@ -187,7 +187,7 @@ const MultiSelectDropdown = ({
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => {}} // Handled by parent click
+                        onChange={() => { }} // Handled by parent click
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>

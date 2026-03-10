@@ -129,7 +129,6 @@
 }
 
 .multi-select-options {
-  max-height: 200px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #d1d5db #f9fafb;
@@ -214,26 +213,19 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .multi-select-dropdown-menu {
-    max-height: 250px;
-  }
-  
-  .multi-select-options {
-    max-height: 180px;
-  }
-  
   .multi-select-trigger {
     padding: 10px 14px;
     min-height: 44px;
   }
-  
+
   .multi-select-option {
     padding: 12px;
   }
-  
+
   .multi-select-text,
   .multi-select-label {
-    font-size: 16px; /* Prevent zoom on iOS */
+    font-size: 16px;
+    /* Prevent zoom on iOS */
   }
 }
 
@@ -243,6 +235,7 @@
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -269,7 +262,7 @@
   .multi-select-trigger {
     border-width: 2px;
   }
-  
+
   .multi-select-option.selected {
     background: #000;
     color: #fff;
