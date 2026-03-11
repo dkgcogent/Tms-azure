@@ -895,14 +895,13 @@ module.exports = (pool) => {
       // Validate required fields based on transaction type
       if (TripType === 'Fixed') {
         console.log('🔍 VALIDATION DEBUG - Fixed transaction required fields:');
-        console.log('🔍 CustomerID:', CustomerID, '-> cleaned:', cleanCustomerID, 'Type:', typeof CustomerID, 'Truthy:', !!CustomerID);
+        console.log('🔍 CustomerID:', CustomerID, 'Type:', typeof CustomerID, 'Truthy:', !!CustomerID);
         console.log('🔍 VehicleIDs:', VehicleIDs, 'Type:', typeof VehicleIDs, 'Truthy:', !!VehicleIDs);
         console.log('🔍 DriverIDs:', DriverIDs, 'Type:', typeof DriverIDs, 'Truthy:', !!DriverIDs);
         console.log('🔍 TransactionDate:', TransactionDate, 'Type:', typeof TransactionDate, 'Truthy:', !!TransactionDate);
         console.log('🔍 OpeningKM:', OpeningKM, 'Type:', typeof OpeningKM, 'Truthy:', !!OpeningKM);
 
-        // For updates, we don't require CustomerID to be present (it might already exist in DB)
-        // Only validate the fields that are actually being updated
+        // Only validate the fields that are actually being submitted
         if (!VehicleIDs || !DriverIDs || !TransactionDate || OpeningKM === null || OpeningKM === undefined) {
           const missingFields = [];
           if (!VehicleIDs) missingFields.push('VehicleIDs');
@@ -912,7 +911,7 @@ module.exports = (pool) => {
 
           return res.status(400).json({
             error: `Required fields for Fixed missing: ${missingFields.join(', ')}`,
-            details: { CustomerID: cleanCustomerID, VehicleIDs, DriverIDs, TransactionDate, OpeningKM }
+            details: { CustomerID, VehicleIDs, DriverIDs, TransactionDate, OpeningKM }
           });
         }
       } else if (TripType === 'Adhoc' || TripType === 'Replacement') {
@@ -1438,32 +1437,31 @@ module.exports = (pool) => {
 
       const TripClose = convertToBoolean(transaction.TripClose);
 
-      // Verify newly uploaded files
-      const uploadedFiles = [DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc, OpeningKMImage, ClosingKMImage, OpeningKMImageAdhoc, ClosingKMImageAdhoc].filter(Boolean);
-      for (const filePath of uploadedFiles) {
-        if (filePath.startsWith('http')) continue;
-        const fullPath = uploadsManager.getFullPath(filePath);
-        if (!fs.existsSync(fullPath)) {
-          console.error('❌ Uploaded file not found during update:', fullPath);
-          return res.status(500).json({ error: 'File upload failed - file not accessible' });
-        }
-      }
+      // File verification via fs.existsSync is skipped on Vercel (serverless, no local filesystem).
+      // All files go to Azure Blob Storage as HTTP URLs - local path checks are not needed here.
 
       // Preserve IDs if not provided
       const preservedCustomerID = CustomerID !== null ? CustomerID : existingRecord.CustomerID;
       const preservedProjectID = ProjectID !== null ? ProjectID : existingRecord.ProjectID;
       const preservedVendorID = VendorID !== null ? VendorID : existingRecord.VendorID;
 
-      // Handle JSON fields for Fixed type
+      // Handle JSON fields for Fixed type - must be stored as JSON strings in DB
       let VehicleIDs = transaction.VehicleIDs;
       let DriverIDs = transaction.DriverIDs;
       if (transactionTable === 'fixed_transactions') {
+        // Parse incoming string to array first
         if (typeof VehicleIDs === 'string') {
           try { VehicleIDs = JSON.parse(VehicleIDs); } catch (e) { VehicleIDs = existingRecord.VehicleIDs; }
         }
         if (typeof DriverIDs === 'string') {
           try { DriverIDs = JSON.parse(DriverIDs); } catch (e) { DriverIDs = existingRecord.DriverIDs; }
         }
+        // Re-stringify arrays for MySQL JSON column storage
+        if (Array.isArray(VehicleIDs)) VehicleIDs = JSON.stringify(VehicleIDs);
+        if (Array.isArray(DriverIDs)) DriverIDs = JSON.stringify(DriverIDs);
+        // Fall back to existing DB values if missing
+        if (!VehicleIDs) VehicleIDs = existingRecord.VehicleIDs;
+        if (!DriverIDs) DriverIDs = existingRecord.DriverIDs;
       }
 
       // Build update query based on table type
@@ -1546,9 +1544,9 @@ module.exports = (pool) => {
             OpeningKM = ?, ClosingKM = ?, TotalShipmentsForDeliveries = ?, TotalShipmentDeliveriesAttempted = ?, TotalShipmentDeliveriesDone = ?,
             TotalDutyHours = ?, VFreightFix = ?, FixKm = ?, VFreightVariable = ?, TotalFreight = ?,
             TollExpenses = ?, ParkingCharges = ?, LoadingCharges = ?, UnloadingCharges = ?, OtherCharges = ?, OtherChargesRemarks = ?,
-            DriverAadharDoc = ?, DriverLicenceDoc = ?,
-            TollExpensesDoc = ?, ParkingChargesDoc = ?,
-            OpeningKMImage = ?, ClosingKMImage = ?,
+            DriverAadharDoc = COALESCE(?, DriverAadharDoc), DriverLicenceDoc = COALESCE(?, DriverLicenceDoc),
+            TollExpensesDoc = COALESCE(?, TollExpensesDoc), ParkingChargesDoc = COALESCE(?, ParkingChargesDoc),
+            OpeningKMImage = COALESCE(?, OpeningKMImage), ClosingKMImage = COALESCE(?, ClosingKMImage),
             Remarks = ?, TripClose = ?, Status = ?, UpdatedAt = CURRENT_TIMESTAMP
           WHERE TransactionID = ?
         `;
@@ -1558,54 +1556,58 @@ module.exports = (pool) => {
         const vFreightVariableVal = parseFloat(VFreightVariable) || 0;
         const totalFreightVal = vFreightFixVal + vFreightVariableVal;
 
+        // OpeningKMImage/ClosingKMImage may come via OpeningKMImageAdhoc field names from multer
+        const adhocOpeningKMImage = OpeningKMImageAdhoc || OpeningKMImage || null;
+        const adhocClosingKMImage = ClosingKMImageAdhoc || ClosingKMImage || null;
+
         values = [
           TripType || 'Adhoc',
           TransactionDate,
           preservedCustomerID,
           preservedProjectID,
-          TripNo,
-          VehicleNumber,
-          VehicleType,
-          VendorName,
-          VendorNumber,
-          DriverName,
-          DriverNumber,
-          DriverAadharNumber,
-          DriverLicenceNumber,
-          ArrivalTimeAtHub,
-          InTimeByCust,
-          OutTimeFromHub,
-          ReturnReportingTime,
-          OutTimeFrom,
-          VehicleReportingAtHub,
-          VehicleEntryInHub,
-          VehicleOutFromHubForDelivery,
-          VehicleReturnAtHub,
-          VehicleEnteredAtHubReturn,
-          VehicleOutFromHubFinal,
-          OpeningKM,
-          ClosingKM,
-          TotalShipmentsForDeliveries,
-          TotalShipmentDeliveriesAttempted,
-          TotalShipmentDeliveriesDone,
-          TotalDutyHours,
-          VFreightFix,
-          FixKm,
-          VFreightVariable,
+          TripNo || null,
+          VehicleNumber || null,
+          VehicleType || null,
+          VendorName || null,
+          VendorNumber || null,
+          DriverName || null,
+          DriverNumber || null,
+          DriverAadharNumber || null,
+          DriverLicenceNumber || null,
+          ArrivalTimeAtHub || null,
+          InTimeByCust || null,
+          OutTimeFromHub || null,
+          ReturnReportingTime || null,
+          OutTimeFrom || null,
+          VehicleReportingAtHub || null,
+          VehicleEntryInHub || null,
+          VehicleOutFromHubForDelivery || null,
+          VehicleReturnAtHub || null,
+          VehicleEnteredAtHubReturn || null,
+          VehicleOutFromHubFinal || null,
+          OpeningKM || null,
+          ClosingKM || null,
+          TotalShipmentsForDeliveries || null,
+          TotalShipmentDeliveriesAttempted || null,
+          TotalShipmentDeliveriesDone || null,
+          TotalDutyHours || null,
+          VFreightFix || null,
+          FixKm || null,
+          VFreightVariable || null,
           totalFreightVal > 0 ? totalFreightVal : null,
-          TollExpenses,
-          ParkingCharges,
-          LoadingCharges,
-          UnloadingCharges,
-          OtherCharges,
-          OtherChargesRemarks,
-          DriverAadharDoc,
-          DriverLicenceDoc,
-          TollExpensesDoc,
-          ParkingChargesDoc,
-          OpeningKMImageAdhoc,
-          ClosingKMImageAdhoc,
-          Remarks,
+          TollExpenses || null,
+          ParkingCharges || null,
+          LoadingCharges || null,
+          UnloadingCharges || null,
+          OtherCharges || null,
+          OtherChargesRemarks || null,
+          DriverAadharDoc || null,
+          DriverLicenceDoc || null,
+          TollExpensesDoc || null,
+          ParkingChargesDoc || null,
+          adhocOpeningKMImage,
+          adhocClosingKMImage,
+          Remarks || null,
           TripClose ? 1 : 0,
           Status || 'Pending',
           originalTransactionID
