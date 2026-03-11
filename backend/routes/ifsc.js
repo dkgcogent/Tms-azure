@@ -42,7 +42,7 @@ module.exports = (pool) => {
       res.status(500).json({
         success: false,
         data: null,
-        error: 'Internal server error during IFSC lookup',
+        error: 'during IFSC lookup',
         message: 'Please try again later'
       });
     }
@@ -69,7 +69,7 @@ module.exports = (pool) => {
       res.status(500).json({
         success: false,
         isValid: false,
-        error: 'Internal server error during validation',
+        error: 'during validation',
         message: 'Please try again later'
       });
     }
@@ -118,7 +118,7 @@ module.exports = (pool) => {
       console.error('Bulk IFSC lookup route error:', error);
       res.status(500).json({
         success: false,
-        error: 'Internal server error during bulk lookup',
+        error: 'during bulk lookup',
         message: 'Please try again later'
       });
     }

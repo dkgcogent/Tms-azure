@@ -141,16 +141,16 @@
     right: 10px;
     left: 10px;
   }
-  
+
   .notification {
     min-width: auto;
     max-width: none;
   }
-  
+
   .notification-content {
     padding: 12px;
   }
-  
+
   .notification-message {
     font-size: 13px;
   }
