@@ -354,7 +354,17 @@ const ERROR_MESSAGES = {
 // Generic API helper functions
 export const apiHelpers = {
   handleError: (error, defaultMessage = 'An error occurred') => {
-    // Handle network errors
+    // If error is null/undefined, just return the default message
+    if (!error) {
+      return defaultMessage;
+    }
+
+    // Handle string error (if error is passed as string instead of object)
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    // Handle network errors (axios error without response)
     if (!error.response) {
       if (error.message?.includes('Azure upload failed') || error.message?.includes('Azure blob upload')) {
         return 'Cloud Storage Error: Access Denied or Network Error. Please ensure Azure CORS is configured correctly.';
@@ -368,7 +378,7 @@ export const apiHelpers = {
       if (error.code === 'ETIMEDOUT') {
         return ERROR_MESSAGES.CONNECTION_TIMEOUT;
       }
-      return error.message || ERROR_MESSAGES.NETWORK_ERROR;
+      return error.message || defaultMessage || ERROR_MESSAGES.NETWORK_ERROR;
     }
 
     // Handle HTTP status codes
@@ -384,14 +394,21 @@ export const apiHelpers = {
             return data.error;
           }
           if (data.error.includes('required')) {
-            return ERROR_MESSAGES.REQUIRED_FIELD_MISSING;
+            return data.error || ERROR_MESSAGES.REQUIRED_FIELD_MISSING;
           }
           if (data.error.includes('format') || data.error.includes('invalid')) {
             return data.error;
           }
           return data.error;
         }
-        return ERROR_MESSAGES.VALIDATION_FAILED;
+        if (data?.message) return data.message;
+        if (data?.details) return data.details;
+        if (data?.errors) {
+          if (Array.isArray(data.errors)) return data.errors.join(', ');
+          if (typeof data.errors === 'object') return Object.values(data.errors).join(', ');
+          return String(data.errors);
+        }
+        return `Validation Error: ${defaultMessage || ERROR_MESSAGES.VALIDATION_FAILED}`;
       case 401:
         return ERROR_MESSAGES.AUTH_FAILED;
       case 403:
@@ -407,7 +424,16 @@ export const apiHelpers = {
       case 422:
         return data?.error || ERROR_MESSAGES.VALIDATION_FAILED;
       case 500:
-        return data?.error || 'Something went wrong on our end. Please try again.';
+        // Extract exact root cause if available - prioritize details/message over generic 'error' field
+        const specificDetail = data?.details || data?.message;
+        const serverError = (specificDetail && data?.error === 'Internal Server Error') 
+          ? specificDetail 
+          : (data?.error || data?.message || data?.details);
+
+        if (serverError && serverError !== 'Internal Server Error' && serverError !== 'An error occurred') {
+          return `Root Cause: ${typeof serverError === 'object' ? JSON.stringify(serverError) : serverError}`;
+        }
+        return 'Server encountered an issue. Our team has been notified. Please try again.';
       case 502:
         return ERROR_MESSAGES.SERVER_UNAVAILABLE;
       case 503:
@@ -462,9 +488,9 @@ export const apiHelpers = {
   // Helper to show validation errors
   showValidationErrors: (errors) => {
     if (Array.isArray(errors)) {
-      errors.forEach(error => apiHelpers.showError(null, error));
+      apiHelpers.showError(null, errors.join('\n'));
     } else if (typeof errors === 'object') {
-      Object.values(errors).forEach(error => apiHelpers.showError(null, error));
+      apiHelpers.showError(null, Object.values(errors).join('\n'));
     } else {
       apiHelpers.showError(null, errors);
     }
@@ -488,12 +514,21 @@ export const apiHelpers = {
       // Handle validation errors from backend
       const errors = error.response.data.errors;
       if (Array.isArray(errors)) {
-        errors.forEach(err => apiHelpers.showError(null, err));
+        // Combine multiple array errors into one notification
+        apiHelpers.showError(null, errors.join('\n'));
+      } else if (typeof errors === 'object') {
+        // Combine multiple object-based errors into one notification
+        const combinedErrors = Object.entries(errors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join('\n');
+        apiHelpers.showError(null, combinedErrors);
       } else {
-        Object.entries(errors).forEach(([field, message]) => {
-          apiHelpers.showError(null, `${field}: ${message}`);
-        });
+        apiHelpers.showError(null, String(errors));
       }
+    } else if (error.response?.data?.error || error.response?.data?.message) {
+      // Use the specific error message if available
+      const specificError = error.response.data.error || error.response.data.message;
+      apiHelpers.showError(null, specificError);
     } else {
       // Handle general form errors with context-specific messages
       let contextMessage;
