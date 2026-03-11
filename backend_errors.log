@@ -1253,3 +1253,16 @@ SyntaxError: Unexpected token ')'
     at require (node:internal/modules/helpers:147:16)
     at Object.<anonymous> (D:\tms 1\Tms-azure\server.js:80:23)
 
+[2026-03-11T21:33:54.666Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\tms 1\Tms-azure\server.js:197:11)
+    at Object.<anonymous> (D:\tms 1\Tms-azure\server.js:215:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+
