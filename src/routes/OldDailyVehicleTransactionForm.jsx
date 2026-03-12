@@ -855,7 +855,7 @@ const DailyVehicleTransactionForm = () => {
       if (vehicle) {
         try {
           // Get vehicle details from Vehicle Master
-          const vehicleRes = await fetch(`http://localhost:3000/api/vehicles/${value}`);
+          const vehicleRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/vehicles/${value}`);
           const vehicleData = await vehicleRes.json();
           const vehicleDetails = vehicleData.data || vehicleData;
 
@@ -949,7 +949,7 @@ const DailyVehicleTransactionForm = () => {
       if (project) {
         try {
           // Get vehicle assignments for this project from Vehicle Project Linking
-          const assignmentsRes = await fetch(`http://localhost:3000/api/vehicle-project-linking/assignments`);
+          const assignmentsRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/vehicle-project-linking/assignments`);
           const assignmentsData = await assignmentsRes.json();
           const allAssignments = assignmentsData.data || [];
 

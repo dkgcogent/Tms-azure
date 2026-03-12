@@ -243,7 +243,7 @@ export const useVehicleForm = () => {
       }
 
       const queryString = queryParams.toString();
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       const exportUrl = `${API_BASE_URL}/api/export/vehicles${queryString ? `?${queryString}` : ''}`;
 
       console.log('📊 Export URL with filters:', exportUrl);

@@ -96,7 +96,7 @@ const DriverFormRefactored = () => {
       if (dateFilter.toDate) queryParams.append('toDate', dateFilter.toDate);
 
       const queryString = queryParams.toString();
-      const exportUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api/export/drivers${queryString ? `?${queryString}` : ''}`;
+      const exportUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/api/export/drivers${queryString ? `?${queryString}` : ''}`;
 
       const loadingToast = createToast('🔄 Exporting drivers... Please wait', '#007bff');
       const link = document.createElement('a');

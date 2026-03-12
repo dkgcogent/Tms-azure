@@ -35,7 +35,7 @@ const VehicleProjectLinking = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // API base URL
-    const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000') + '/api/vehicle-project-linking';
+    const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '') + '/api/vehicle-project-linking';
 
 
 
