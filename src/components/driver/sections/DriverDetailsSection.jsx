@@ -13,7 +13,7 @@ const DriverDetailsSection = ({ driverData, handleInputChange, vendors, errors, 
       {field('Licence Number', 'DriverLicenceNo', 'text', { placeholder: 'Enter licence number' }, true)}
       {field('Mobile Number', 'DriverMobileNo', 'validated', { validationRule: 'MOBILE', placeholder: 'Enter mobile number', autoFormat: true })}
       {field('Driver Alternate No. / Family No.', 'DriverAlternateNo', 'validated', { validationRule: 'MOBILE', placeholder: 'Enter alternate/family contact number', autoFormat: true })}
-      {field('Driver Total Experience (Years)', 'DriverTotalExperience', 'number', { placeholder: 'Enter total experience in years', min: '0', max: '50' })}
+      {field('Driver Total Experience', 'DriverTotalExperience', 'text', { placeholder: 'Computed automatically from issue date' })}
     </FormSection>
   );
 };

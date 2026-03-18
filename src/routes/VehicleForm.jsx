@@ -243,7 +243,9 @@ const VehicleForm = () => {
         VehicleCode: 'string',
         VehicleChasisNo: 'string',
         VehicleModel: 'string',
-        GPSCompany: 'string'
+        GPSCompany: 'string',
+        FuelType: 'string',
+        VehicleStage: 'string'
       };
 
       // Check and convert data types
@@ -456,6 +458,7 @@ const VehicleForm = () => {
     // Vehicle Information Fields
     VehicleRegistrationNo: '',
     VehicleCode: '',
+    VendorCompany: '', // Vendor company name
     vendor_id: '', // Assigned vendor
     driver_id: '', // Assigned driver
     RCUpload: null,
@@ -500,7 +503,9 @@ const VehicleForm = () => {
     NoEntryPassCopy: null,
     FixRate: '',
     FuelRate: '',
-    HandlingCharges: ''
+    HandlingCharges: '',
+    FuelType: '',
+    VehicleStage: ''
   });
 
   const [vehicleData, setVehicleData] = useState(getInitialState());
@@ -830,7 +835,7 @@ const VehicleForm = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value, type, files } = e.target;
+    const { name, value, type, files, selectedOption } = e.target;
 
     console.log('🔄 VEHICLE FORM - Input change:', { name, value, type, files: files?.length });
 
@@ -838,6 +843,23 @@ const VehicleForm = () => {
       const file = files?.[0];
       console.log('📁 VEHICLE FORM - File selected:', { name, fileName: file?.name, fileSize: file?.size });
       setVehicleData(prev => ({ ...prev, [name]: file }));
+    } else if (name === 'VendorCompany') {
+      setVehicleData(prev => ({
+        ...prev,
+        VendorCompany: value,
+        // Only reset vendor_id if it's no longer consistent with the new company selection
+        // We'll let the user decide, but resetting is safer for data integrity
+        vendor_id: '' 
+      }));
+    } else if (name === 'vendor_id') {
+      // Auto-populate VendorCompany if a vendor is selected
+      const companyName = selectedOption ? (selectedOption.CompanyName || selectedOption.vendor_company_name) : '';
+      
+      setVehicleData(prev => ({
+        ...prev,
+        vendor_id: value,
+        VendorCompany: companyName || prev.VendorCompany
+      }));
     } else {
       setVehicleData(prev => ({
         ...prev,
@@ -1261,9 +1283,12 @@ const VehicleForm = () => {
         VehicleModel: 'VehicleModel',
         TypeOfBody: 'TypeOfBody',
         VehicleType: 'VehicleType',
+        FuelType: 'FuelType',
+        VehicleStage: 'VehicleStage',
         VehicleRegistrationDate: 'VehicleRegistrationDate',
         VehicleAge: 'VehicleAge',
         VehicleKMS: 'VehicleKMS',
+        VendorCompany: 'VendorCompany', // Map VendorCompany
         VendorID: 'vendor_id',  // Map VendorID to vendor_id
         DriverID: 'driver_id',  // Map DriverID to driver_id
         GPSCompany: 'GPSCompany',
@@ -1694,9 +1719,12 @@ const VehicleForm = () => {
 
   const vehicleColumns = [
     { key: 'VehicleRegistrationNo', label: 'Registration No', sortable: true },
+    { key: 'VendorCompany', label: 'Vendor Company', sortable: true },
     { key: 'VehicleCode', label: 'Vehicle Code', sortable: true },
     { key: 'VehicleModel', label: 'Model', sortable: true },
     { key: 'TypeOfBody', label: 'Body Type', sortable: true },
+    { key: 'FuelType', label: 'Fuel Type', sortable: true },
+    { key: 'VehicleStage', label: 'Vehicle Stage', sortable: true },
     {
       key: 'GPS',
       label: 'GPS',
@@ -1769,11 +1797,18 @@ const VehicleForm = () => {
                     apiCall={async () => {
                       try {
                         const response = await vendorAPI.getAll();
-                        // Handle different response formats
-                        const vendors = response.data || [];
+                        let vendors = response.data || [];
+                        
+                        // Filter by selected company if applicable
+                        if (vehicleData.VendorCompany) {
+                          vendors = vendors.filter(v => 
+                            (v.CompanyName || v.vendor_company_name) === vehicleData.VendorCompany
+                          );
+                        }
+                        
                         return { data: vendors };
                       } catch (error) {
-
+                        console.error('Error fetching vendors:', error);
                         return { data: [] };
                       }
                     }}
@@ -1784,7 +1819,39 @@ const VehicleForm = () => {
                     allowEmpty={false}
                     required={true}
                     searchPlaceholder="Search vendors..."
+                    key={vehicleData.VendorCompany} // Re-mount when company changes to refresh list
                   />
+                  {errors.vendor_id && <div className="form-field-error">{errors.vendor_id}</div>}
+                </div>
+
+                <div className="form-field">
+                  <label className="form-field-label">
+                    Vendor Company
+                  </label>
+                  <SearchableDropdown
+                    name="VendorCompany"
+                    value={vehicleData.VendorCompany}
+                    onChange={handleInputChange}
+                    apiCall={async () => {
+                      try {
+                        const response = await vendorAPI.getAll();
+                        const vendors = response.data || [];
+                        // Extract unique company names from both database field names
+                        const companies = [...new Set(vendors.map(v => v.CompanyName || v.vendor_company_name).filter(Boolean))];
+                        return { data: companies.map(name => ({ CompanyName: name })) };
+                      } catch (error) {
+                        console.error('Error fetching vendor companies:', error);
+                        return { data: [] };
+                      }
+                    }}
+                    valueKey="CompanyName"
+                    labelKey="CompanyName"
+                    placeholder="Select vendor company (optional)"
+                    allowEmpty={true}
+                    required={false}
+                    searchPlaceholder="Search companies..."
+                  />
+                  {errors.VendorCompany && <div className="form-field-error">{errors.VendorCompany}</div>}
                 </div>
 
                 <div className="form-field">
@@ -1864,6 +1931,12 @@ const VehicleForm = () => {
                 {renderFormField('Type of Body', 'TypeOfBody', 'select', { values: ['Open', 'CBD', 'Container'] }, true)}
                 {renderFormField('Vehicle Type', 'VehicleType', 'select', {
                   values: ['LP', 'LPT', 'Tata Ace', 'Pickup', 'Tata 407 10ft', 'Tata 407 14ft', 'Eicher 17ft']
+                })}
+                {renderFormField('Fuel Type', 'FuelType', 'select', {
+                  values: ['Petrol', 'Diesel', 'EV', 'CNG']
+                })}
+                {renderFormField('Vehicle Stage', 'VehicleStage', 'select', {
+                  values: ['BSIII', 'BSIV', 'BSVI']
                 })}
                 {renderFormField('Vehicle Registration Year/Date', 'VehicleRegistrationDate', 'date', {
                   title: 'Enter date in YYYY-MM-DD format (8 digits)',

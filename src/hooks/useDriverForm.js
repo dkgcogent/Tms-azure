@@ -122,6 +122,37 @@ export const useDriverForm = () => {
     }
   }, [vendors]);
 
+  // Auto-calculate Driver Total Experience based on Licence Issue Date
+  useEffect(() => {
+    if (driverData.DriverLicenceIssueDate) {
+      const issueDate = new Date(driverData.DriverLicenceIssueDate);
+      const today = new Date();
+
+      if (!isNaN(issueDate.getTime()) && issueDate <= today) {
+        // Calculate years and months
+        let years = today.getFullYear() - issueDate.getFullYear();
+        let months = today.getMonth() - issueDate.getMonth();
+        
+        if (months < 0) {
+          years--;
+          months += 12;
+        }
+
+        const experienceStr = years > 0 
+          ? `${years} Year${years !== 1 ? 's' : ''}${months > 0 ? ` ${months} Month${months !== 1 ? 's' : ''}` : ''}`
+          : `${months} Month${months !== 1 ? 's' : ''}`;
+
+        // Only update if the calculated value is different from current value
+        if (driverData.DriverTotalExperience !== experienceStr) {
+          setDriverData(prev => ({
+            ...prev,
+            DriverTotalExperience: experienceStr
+          }));
+        }
+      }
+    }
+  }, [driverData.DriverLicenceIssueDate, driverData.DriverTotalExperience]);
+
   useEffect(() => { fetchDrivers(); fetchVendors(); }, [fetchDrivers, fetchVendors]);
 
   return { driverData, setDriverData, drivers, vendors, files, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingDriver, setEditingDriver, dateFilter, setDateFilter, modalImage, setModalImage, showModal, setShowModal, resetForm, handleInputChange, handleFileChange, handleAddressChange, getAddressData, fetchDrivers, fetchVendors, handleEdit, handleDelete, handleFileDelete, handleVendorSelection, parseFullAddress };

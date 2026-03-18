@@ -915,9 +915,9 @@ module.exports = (pool) => {
           });
         }
       } else if (TripType === 'Adhoc' || TripType === 'Replacement') {
-        if (!CustomerID || !TransactionDate || !OpeningKM || !TripNo || !VehicleNumber || !VendorName || !DriverName || !DriverNumber) {
+        if (!CustomerID || !TransactionDate || !OpeningKM || !VehicleNumber || !VendorName || !DriverName || !DriverNumber) {
           return res.status(400).json({
-            error: 'Required fields for Adhoc/Replacement: CustomerID, TransactionDate, OpeningKM, TripNo, VehicleNumber, VendorName, DriverName, DriverNumber'
+            error: 'Required fields for Adhoc/Replacement: CustomerID, TransactionDate, OpeningKM, VehicleNumber, VendorName, DriverName, DriverNumber'
           });
         }
 
@@ -1045,7 +1045,7 @@ module.exports = (pool) => {
         const totalFreight = vFreightFix + vFreightVariable;
 
         values = [
-          TripType, TransactionDate, TripNo || null, Shift || null, JSON.stringify(vehicleIds), JSON.stringify(driverIds), VendorID || null,
+          TripType, TransactionDate, TripNo || '', Shift || null, JSON.stringify(vehicleIds), JSON.stringify(driverIds), VendorID || null,
           CustomerID, ProjectID || null, null, ReplacementDriverID || null, ReplacementDriverName || null,
           ReplacementDriverNo || null, ArrivalTimeAtHub || null, InTimeByCust || null, OutTimeFromHub || null,
           ReturnReportingTime || null, OutTimeFrom || null,
@@ -1097,7 +1097,7 @@ module.exports = (pool) => {
         const driverNumbersJson = Array.isArray(DriverNumber) ? JSON.stringify(DriverNumber) : null;
 
         values = [
-          TripType, TransactionDate, TripNo || null, CustomerID || null, ProjectID || null,
+          TripType, TransactionDate, TripNo || '', CustomerID || null, ProjectID || null,
           Array.isArray(VehicleNumber) ? VehicleNumber[0] : VehicleNumber, vehicleNumbersJson,
           Array.isArray(VehicleType) ? VehicleType[0] : VehicleType, vehicleTypesJson,
           Array.isArray(VendorName) ? VendorName[0] : VendorName, vendorNamesJson,
@@ -1508,7 +1508,7 @@ module.exports = (pool) => {
         values = [
           TripType || 'Fixed',
           TransactionDate,
-          TripNo || null,
+          TripNo || '',
           preservedCustomerID,
           preservedProjectID,
           VehicleIDs,
@@ -1590,7 +1590,7 @@ module.exports = (pool) => {
           TransactionDate,
           preservedCustomerID,
           preservedProjectID,
-          TripNo || null,
+          TripNo || '',
           VehicleNumber || null,
           VehicleType || null,
           VendorName || null,
@@ -2325,10 +2325,22 @@ module.exports = (pool) => {
         SELECT
           ft.*,
           COALESCE(c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
-          COALESCE(p.ProjectName, 'N/A') as ProjectName
+          c.Name as CompanyName,
+          c.GSTNo as GSTNo,
+          COALESCE(p.ProjectName, 'N/A') as ProjectName,
+          v.VehicleRegistrationNo as VehicleNumber,
+          v.VehicleType as VehicleType,
+          vend.VendorName as VendorName,
+          vend.VendorCode as VendorNumber,
+          d.DriverName as DriverName,
+          d.DriverMobileNo as DriverNumber,
+          d.DriverLicenceNo as DriverLicenceNumber
         FROM fixed_transactions ft
         LEFT JOIN Customer c ON ft.CustomerID = c.CustomerID
         LEFT JOIN Project p ON ft.ProjectID = p.ProjectID
+        LEFT JOIN vehicle v ON v.VehicleID = JSON_UNQUOTE(JSON_EXTRACT(ft.VehicleIDs, '$[0]'))
+        LEFT JOIN vendor vend ON ft.VendorID = vend.VendorID
+        LEFT JOIN driver d ON d.DriverID = JSON_UNQUOTE(JSON_EXTRACT(ft.DriverIDs, '$[0]'))
         WHERE ft.TripType = 'Fixed'
         ORDER BY ft.UpdatedAt DESC, ft.TransactionDate DESC, ft.TransactionID DESC
       `;

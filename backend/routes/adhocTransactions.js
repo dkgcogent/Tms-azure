@@ -225,10 +225,10 @@ router.get('/:id', async (req, res) => {
       } = req.body;
 
       // Validate required fields
-      if (!TripType || !TransactionDate || !TripNo || !VehicleNumber || !VendorName || !DriverName || !DriverNumber || !OpeningKM || !ClosingKM) {
+      if (!TripType || !TransactionDate || !VehicleNumber || !VendorName || !DriverName || !DriverNumber || !OpeningKM || !ClosingKM) {
         return res.status(400).json({
           success: false,
-          error: 'Required fields: TripType, TransactionDate, TripNo, VehicleNumber, VendorName, DriverName, DriverNumber, OpeningKM, ClosingKM'
+          error: 'Required fields: TripType, TransactionDate, VehicleNumber, VendorName, DriverName, DriverNumber, OpeningKM, ClosingKM'
         });
       }
 
@@ -275,7 +275,7 @@ router.get('/:id', async (req, res) => {
       `;
 
       const values = [
-        TripType, TransactionDate, TripNo, CustomerID, ProjectID,
+        TripType, TransactionDate, TripNo || '', CustomerID, ProjectID,
         VehicleNumber, VehicleType, VendorName, VendorCode, VendorNumber,
         DriverName, DriverNumber, DriverAadharNumber, DriverLicenceNumber,
         DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
@@ -322,6 +322,11 @@ router.put('/:id', async (req, res) => {
     // Remove TransactionID from update fields if present
     delete updateFields.TransactionID;
     delete updateFields.CreatedAt;
+    
+    // Ensure TripNo is not null if it exists in updateFields
+    if (updateFields.hasOwnProperty('TripNo') && (updateFields.TripNo === null || updateFields.TripNo === undefined)) {
+      updateFields.TripNo = '';
+    }
 
     // Build dynamic update query
     const fields = Object.keys(updateFields);

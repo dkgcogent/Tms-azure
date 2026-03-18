@@ -27,10 +27,8 @@ export const useDailyVehicleTransactionValidation = () => {
     if (!transactionData.OpeningKM) newErrors.OpeningKM = 'Opening KM is required';
     if (!transactionData.ClosingKM) newErrors.ClosingKM = 'Closing KM is required';
 
-    // Trip Number validation for all transaction types
-    if (!transactionData.TripNo) {
-      newErrors.TripNo = 'Trip Number is required';
-    } else {
+    // Trip Number validation - now optional
+    if (transactionData.TripNo) {
       const tripNum = parseInt(transactionData.TripNo, 10);
       if (isNaN(tripNum) || tripNum <= 0) {
         newErrors.TripNo = 'Trip Number must be a positive integer';
@@ -39,7 +37,7 @@ export const useDailyVehicleTransactionValidation = () => {
 
     // Adhoc/Replacement-specific validations
     if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
-      if (!transactionData.TripNo) newErrors.TripNo = 'Trip No is required for Adhoc/Replacement transactions';
+      // if (!transactionData.TripNo) newErrors.TripNo = 'Trip No is required for Adhoc/Replacement transactions';
       if (!transactionData.VehicleNumber) newErrors.VehicleNumber = 'Vehicle Number is required for Adhoc/Replacement transactions';
       if (!transactionData.VendorName) newErrors.VendorName = 'Vendor Name is required for Adhoc/Replacement transactions';
       if (!transactionData.DriverName) newErrors.DriverName = 'Driver Name is required for Adhoc/Replacement transactions';

@@ -208,10 +208,10 @@ const AdhocTransactionForm = () => {
       newErrors.Customer = 'Customer is required';
       errorFields.push('Customer');
     }
-    if (!transactionData.TripNo) {
-      newErrors.TripNo = 'Trip No is required';
-      errorFields.push('TripNo');
-    }
+    // if (!transactionData.TripNo) {
+    //   newErrors.TripNo = 'Trip No is required';
+    //   errorFields.push('TripNo');
+    // }
     if (!transactionData.VehicleNumber) {
       newErrors.VehicleNumber = 'Vehicle Number is required';
       errorFields.push('VehicleNumber');
@@ -384,7 +384,7 @@ const AdhocTransactionForm = () => {
           <h3>Manual Transaction Details</h3>
           <div className="form-row">
             <div className="form-group">
-              <label>Trip No *</label>
+              <label>Trip No</label>
               <input type="text" name="TripNo" value={transactionData.TripNo} onChange={handleTransactionDataChange} className={errors.TripNo ? 'error' : ''} placeholder="Enter trip number" />
               {errors.TripNo && <span className="error-message">{errors.TripNo}</span>}
             </div>

@@ -2065,19 +2065,14 @@ const DailyVehicleTransactionForm = () => {
     if (!transactionData.OpeningKM) newErrors.OpeningKM = 'Opening KM is required';
     if (!transactionData.ClosingKM) newErrors.ClosingKM = 'Closing KM is required';
 
-    // Trip Number validation for all transaction types
-    // Allows alphanumeric and special characters (varchar(50) in database)
-    if (!transactionData.TripNo) {
-      newErrors.TripNo = 'Trip Number is required';
-    } else if (transactionData.TripNo.trim() === '') {
-      newErrors.TripNo = 'Trip Number cannot be empty';
-    } else if (transactionData.TripNo.length > 50) {
+    // Trip Number validation - Non-mandatory but length limited to 50
+    if (transactionData.TripNo && transactionData.TripNo.length > 50) {
       newErrors.TripNo = 'Trip Number cannot exceed 50 characters';
     }
 
     // Adhoc/Replacement-specific validations
     if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
-      if (!transactionData.TripNo) newErrors.TripNo = 'Trip No is required for Adhoc/Replacement transactions';
+      // if (!transactionData.TripNo) newErrors.TripNo = 'Trip No is required for Adhoc/Replacement transactions';
       if (!transactionData.VehicleNumber) newErrors.VehicleNumber = 'Vehicle Number is required for Adhoc/Replacement transactions';
       if (!transactionData.VendorName) newErrors.VendorName = 'Vendor Name is required for Adhoc/Replacement transactions';
       if (!transactionData.DriverName) newErrors.DriverName = 'Driver Name is required for Adhoc/Replacement transactions';
@@ -2252,7 +2247,7 @@ const DailyVehicleTransactionForm = () => {
         payload = {
           ...payload,
           // Trip Number - CRITICAL FIX: Use TripNo field consistently
-          TripNo: transactionData.TripNo || null,
+          TripNo: transactionData.TripNo || '',
           VehicleIDs: JSON.stringify(vehicleIds), // Always send as JSON array
           DriverIDs: JSON.stringify(driverIds),   // Always send as JSON array
           VendorID: ids.VendorID || null,
@@ -2271,7 +2266,9 @@ const DailyVehicleTransactionForm = () => {
           TripClose: supervisorData.TripClose || false,
 
           // Vehicle and Driver Details (for Excel export and reference)
-          VehicleNumber: masterData.VehicleNo && masterData.VehicleNo.length > 0 ? masterData.VehicleNo[0] : null,
+          VehicleNumber: masterData.VehicleNo && masterData.VehicleNo.length > 0 
+            ? (vehicles.find(v => v.VehicleID == masterData.VehicleNo[0])?.VehicleRegistrationNo || masterData.VehicleNo[0]) 
+            : null,
           VendorName: vendorName,
           VendorNumber: vendorNumber,
           DriverName: selectedDriver ? selectedDriver.DriverName : null,
@@ -2310,7 +2307,7 @@ const DailyVehicleTransactionForm = () => {
         payload = {
           ...payload,
           // Basic Transaction Info
-          TripNo: transactionData.TripNo || null,
+          TripNo: transactionData.TripNo || '',
 
           // Vehicle Details
           VehicleNumber: transactionData.VehicleNumber || null,
@@ -3567,7 +3564,7 @@ const DailyVehicleTransactionForm = () => {
                     </div>
 
                     <div className="form-group">
-                      <label>Trip Number *</label>
+                      <label>Trip Number</label>
                       <input
                         type="text"
                         name="TripNumber"
@@ -3886,7 +3883,7 @@ const DailyVehicleTransactionForm = () => {
 
                 {/* Trip No */}
                 <div className="form-group">
-                  <label>Trip No *</label>
+                  <label>Trip No</label>
                   <input
                     type="text"
                     name="TripNo"

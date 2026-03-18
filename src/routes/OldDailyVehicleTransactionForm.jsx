@@ -425,11 +425,13 @@ const DailyVehicleTransactionForm = () => {
       const response = await vehicleTransactionAPI.getAll();
       let transactionData = response.data.data || response.data.value || response.data || [];
 
+      console.log('Transaction type breakdown:',
         transactionData.reduce((acc, t) => {
           acc[t.TripType] = (acc[t.TripType] || 0) + 1;
           return acc;
         }, {})
       );
+      console.log('Sample data:', transactionData.slice(0, 2).map(t => ({
         ID: t.TransactionID,
         Type: t.TripType,
         Customer: t.CustomerName
@@ -511,6 +513,7 @@ const DailyVehicleTransactionForm = () => {
               DriverID: driver.DriverID
             }));
 
+            console.log('Linked data found:', {
               project: project.ProjectName,
               vendor: vendor.VendorName,
               vehicle: vehicle.VehicleRegistrationNo,
@@ -1115,7 +1118,7 @@ const DailyVehicleTransactionForm = () => {
 
     // Adhoc/Replacement-specific validations
     if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
-      if (!transactionData.TripNo) newErrors.TripNo = 'Trip No is required for Adhoc/Replacement transactions';
+      // if (!transactionData.TripNo) newErrors.TripNo = 'Trip No is required for Adhoc/Replacement transactions';
       if (!transactionData.VehicleNumber) newErrors.VehicleNumber = 'Vehicle Number is required for Adhoc/Replacement transactions';
       if (!transactionData.VendorName) newErrors.VendorName = 'Vendor Name is required for Adhoc/Replacement transactions';
       if (!transactionData.DriverName) newErrors.DriverName = 'Driver Name is required for Adhoc/Replacement transactions';
@@ -1218,7 +1221,7 @@ const DailyVehicleTransactionForm = () => {
         payload = {
           ...payload,
           // Basic Transaction Info
-          TripNo: transactionData.TripNo || null,
+          TripNo: transactionData.TripNo || '',
 
           // Vehicle Details
           VehicleNumber: transactionData.VehicleNumber || null,
@@ -1620,6 +1623,8 @@ const DailyVehicleTransactionForm = () => {
     setSelectedDrivers(driverTags);
 
     // Populate transaction section
+    setTransactionData(prev => ({
+      ...prev,
       DriverID: full.DriverID,
       DriverMobileNo: full.DriverMobileNo,
       TransactionDate: full.TransactionDate,
@@ -1627,7 +1632,7 @@ const DailyVehicleTransactionForm = () => {
       TotalDeliveries: full.TotalDeliveries,
       TripNo: full.TripNo,
       VehicleNumber: full.VehicleNumber
-    });
+    }));
 
     // Populate transaction data based on transaction type
     if (isAdhocOrReplacement) {

@@ -183,16 +183,24 @@ const DriverForm = () => {
 
       // Check if the date is valid
       if (!isNaN(issueDate.getTime()) && issueDate <= today) {
-        // Calculate the difference in years
-        const diffInMs = today - issueDate;
-        const diffInYears = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 365.25));
+        // Calculate years and months
+        let years = today.getFullYear() - issueDate.getFullYear();
+        let months = today.getMonth() - issueDate.getMonth();
+        
+        if (months < 0) {
+          years--;
+          months += 12;
+        }
+
+        const experienceStr = years > 0 
+          ? `${years} Year${years !== 1 ? 's' : ''}${months > 0 ? ` ${months} Month${months !== 1 ? 's' : ''}` : ''}`
+          : `${months} Month${months !== 1 ? 's' : ''}`;
 
         // Only update if the calculated value is different from current value
-        // This prevents infinite loops and allows manual editing
-        if (diffInYears >= 0 && driverData.DriverTotalExperience !== diffInYears.toString()) {
+        if (driverData.DriverTotalExperience !== experienceStr) {
           setDriverData(prev => ({
             ...prev,
-            DriverTotalExperience: diffInYears.toString()
+            DriverTotalExperience: experienceStr
           }));
         }
       }
@@ -592,7 +600,9 @@ const DriverForm = () => {
         DriverMedicalDate: driverData.DriverMedicalDate || null,
         DriverSameAsVendor: driverData.DriverSameAsVendor || 'Separate',
         DriverAlternateNo: driverData.DriverAlternateNo?.trim() || null,
-        DriverTotalExperience: driverData.DriverTotalExperience || null,
+        DriverTotalExperience: (driverData.DriverTotalExperience && typeof driverData.DriverTotalExperience === 'string' && driverData.DriverTotalExperience.includes('Year')) 
+          ? parseInt(driverData.DriverTotalExperience) 
+          : (driverData.DriverTotalExperience && typeof driverData.DriverTotalExperience === 'string' && driverData.DriverTotalExperience.includes('Month') ? 0 : (parseInt(driverData.DriverTotalExperience) || null)),
         VendorID: driverData.vendor_id || null,
         // Individual address fields
         house_flat_no: driverData.house_flat_no || null,
@@ -812,6 +822,26 @@ const DriverForm = () => {
     { key: 'DriverLicenceNo', label: 'Licence No', sortable: true },
     { key: 'DriverMobileNo', label: 'Mobile', sortable: true },
     { key: 'DriverAlternateNo', label: 'Alt. Mobile', sortable: true },
+    {
+      key: 'DriverTotalExperience',
+      label: 'Experience',
+      sortable: true,
+      render: (value, row) => {
+        if (row.DriverLicenceIssueDate) {
+          const issueDate = new Date(row.DriverLicenceIssueDate);
+          const today = new Date();
+          if (!isNaN(issueDate.getTime()) && issueDate <= today) {
+            let years = today.getFullYear() - issueDate.getFullYear();
+            let months = today.getMonth() - issueDate.getMonth();
+            if (months < 0) { years--; months += 12; }
+            return years > 0 
+              ? `${years}y ${months}m`
+              : `${months}m`;
+          }
+        }
+        return value ? `${value}y` : '-';
+      }
+    },
     {
       key: 'DriverLicenceExpiryDate',
       label: 'Licence Expiry',
@@ -1062,15 +1092,13 @@ const DriverForm = () => {
 
               {/* Driver Total Experience */}
               <div className="form-field">
-                <label className="form-field-label">Driver Total Experience (Years) (Optional)</label>
+                <label className="form-field-label">Driver Total Experience (Optional)</label>
                 <input
-                  type="number"
+                  type="text"
                   name="DriverTotalExperience"
                   value={driverData.DriverTotalExperience}
                   onChange={handleInputChange}
-                  placeholder="Enter total experience in years"
-                  min="0"
-                  max="50"
+                  placeholder="Computed automatically from issue date"
                   className="form-input"
                 />
               </div>

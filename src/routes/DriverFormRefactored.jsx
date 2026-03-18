@@ -47,7 +47,9 @@ const DriverFormRefactored = () => {
         DriverLicenceExpiryDate: driverData.DriverLicenceExpiryDate || null,
         DriverMedicalDate: driverData.DriverMedicalDate || null,
         DriverAlternateNo: driverData.DriverAlternateNo?.trim() || null,
-        DriverTotalExperience: driverData.DriverTotalExperience || null,
+        DriverTotalExperience: (driverData.DriverTotalExperience && typeof driverData.DriverTotalExperience === 'string' && driverData.DriverTotalExperience.includes('Year')) 
+          ? parseInt(driverData.DriverTotalExperience) 
+          : (driverData.DriverTotalExperience && typeof driverData.DriverTotalExperience === 'string' && driverData.DriverTotalExperience.includes('Month') ? 0 : (parseInt(driverData.DriverTotalExperience) || null)),
         DriverSameAsVendor: driverData.DriverSameAsVendor || 'Separate',
         VendorID: driverData.vendor_id || null,
         DriverPhoto: photoUrl
@@ -117,6 +119,24 @@ const DriverFormRefactored = () => {
     { key: 'DriverName', label: 'Driver Name', sortable: true },
     { key: 'DriverLicenceNo', label: 'Licence No', sortable: true },
     { key: 'DriverMobileNo', label: 'Mobile', sortable: true },
+    {
+      key: 'DriverTotalExperience',
+      label: 'Experience',
+      sortable: true,
+      render: (value, row) => {
+        if (row.DriverLicenceIssueDate) {
+          const issueDate = new Date(row.DriverLicenceIssueDate);
+          const today = new Date();
+          if (!isNaN(issueDate.getTime()) && issueDate <= today) {
+            let years = today.getFullYear() - issueDate.getFullYear();
+            let months = today.getMonth() - issueDate.getMonth();
+            if (months < 0) { years--; months += 12; }
+            return years > 0 ? `${years}y ${months}m` : `${months}m`;
+          }
+        }
+        return value ? `${value}y` : '-';
+      }
+    },
     { key: 'DriverLicenceExpiryDate', label: 'Licence Expiry', sortable: true, type: 'date' },
     { key: 'DriverAddress', label: 'Address', sortable: false, render: (value) => value ? (value.length > 30 ? value.substring(0, 30) + '...' : value) : '-' }
   ];
