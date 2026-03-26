@@ -66,7 +66,7 @@ module.exports = (pool) => {
     try {
       console.log('📊 GET /api/daily-vehicle-transactions called');
 
-      const { page = 1, limit = 50, fromDate, toDate } = req.query;
+      const { page = 1, limit = 1000, fromDate, toDate } = req.query;
       const offset = (page - 1) * limit;
 
       // Build date filter conditions
@@ -205,8 +205,7 @@ module.exports = (pool) => {
 
       // Apply pagination to transformed results
       const startIndex = parseInt(offset);
-      const endIndex = startIndex + parseInt(limit);
-      const rows = transformedRows.slice(startIndex, endIndex);
+      const rows = transformedRows.slice(startIndex, startIndex + parseInt(limit));
 
       // Get total count for pagination with date filter
       const fixedCountQuery = `SELECT COUNT(*) as count FROM fixed_transactions ${dateFilter.replace('ft.TransactionDate', 'TransactionDate')}`;
