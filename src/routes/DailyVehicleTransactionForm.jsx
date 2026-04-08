@@ -158,6 +158,8 @@ const DailyVehicleTransactionForm = () => {
       OtherCharges: '',
       OtherChargesRemarks: '',
       Date: getCurrentDate(),
+      ServiceDate: getCurrentDate(),
+      VehicleReturnDate: getCurrentDate(),
       OpeningKM: '',
       ClosingKM: '',
       // TripNo: '',
@@ -310,19 +312,14 @@ const DailyVehicleTransactionForm = () => {
     loadDropdownOptions();
   }, []);
 
-  // Trigger vendor selection after vendors are loaded and when editing
-  useEffect(() => {
-    if (editingTransaction && vendors.length > 0 && masterData.VendorName && !masterData.CompanyName) {
-      console.log('🔧 Edit: Triggering vendor selection after vendors loaded, VendorID:', masterData.VendorName);
-      const vendorSelectEvent = {
-        target: {
-          name: 'VendorName',
-          value: masterData.VendorName
-        }
-      };
-      handleMasterDataChange(vendorSelectEvent);
-    }
-  }, [editingTransaction, vendors, masterData.VendorName]);
+  // NOTE: This useEffect was removed because handleEdit now sets all masterData fields
+  // directly from the stored DB record (full.*), so re-triggering handleMasterDataChange
+  // here is not needed and was causing stored values to be overwritten by linked entity data.
+  // useEffect(() => {
+  //   if (editingTransaction && vendors.length > 0 && masterData.VendorName && !masterData.CompanyName) {
+  //     handleMasterDataChange({ target: { name: 'VendorName', value: masterData.VendorName } });
+  //   }
+  // }, [editingTransaction, vendors, masterData.VendorName]);
 
 
 
@@ -1171,14 +1168,17 @@ const DailyVehicleTransactionForm = () => {
         setMasterData(prev => ({
           ...prev,
           Project: selectedProject.ProjectName,
-          Location: selectedProject.Location || '', // Auto-populate location from project
-          CustSite: selectedProject.Location || '' // Also update CustSite for validation
+          Location: selectedProject.ProjectLocation || selectedProject.Location || '',
+          CustSite: selectedProject.ProjectLocation || selectedProject.Location || ''
         }));
 
         // Update project ID for submission
         setIds(prev => ({ ...prev, ProjectID: selectedProjectId }));
 
-        console.log('✅ PROJECT SELECTION - Auto-populated location:', selectedProject.Location);
+        console.log('📋 Project Selection Updated:', { 
+          ProjectName: selectedProject.ProjectName, 
+          ProjectID: selectedProjectId 
+        });
       }
     } catch (error) {
       console.error('❌ PROJECT SELECTION - Error:', error);
@@ -1295,7 +1295,8 @@ const DailyVehicleTransactionForm = () => {
 
           if (projectData) {
             autoPopulatedData.Project = projectData.ProjectName; // Use project name for display
-            console.log('✅ Project data found:', projectData.ProjectName);
+            idsData.ProjectID = projectData.ProjectID;
+            console.log('📋 Vehicle Auto-populate - Selected project:', projectData.ProjectName, 'ID:', projectData.ProjectID);
 
             // Get exact location from project (try multiple possible field names)
             const projectLocation = projectData.Location || projectData.LocationName || projectData.LocationID || projectData.ProjectLocation || projectData.SiteLocation;
@@ -1448,8 +1449,6 @@ const DailyVehicleTransactionForm = () => {
       ...prev,
       VehicleNo: newVehicleIds
     }));
-
-
 
     // Update IDs for submission (use first remaining vehicle)
     if (newVehicleIds.length > 0) {
@@ -1688,10 +1687,10 @@ const DailyVehicleTransactionForm = () => {
 
               // Take the first project or let user select if multiple
               const project = linkedProjects[0];
-              autoPopulatedData.Project = `${project.ProjectName} [${project.ProjectCode || project.ProjectID}]`;
-              console.log('✅ Project found:', autoPopulatedData.Project);
-
-              // Store project ID for submission
+              // FIX: Use only ProjectName, remove brackets [ID] to match handleProjectSelection
+              autoPopulatedData.Project = project.ProjectName;
+              autoPopulatedData.Location = project.Location || '';
+              autoPopulatedData.CustSite = project.Location || '';
               setIds(prev => ({ ...prev, ProjectID: project.ProjectID }));
             } else {
               autoPopulatedData.Project = 'N/A';
@@ -2132,17 +2131,140 @@ const DailyVehicleTransactionForm = () => {
       }
     }
 
-    // NEW: Validate chronological order of time fields
-    const chronologicalErrors = validateChronologicalTimes(transactionData);
-    Object.assign(newErrors, chronologicalErrors);
-
-    console.log('🔍 VALIDATION - Final errors:', newErrors);
-    console.log('🔍 VALIDATION - Error count:', Object.keys(newErrors).length);
-
     setErrors(newErrors);
     const isValid = Object.keys(newErrors).length === 0;
-    console.log('🔍 VALIDATION - Form is valid:', isValid);
     return isValid;
+  };
+
+  // Helper to format Excel dates correctly (handles serial numbers or strings)
+  const formatExcelDate = (dateVal) => {
+    if (!dateVal) return '';
+
+    // If it's already a Date object
+    if (dateVal instanceof Date) {
+      return dateVal.toISOString().split('T')[0];
+    }
+
+    // If it's an Excel serial number
+    if (typeof dateVal === 'number' || (typeof dateVal === 'string' && !isNaN(dateVal) && dateVal.length > 5)) {
+      const num = Number(dateVal);
+      const date = new Date((num - 25569) * 86400 * 1000);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+    }
+
+    // If it's a string, try to parse it
+    if (typeof dateVal === 'string') {
+      // Handle DD-MM-YYYY or DD/MM/YYYY
+      const parts = dateVal.split(/[-/.]/);
+      if (parts.length === 3) {
+        if (parts[2].length === 4) { // DD-MM-YYYY
+          return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+        } else if (parts[0].length === 4) { // YYYY-MM-DD
+          return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+        }
+      }
+
+      const date = new Date(dateVal);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+    }
+
+    return getCurrentDate();
+  };
+
+  // Helper to find a value in a row by checking multiple possible column name variations
+  const getCellValue = (row, fieldNames) => {
+    if (!row) return null;
+    const rowKeys = Object.keys(row);
+    
+    for (const targetName of fieldNames) {
+      // 1. Direct match
+      if (row[targetName] !== undefined && row[targetName] !== "") return row[targetName];
+      
+      // 2. Case-insensitive and space-insensitive match
+      const normalizedTarget = targetName.toLowerCase().replace(/[\s_-]/g, '');
+      const foundKey = rowKeys.find(key => {
+        const normalizedKey = key.toLowerCase().replace(/[\s_-]/g, '');
+        return normalizedKey === normalizedTarget;
+      });
+      
+      if (foundKey !== undefined && row[foundKey] !== "") return row[foundKey];
+    }
+    return null;
+  };
+
+  // Helper to format Excel times correctly (handles serial numbers, strings, or Date objects)
+  const formatExcelTime = (timeVal) => {
+    if (timeVal === null || timeVal === undefined || timeVal === "") return null;
+
+    // Handle Date objects
+    if (timeVal instanceof Date) {
+      const hours = timeVal.getHours();
+      const minutes = timeVal.getMinutes();
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+
+    // If it's a number (Excel serial time or just hours)
+    if (typeof timeVal === 'number') {
+      // If the number is < 1, it's a fraction of a day (Excel time format)
+      // If it's > 1, it might be a Date+Time serial (e.g. 45000.375) or just raw hours
+      let fraction = timeVal;
+      if (timeVal >= 1) {
+        fraction = timeVal % 1;
+      }
+      
+      // If it's 0 but the original wasn't 0 and it's large, it might be raw hours
+      if (fraction === 0 && timeVal > 0 && timeVal < 24) {
+          return `${String(Math.floor(timeVal)).padStart(2, '0')}:00`;
+      }
+
+      const totalSeconds = Math.round(fraction * 86400);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+
+    // If it's a string, try to normalize
+    if (typeof timeVal === 'string') {
+      const str = timeVal.trim();
+      if (!str) return null;
+
+      // Handle HH:MM:SS or HH:MM
+      const timeMatch = str.match(/^(\d{1,2}):(\d{1,2})/);
+      if (timeMatch) {
+        return `${timeMatch[1].padStart(2, '0')}:${timeMatch[2].padStart(2, '0')}`;
+      }
+      
+      // Handle HHMM (4 digits)
+      const hhmmMatch = str.match(/^(\d{2})(\d{2})$/);
+      if (hhmmMatch) {
+          const h = parseInt(hhmmMatch[1]);
+          const m = parseInt(hhmmMatch[2]);
+          if (h < 24 && m < 60) {
+            return `${hhmmMatch[1]}:${hhmmMatch[2]}`;
+          }
+      }
+
+      // Handle "9 AM" or "09:00 PM" etc.
+      if (/am|pm/i.test(str)) {
+        const dummyDate = new Date(`2000-01-01 ${str}`);
+        if (!isNaN(dummyDate.getTime())) {
+          const h = dummyDate.getHours();
+          const m = dummyDate.getMinutes();
+          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+      }
+      
+      // If it's just a number in a string "0.375"
+      if (!isNaN(str) && str.includes('.')) {
+          return formatExcelTime(parseFloat(str));
+      }
+    }
+
+    return String(timeVal);
   };
 
   const handleExcelImport = async (e) => {
@@ -2170,133 +2292,200 @@ const DailyVehicleTransactionForm = () => {
       for (let i = 0; i < totalRows; i++) {
         setImportProgress({ current: i + 1, total: totalRows, success: successCount, failed: failedCount });
         const row = jsonData[i];
-        
+
         const tripType = row['TypeOfTransaction'] || row['Transaction Type'] || row['TripType'] || 'Fixed';
-        
+
         let payload = {};
-        
+
         try {
           // Attempt to map names to internal Foreign Keys using current component state values
           let resolvedCustomerId = row['CustomerID'];
           const customerNameRaw = row['Customer'] || row['CompanyName'] || row['CustomerName'] || row['CustomerID'];
           if (!resolvedCustomerId && customerNameRaw && customers.length > 0) {
-            const foundC = customers.find(c => 
-              c.CustomerID == customerNameRaw || 
-              c.customer_id == customerNameRaw || 
+            const foundC = customers.find(c =>
+              c.CustomerID == customerNameRaw ||
+              c.customer_id == customerNameRaw ||
               (c.Name && c.Name.toLowerCase() === String(customerNameRaw).toLowerCase()) ||
               (c.customer_name && c.customer_name.toLowerCase() === String(customerNameRaw).toLowerCase())
             );
             resolvedCustomerId = foundC ? (foundC.CustomerID || foundC.customer_id) : null;
           }
-          // Default to a fallback if none found (to bypass strict mandatory empty check if testing casually)
-          if (!resolvedCustomerId && customers.length > 0) {
-             resolvedCustomerId = customers[0].CustomerID || customers[0].customer_id;
-          }
 
           let resolvedProjectId = row['ProjectID'];
           const projectNameRaw = row['Project'];
           if (!resolvedProjectId && projectNameRaw && projects.length > 0) {
-             const foundP = projects.find(p => 
-               p.ProjectID == projectNameRaw || 
-               p.project_id == projectNameRaw ||
-               (p.ProjectName && p.ProjectName.toLowerCase() === String(projectNameRaw).toLowerCase())
-             );
-             resolvedProjectId = foundP ? (foundP.ProjectID || foundP.project_id) : null;
+            const foundP = projects.find(p =>
+              p.ProjectID == projectNameRaw ||
+              p.project_id == projectNameRaw ||
+              (p.ProjectName && p.ProjectName.toLowerCase() === String(projectNameRaw).toLowerCase())
+            );
+            resolvedProjectId = foundP ? (foundP.ProjectID || foundP.project_id) : null;
           }
 
           let resolvedVehicleIds = [];
           const rawVehicle = row['VehicleID'] || row['Vehicle Number'] || row['VehicleNumber'];
           if (rawVehicle) {
-             const foundV = vehicles.find(v => 
-               v.VehicleID == rawVehicle || 
-               v.vehicle_id == rawVehicle || 
-               (v.VehicleRegistrationNo && String(v.VehicleRegistrationNo).replace(/\s/g,'').toLowerCase() === String(rawVehicle).replace(/\s/g,'').toLowerCase()) ||
-               (v.vehicle_number && String(v.vehicle_number).replace(/\s/g,'').toLowerCase() === String(rawVehicle).replace(/\s/g,'').toLowerCase())
-             );
-             if (foundV) {
-               resolvedVehicleIds.push(String(foundV.VehicleID || foundV.vehicle_id));
-             } else if (!isNaN(rawVehicle)) {
-               resolvedVehicleIds.push(String(rawVehicle));
-             }
-          }
-          if (resolvedVehicleIds.length === 0 && vehicles.length > 0) {
-             resolvedVehicleIds.push(String(vehicles[0].VehicleID || vehicles[0].vehicle_id)); // Safety fallback
+            const foundV = vehicles.find(v =>
+              v.VehicleID == rawVehicle ||
+              v.vehicle_id == rawVehicle ||
+              (v.VehicleRegistrationNo && String(v.VehicleRegistrationNo).replace(/\s/g, '').toLowerCase() === String(rawVehicle).replace(/\s/g, '').toLowerCase()) ||
+              (v.vehicle_number && String(v.vehicle_number).replace(/\s/g, '').toLowerCase() === String(rawVehicle).replace(/\s/g, '').toLowerCase())
+            );
+            if (foundV) {
+              resolvedVehicleIds.push(String(foundV.VehicleID || foundV.vehicle_id));
+            } else if (!isNaN(rawVehicle)) {
+              resolvedVehicleIds.push(String(rawVehicle));
+            }
           }
 
           let resolvedDriverIds = [];
           const rawDriver = row['DriverID'] || row['Driver Name'] || row['DriverName'];
           if (rawDriver) {
-             const foundD = drivers.find(d => 
-               d.DriverID == rawDriver || 
-               d.driver_id == rawDriver ||
-               (d.DriverName && d.DriverName.toLowerCase() === String(rawDriver).toLowerCase()) ||
-               (d.driver_name && d.driver_name.toLowerCase() === String(rawDriver).toLowerCase())
-             );
-             if (foundD) {
-               resolvedDriverIds.push(String(foundD.DriverID || foundD.driver_id));
-             } else if (!isNaN(rawDriver)) {
-               resolvedDriverIds.push(String(rawDriver));
-             }
+            const foundD = drivers.find(d =>
+              d.DriverID == rawDriver ||
+              d.driver_id == rawDriver ||
+              (d.DriverName && d.DriverName.toLowerCase() === String(rawDriver).toLowerCase()) ||
+              (d.driver_name && d.driver_name.toLowerCase() === String(rawDriver).toLowerCase())
+            );
+            if (foundD) {
+              resolvedDriverIds.push(String(foundD.DriverID || foundD.driver_id));
+            } else if (!isNaN(rawDriver)) {
+              resolvedDriverIds.push(String(rawDriver));
+            }
           }
-          if (resolvedDriverIds.length === 0 && drivers.length > 0) {
-             resolvedDriverIds.push(String(drivers[0].DriverID || drivers[0].driver_id)); // Safety fallback
-          }
+
+          // Format dates using the helper with expanded column variations
+          const transactionDateStr = formatExcelDate(row['Date'] || row['TransactionDate'] || row['Transaction Date'] || row['Transaction_Date'] || row['Entry Date'] || row['EntryDate'] || row['Entry_Date']) || getCurrentDate();
+          const serviceDateStr = formatExcelDate(row['ServiceDate'] || row['Service Date'] || row['Service_Date'] || row['Date'] || row['TransactionDate'] || row['Entry Date']) || transactionDateStr;
+          const vehicleReturnDateStr = formatExcelDate(row['VehicleReturnDate'] || row['Vehicle Return Date'] || row['Vehicle_Return_Date'] || row['Date'] || row['TransactionDate']) || transactionDateStr;
 
           if (tripType === 'Fixed') {
             payload = {
               TripType: 'Fixed',
-              TransactionDate: row['Date'] || getCurrentDate(),
-              CustomerID: resolvedCustomerId, 
-              ProjectID: resolvedProjectId,
+              TransactionDate: transactionDateStr,
+              ServiceDate: serviceDateStr,
+              VehicleReturnDate: vehicleReturnDateStr,
+              CustomerID: resolvedCustomerId || null,
+              ProjectID: resolvedProjectId || null,
               TripNo: row['TripNo'] || row['Trip No'] || '',
               VehicleIDs: JSON.stringify(resolvedVehicleIds),
               DriverIDs: JSON.stringify(resolvedDriverIds),
               OpeningKM: row['OpeningKM'] || row['Opening KM'] ? Number(row['OpeningKM'] || row['Opening KM']) : 0,
               ClosingKM: row['ClosingKM'] || row['Closing KM'] ? Number(row['ClosingKM'] || row['Closing KM']) : 1,
-              VehicleReportingAtHub: row['VehicleReportingAtHub'] || row['Vehicle Reporting at Hub'] || '09:00',
-              VehicleEntryInHub: row['VehicleEntryInHub'] || row['Vehicle Entry in Hub'] || '09:30',
-              VehicleOutFromHubForDelivery: row['VehicleOutFromHubForDelivery'] || row['Vehicle Out from Hub for Delivery'] || '10:00',
-              VehicleReturnAtHub: row['VehicleReturnAtHub'] || row['Vehicle Return at Hub'] || '18:00',
-              VehicleEnteredAtHubReturn: row['VehicleEnteredAtHubReturn'] || row['Vehicle Entered at Hub (Return)'] || '18:30',
-              VehicleOutFromHubFinal: row['VehicleOutFromHubFinal'] || row['Vehicle Out from Hub Final (Trip Close)'] || '19:00',
+              
+              // Delivery Metrics
+              TotalDeliveries: row['TotalDeliveries'] || row['Total Deliveries'] || row['TotalShipmentsForDeliveries'] || 0,
+              TotalDeliveriesAttempted: row['TotalDeliveriesAttempted'] || row['Total Deliveries Attempted'] || row['TotalShipmentDeliveriesAttempted'] || 0,
+              TotalDeliveriesDone: row['TotalDeliveriesDone'] || row['Total Deliveries Done'] || row['TotalShipmentDeliveriesDone'] || 0,
+
+              // Hub Timing (with robust matching and no defaults to avoid "wrong" data)
+              VehicleReportingAtHub: formatExcelTime(getCellValue(row, ['VehicleReportingAtHub', 'Vehicle Reporting at Hub', 'ReportingTime', 'Vehicle Reporting'])),
+              VehicleEntryInHub: formatExcelTime(getCellValue(row, ['VehicleEntryInHub', 'Vehicle Entry in Hub', 'EntryTime', 'Vehicle Entry'])),
+              VehicleOutFromHubForDelivery: formatExcelTime(getCellValue(row, ['VehicleOutFromHubForDelivery', 'Vehicle Out from Hub for Delivery', 'OutTime', 'Out for Delivery'])),
+              VehicleReturnAtHub: formatExcelTime(getCellValue(row, ['VehicleReturnAtHub', 'Vehicle Return at Hub', 'ReturnTime', 'Vehicle Return'])),
+              VehicleEnteredAtHubReturn: formatExcelTime(getCellValue(row, ['VehicleEnteredAtHubReturn', 'Vehicle Entered at Hub (Return)', 'ReturnEntryTime', 'Return Entry'])),
+              VehicleOutFromHubFinal: formatExcelTime(getCellValue(row, ['VehicleOutFromHubFinal', 'Vehicle Out from Hub Final (Trip Close)', 'FinalOutTime', 'Final Out'])),
+              
               Status: 'Pending',
-              Location: row['Location'] || row['Customer Site'] || 'Default',
+              Location: row['Location'] || row['Customer Site'] || row['Loc'] || 'Default',
               CustomerSite: row['CustSite'] || row['Customer Site'] || 'Default',
+              CompanyName: row['CompanyName'] || row['Company Name'] || row['Customer'] || '',
+              ProjectName: row['ProjectName'] || row['Project Name'] || row['Project'] || '',
+              GSTNo: row['GSTNo'] || row['GST No'] || row['GST Number'] || '',
+              VehicleNumber: row['VehicleNumber'] || row['Vehicle Number'] || '',
+              VendorName: row['VendorName'] || row['Vendor Name'] || '',
+              VendorNumber: row['VendorNumber'] || row['Vendor Number'] || '',
+              DriverName: row['DriverName'] || row['Driver Name'] || '',
+              DriverNumber: row['DriverNumber'] || row['Driver Number'] || '',
+              ReplacementDriverName: row['ReplacementDriverName'] || row['Replacement Driver Name'] || '',
+              ReplacementDriverNo: row['ReplacementDriverNo'] || row['Replacement Driver No.'] || row['Replacement Driver No'] || '',
+              DriverAadharNumber: row['DriverAadharNumber'] || row['Driver Aadhar Number'] || row['AadharNumber'] || '',
+              DriverLicenceNumber: row['DriverLicenceNumber'] || row['Driver Licence Number'] || row['LicenceNumber'] || '',
+              VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || '',
+              
+              // Financial and Calculated Fields
+              VFreightFix: getCellValue(row, ['VFreightFix', 'V. Freight (Fix)', 'V.Freight (Fix)', 'V. FREIGHT (FIX)']),
+              FixKm: getCellValue(row, ['FixKm', 'Fix KM']),
+              VFreightVariable: getCellValue(row, ['VFreightVariable', 'V. Freight (Variable)', 'V.Freight (Variable)']),
+              TotalFreight: getCellValue(row, ['TotalFreight', 'Total Freight']),
+              TollExpenses: getCellValue(row, ['TollExpenses', 'Toll Expenses']),
+              ParkingCharges: getCellValue(row, ['ParkingCharges', 'Parking Charges']),
+              HandlingCharges: getCellValue(row, ['HandlingCharges', 'Handling Charges']),
+              LoadingCharges: getCellValue(row, ['LoadingCharges', 'Loading Charges']),
+              UnloadingCharges: getCellValue(row, ['UnloadingCharges', 'Unloading Charges']),
+              OtherCharges: getCellValue(row, ['OtherCharges', 'Other Charges']),
+              OtherChargesRemarks: getCellValue(row, ['OtherChargesRemarks', 'Other Charges Remarks']) || '',
+              TotalDutyHours: getCellValue(row, ['TotalDutyHours', 'Total Duty Hours']),
+
               TripClose: false
             };
-            
+
             await vehicleTransactionAPI.create(payload);
             successCount++;
           } else if (tripType === 'Adhoc' || tripType === 'Replacement') {
             payload = {
               TripType: tripType,
-              TransactionDate: row['Date'] || getCurrentDate(),
-              CustomerID: resolvedCustomerId,
-              ProjectID: resolvedProjectId,
+              TransactionDate: transactionDateStr,
+              ServiceDate: serviceDateStr,
+              VehicleReturnDate: vehicleReturnDateStr,
+              CustomerID: resolvedCustomerId || null,
+              ProjectID: resolvedProjectId || null,
               TripNo: row['TripNo'] || row['Trip No'] || '',
-              VehicleNumber: row['VehicleNumber'] || row['Vehicle Number'] || 'NA',
-              VendorName: row['VendorName'] || row['Vendor Name'] || 'NA',
-              DriverName: row['DriverName'] || row['Driver Name'] || 'NA',
-              DriverNumber: (row['DriverNumber'] || row['Driver Number']) ? String(row['DriverNumber'] || row['Driver Number']).padStart(10, '0').slice(0, 10) : '0000000000',
-              VendorNumber: (row['VendorNumber'] || row['Vendor Number']) ? String(row['VendorNumber'] || row['Vendor Number']).padStart(10, '0').slice(0, 10) : '0000000000',
+              VehicleNumber: row['VehicleNumber'] || row['Vehicle Number'] || row['VehicleNo'] || 'NA',
+              VendorName: row['VendorName'] || row['Vendor Name'] || row['Vendor'] || 'NA',
+              DriverName: row['DriverName'] || row['Driver Name'] || row['Driver'] || 'NA',
+              DriverNumber: row['DriverNumber'] || row['Driver Number'] || row['DriverMobile'] || row['Driver Mobile'] || '',
+              VendorNumber: row['VendorNumber'] || row['Vendor Number'] || row['VendorCode'] || row['Vendor Mobile'] || '',
+              ReplacementDriverName: row['ReplacementDriverName'] || row['Replacement Driver Name'] || '',
+              ReplacementDriverNo: row['ReplacementDriverNo'] || row['Replacement Driver No.'] || row['Replacement Driver No'] || '',
+              DriverAadharNumber: row['DriverAadharNumber'] || row['Driver Aadhar Number'] || row['AadharNumber'] || '',
+              DriverLicenceNumber: row['DriverLicenceNumber'] || row['Driver Licence Number'] || row['LicenceNumber'] || '',
+              
               OpeningKM: row['OpeningKM'] || row['Opening KM'] ? Number(row['OpeningKM'] || row['Opening KM']) : 0,
               ClosingKM: row['ClosingKM'] || row['Closing KM'] ? Number(row['ClosingKM'] || row['Closing KM']) : 1,
-              VehicleReportingAtHub: row['VehicleReportingAtHub'] || row['Vehicle Reporting at Hub'] || '09:00',
-              VehicleEntryInHub: row['VehicleEntryInHub'] || row['Vehicle Entry in Hub'] || '09:30',
-              VehicleOutFromHubForDelivery: row['VehicleOutFromHubForDelivery'] || row['Vehicle Out from Hub for Delivery'] || '10:00',
-              VehicleReturnAtHub: row['VehicleReturnAtHub'] || row['Vehicle Return at Hub'] || '18:00',
-              VehicleEnteredAtHubReturn: row['VehicleEnteredAtHubReturn'] || row['Vehicle Entered at Hub (Return)'] || '18:30',
-              VehicleOutFromHubFinal: row['VehicleOutFromHubFinal'] || row['Vehicle Out from Hub Final (Trip Close)'] || '19:00',
+
+              // Delivery Metrics for Adhoc
+              TotalShipmentsForDeliveries: row['TotalDeliveries'] || row['Total Deliveries'] || row['TotalShipmentsForDeliveries'] || 0,
+              TotalShipmentDeliveriesAttempted: row['TotalDeliveriesAttempted'] || row['Total Deliveries Attempted'] || row['TotalShipmentDeliveriesAttempted'] || 0,
+              TotalShipmentDeliveriesDone: row['TotalDeliveriesDone'] || row['Total Deliveries Done'] || row['TotalShipmentDeliveriesDone'] || 0,
+
+              // Hub Timing for Adhoc (with robust matching and no defaults)
+              VehicleReportingAtHub: formatExcelTime(getCellValue(row, ['VehicleReportingAtHub', 'Vehicle Reporting at Hub', 'ReportingTime', 'Vehicle Reporting'])),
+              VehicleEntryInHub: formatExcelTime(getCellValue(row, ['VehicleEntryInHub', 'Vehicle Entry in Hub', 'EntryTime', 'Vehicle Entry'])),
+              VehicleOutFromHubForDelivery: formatExcelTime(getCellValue(row, ['VehicleOutFromHubForDelivery', 'Vehicle Out from Hub for Delivery', 'OutTime', 'Out for Delivery'])),
+              VehicleReturnAtHub: formatExcelTime(getCellValue(row, ['VehicleReturnAtHub', 'Vehicle Return at Hub', 'ReturnTime', 'Vehicle Return'])),
+              VehicleEnteredAtHubReturn: formatExcelTime(getCellValue(row, ['VehicleEnteredAtHubReturn', 'Vehicle Entered at Hub (Return)', 'ReturnEntryTime', 'Return Entry'])),
+              VehicleOutFromHubFinal: formatExcelTime(getCellValue(row, ['VehicleOutFromHubFinal', 'Vehicle Out from Hub Final (Trip Close)', 'FinalOutTime', 'Final Out'])),
+              
               Status: 'Pending',
               Location: row['Location'] || row['Customer Site'] || 'Default',
               CustomerSite: row['CustSite'] || row['Customer Site'] || 'Default',
+              CompanyName: row['CompanyName'] || row['Company Name'] || row['Customer'] || '',
+              ProjectName: row['ProjectName'] || row['Project Name'] || row['Project'] || '',
+              GSTNo: row['GSTNo'] || row['GST No'] || row['GST Number'] || '',
+              VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || '',
+
+              // Financial and Calculated Fields
+              VFreightFix: getCellValue(row, ['VFreightFix', 'V. Freight (Fix)', 'V.Freight (Fix)', 'V. FREIGHT (FIX)']),
+              FixKm: getCellValue(row, ['FixKm', 'Fix KM']),
+              VFreightVariable: getCellValue(row, ['VFreightVariable', 'V. Freight (Variable)', 'V.Freight (Variable)']),
+              TotalFreight: getCellValue(row, ['TotalFreight', 'Total Freight']),
+              TollExpenses: getCellValue(row, ['TollExpenses', 'Toll Expenses']),
+              ParkingCharges: getCellValue(row, ['ParkingCharges', 'Parking Charges']),
+              HandlingCharges: getCellValue(row, ['HandlingCharges', 'Handling Charges']),
+              LoadingCharges: getCellValue(row, ['LoadingCharges', 'Loading Charges']),
+              UnloadingCharges: getCellValue(row, ['UnloadingCharges', 'Unloading Charges']),
+              OtherCharges: getCellValue(row, ['OtherCharges', 'Other Charges']),
+              OtherChargesRemarks: getCellValue(row, ['OtherChargesRemarks', 'Other Charges Remarks']) || '',
+              TotalDutyHours: getCellValue(row, ['TotalDutyHours', 'Total Duty Hours']),
+
               TripClose: false
             };
-            
+
             await vehicleTransactionAPI.create(payload);
             successCount++;
           } else {
-             throw new Error(`Invalid TripType: ${tripType}`);
+            throw new Error(`Invalid TripType: ${tripType}`);
           }
         } catch (apiError) {
           failedCount++;
@@ -2309,7 +2498,7 @@ const DailyVehicleTransactionForm = () => {
 
       setImportProgress({ current: totalRows, total: totalRows, success: successCount, failed: failedCount });
       apiHelpers.showSuccess(`Import completed. Success: ${successCount}, Failed: ${failedCount}`);
-      
+
       fetchTransactions();
     } catch (error) {
       console.error('Error importing Excel file:', error);
@@ -2350,6 +2539,8 @@ const DailyVehicleTransactionForm = () => {
       let payload = {
         TripType: masterData.TypeOfTransaction || 'Fixed',
         TransactionDate: transactionData.Date,
+        ServiceDate: transactionData.ServiceDate,
+        VehicleReturnDate: transactionData.VehicleReturnDate || null,
         CustomerID: ids.CustomerID,
         ProjectID: ids.ProjectID || null,
         ArrivalTimeAtHub: transactionData.ArrivalTimeAtHub || null,
@@ -2369,8 +2560,16 @@ const DailyVehicleTransactionForm = () => {
         ClosingKM: transactionData.ClosingKM ? Number(transactionData.ClosingKM) : null,
         TotalDutyHours: transactionData.TotalDutyHours ? Number(transactionData.TotalDutyHours) : null,
         Remarks: supervisorData.Remarks || null,
-        Status: 'Pending'
+        Status: 'Pending',
+        ProjectName: masterData.Project || null // Ensure ProjectName is here too
       };
+
+      console.log('🚀 Submit Trace - Initial Payload:', { 
+        TripType: payload.TripType, 
+        ProjectID: payload.ProjectID, 
+        ProjectName: payload.ProjectName,
+        masterDataProject: masterData.Project 
+      });
 
       if (masterData.TypeOfTransaction === 'Fixed') {
         // Fixed transactions use master data IDs - always use VehicleIDs and DriverIDs arrays
@@ -2449,8 +2648,8 @@ const DailyVehicleTransactionForm = () => {
           TripClose: supervisorData.TripClose || false,
 
           // Vehicle and Driver Details (for Excel export and reference)
-          VehicleNumber: masterData.VehicleNo && masterData.VehicleNo.length > 0 
-            ? (vehicles.find(v => v.VehicleID == masterData.VehicleNo[0])?.VehicleRegistrationNo || masterData.VehicleNo[0]) 
+          VehicleNumber: masterData.VehicleNo && masterData.VehicleNo.length > 0
+            ? (vehicles.find(v => v.VehicleID == masterData.VehicleNo[0])?.VehicleRegistrationNo || masterData.VehicleNo[0])
             : null,
           VendorName: vendorName,
           VendorNumber: vendorNumber,
@@ -2479,8 +2678,14 @@ const DailyVehicleTransactionForm = () => {
           CompanyName: masterData.CompanyName || null,
           GSTNo: masterData.GSTNo || null,
           Location: masterData.Location || null,
-          CustomerSite: masterData.CustSite || null
+          CustomerSite: masterData.CustSite || null,
+          ProjectName: masterData.Project || null
         };
+
+        console.log('🚀 Submit Trace - Fixed Payload Final:', { 
+          ProjectID: payload.ProjectID, 
+          ProjectName: payload.ProjectName 
+        });
 
         console.log('🔧 FIXED TRANSACTION PAYLOAD - TripNo field:', payload.TripNo);
         console.log('🔧 FIXED TRANSACTION PAYLOAD - Source TripNo:', transactionData.TripNo);
@@ -2543,8 +2748,14 @@ const DailyVehicleTransactionForm = () => {
           BalancePaidAmount: transactionData.BalancePaidAmount ? Number(transactionData.BalancePaidAmount) : null,
           BalancePaidDate: transactionData.BalancePaidDate || null,
           BalancePaidBy: transactionData.BalancePaidBy || null,
-          EmployeeDetailsBalance: transactionData.EmployeeDetailsBalance || null
+          EmployeeDetailsBalance: transactionData.EmployeeDetailsBalance || null,
+          ProjectName: masterData.Project || null
         };
+
+        console.log('🚀 Submit Trace - Adhoc Payload Final:', { 
+          ProjectID: payload.ProjectID, 
+          ProjectName: payload.ProjectName 
+        });
       }
 
       console.log('🚀 Payload being sent:', JSON.stringify(payload, null, 2));
@@ -2639,6 +2850,8 @@ const DailyVehicleTransactionForm = () => {
       ReplacementDriverName: '', // Reset replacement driver name
       ReplacementDriverNo: '', // Reset replacement driver number
       Date: getCurrentDate(),
+      ServiceDate: getCurrentDate(),
+      VehicleReturnDate: getCurrentDate(),
       ArrivalTimeAtHub: '',
       InTimeByCust: '',
       OutTimeFromHub: '',
@@ -2873,15 +3086,14 @@ const DailyVehicleTransactionForm = () => {
       }
 
       // Capture IDs for submission (only keep CustomerID, ProjectID, VendorID as single values)
-      const newCustomerID = full.CustomerID || row.CustomerID || prev.CustomerID || '';
+      const newCustomerID = full.CustomerID || row.CustomerID || '';
       console.log('🔧 Edit: Setting CustomerID in ids:', newCustomerID, 'from full.CustomerID:', full.CustomerID, 'row.CustomerID:', row.CustomerID);
-      console.log('🔧 Edit: CustomerID type:', typeof newCustomerID, 'is numeric:', !isNaN(newCustomerID));
 
       setIds(prev => ({
         ...prev,
         CustomerID: newCustomerID,
-        ProjectID: full.ProjectID || row.ProjectID || prev.ProjectID || '',
-        VendorID: full.VendorID || row.VendorID || prev.VendorID || ''
+        ProjectID: full.ProjectID || row.ProjectID || '',
+        VendorID: full.VendorID || row.VendorID || ''
       }));
 
       // Store the original CustomerID for fallback during submission
@@ -2983,30 +3195,32 @@ const DailyVehicleTransactionForm = () => {
       console.log('🔧 Edit: Transaction type for section rendering:', full.TripType);
       console.log('🔧 Edit: Will show Fixed sections:', full.TripType === 'Fixed');
 
+      // EDIT MODE: Always use stored DB values first.
+      // Linked entity data (rel.*) is only a fallback if the stored field is empty.
+      // This ensures Excel-imported data (where stored values may differ from linked IDs) displays correctly.
       const newMasterData = {
         Customer: full.CustomerID || '',
-        CompanyName: rel.customer?.Name || rel.customer?.MasterCustomerName || full.CompanyName || '',
-        GSTNo: rel.customer?.GSTNo || full.CustomerGSTNo || full.GSTNo || '',
-        Project: rel.project?.ProjectName || full.ProjectName || '',
-        Location: (() => {
-          // PRIORITY ORDER: ProjectLocation first, then fallbacks
-          const location = full.ProjectLocation || rel.project?.Location || rel.customer?.Locations || full.CustomerLocation || full.Location || '';
-          console.log('🔧 LOCATION DEBUG - ProjectLocation from API:', full.ProjectLocation);
-          console.log('🔧 LOCATION DEBUG - full.Location from API:', full.Location);
-          console.log('🔧 LOCATION DEBUG - rel.project?.Location:', rel.project?.Location);
-          console.log('🔧 LOCATION DEBUG - rel.customer?.Locations:', rel.customer?.Locations);
-          console.log('🔧 LOCATION DEBUG - full.CustomerLocation:', full.CustomerLocation);
-          console.log('🔧 LOCATION DEBUG - Final location value:', location);
-          return location;
-        })(),
-        CustSite: rel.customer?.CustomerSite || full.CustomerSite || '',
-        VehiclePlacementType: rel.project?.PlacementType || full.VehiclePlacementType || 'Fixed',
-        VehicleType: full.VehicleType || rel.vehicle?.VehicleType || '', // Use database value first
-        VehicleNo: parsedVehicleIds, // Always use parsed VehicleIDs array
-        VendorName: rel.vendor?.VendorName || full.VendorName || '',
-        VendorCode: rel.vendor?.VendorCode || full.VendorCode || '',
+        CompanyName: full.CompanyName || rel.customer?.Name || rel.customer?.MasterCustomerName || '',
+        GSTNo: full.GSTNo || full.CustomerGSTNo || rel.customer?.GSTNo || '',
+        Project: full.ProjectName || rel.project?.ProjectName || '',
+        Location: full.Location || full.ProjectLocation || rel.project?.Location || rel.customer?.Locations || full.CustomerLocation || '',
+        CustSite: full.CustomerSite || rel.customer?.CustomerSite || '',
+        VehiclePlacementType: full.VehiclePlacementType || rel.project?.PlacementType || 'Fixed',
+        VehicleType: full.VehicleType || rel.vehicle?.VehicleType || '',
+        VehicleNo: parsedVehicleIds,
+        VendorName: full.VendorName || rel.vendor?.VendorName || '',
+        VendorCode: full.VendorCode || rel.vendor?.VendorCode || '',
         TypeOfTransaction: full.TripType || 'Fixed'
       };
+
+      console.log('🔧 EDIT STATE - newMasterData (DB-first priority):', {
+        CompanyName: newMasterData.CompanyName,
+        GSTNo: newMasterData.GSTNo,
+        Project: newMasterData.Project,
+        Location: newMasterData.Location,
+        VendorName: newMasterData.VendorName,
+        VendorCode: newMasterData.VendorCode
+      });
 
       console.log('🔧 EDIT STATE - Setting masterData to:', newMasterData);
       console.log('🔧 EDIT STATE - About to set masterData.Location to:', newMasterData.Location);
@@ -3071,6 +3285,8 @@ const DailyVehicleTransactionForm = () => {
           DriverMobileNo: rel.driver?.DriverMobileNo || full.DriverMobileNo || '',
           TripNumber: full.TripNumber || '',
           Date: formatDateForInput(full.TransactionDate) || getCurrentDate(),
+          ServiceDate: formatDateForInput(full.ServiceDate) || getCurrentDate(),
+          VehicleReturnDate: formatDateForInput(full.VehicleReturnDate) || getCurrentDate(),
           ArrivalTimeAtHub: full.ArrivalTimeAtHub || '',
           InTimeByCust: full.InTimeByCust || '',
           OutTimeFromHub: full.OutTimeFromHub || '',
@@ -3139,6 +3355,8 @@ const DailyVehicleTransactionForm = () => {
           ReplacementDriverName: full.ReplacementDriverName || '',
           ReplacementDriverNo: full.ReplacementDriverNo || '',
           Date: formatDateForInput(full.TransactionDate) || getCurrentDate(),
+          ServiceDate: formatDateForInput(full.ServiceDate) || getCurrentDate(),
+          VehicleReturnDate: formatDateForInput(full.VehicleReturnDate) || getCurrentDate(),
           Shift: full.Shift || '',
           ArrivalTimeAtHub: full.ArrivalTimeAtHub || '',
           InTimeByCust: full.InTimeByCust || '',
@@ -3290,7 +3508,10 @@ const DailyVehicleTransactionForm = () => {
       // Hide project dropdown by default when editing; user can change customer to re-evaluate
       setIsProjectDropdownVisible(false);
 
-      // Trigger customer selection logic to load projects and set correct values
+      // Removed auto-triggering of customer selection logic to prevent overwriting
+      // database values with master data during initial editing load.
+      // This ensures exact database values are displayed.
+      /*
       if (full.CustomerID) {
         console.log('🔄 Edit: Triggering customer selection for CustomerID:', full.CustomerID);
         // Use different handlers based on transaction type
@@ -3304,6 +3525,7 @@ const DailyVehicleTransactionForm = () => {
           }
         }, 100);
       }
+      */
 
       // Reset files state for new uploads (following Vendor Form pattern)
       setFiles({
@@ -3467,8 +3689,39 @@ const DailyVehicleTransactionForm = () => {
         return typeColors[value] || value || '-';
       }
     },
-    { key: 'TransactionDate', label: 'Date', type: 'date', sortable: true, width: '100px' },
+    { 
+      key: 'TransactionDate', 
+      label: 'Entry Date', 
+      type: 'date', 
+      sortable: true, 
+      width: '100px',
+      render: (value) => value ? new Date(value).toLocaleDateString('en-GB') : '-'
+    },
+    { 
+      key: 'ServiceDate', 
+      label: 'Service Date', 
+      type: 'date', 
+      sortable: true, 
+      width: '100px',
+      render: (value) => value ? new Date(value).toLocaleDateString('en-GB') : '-'
+    },
+    { 
+      key: 'VehicleReturnDate', 
+      label: 'Return Date', 
+      type: 'date', 
+      sortable: true, 
+      width: '100px',
+      render: (value) => value ? new Date(value).toLocaleDateString('en-GB') : '-'
+    },
+    { key: 'Shift', label: 'Shift', sortable: true, width: '80px' },
     { key: 'CustomerName', label: 'Customer', sortable: true, width: '150px' },
+    { key: 'ProjectName', label: 'Project', sortable: true, width: '150px' },
+    { key: 'TripNo', label: 'Trip No', sortable: true, width: '120px' },
+    { key: 'VehicleNumber', label: 'Vehicle Number', sortable: true, width: '120px' },
+    { key: 'VendorName', label: 'Vendor Name', sortable: true, width: '150px' },
+    { key: 'VendorNumber', label: 'Vendor Number', sortable: true, width: '120px' },
+    { key: 'DriverName', label: 'Driver Name', sortable: true, width: '150px' },
+    { key: 'DriverNumber', label: 'Driver Number', sortable: true, width: '120px' },
     { key: 'DisplayVehicle', label: 'Vehicle', sortable: true, width: '120px', render: (value, row) => value || row.VehicleRegistrationNo || row.VehicleNumber || '-' },
     { key: 'DisplayDriver', label: 'Driver', sortable: true, width: '120px', render: (value, row) => value || row.DriverName || '-' },
     { key: 'TotalKM', label: 'KM', sortable: true, width: '80px', render: (value) => (value ? `${value}` : '-') },
@@ -3865,7 +4118,7 @@ const DailyVehicleTransactionForm = () => {
               </div> */}
 
                 <div className="form-group">
-                  <label>Date *</label>
+                  <label>Entry Date *</label>
                   <input
                     type="date"
                     name="Date"
@@ -3874,6 +4127,18 @@ const DailyVehicleTransactionForm = () => {
                     className={errors.Date ? 'error' : ''}
                   />
                   {errors.Date && <span className="error-message">{errors.Date}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Service Date *</label>
+                  <input
+                    type="date"
+                    name="ServiceDate"
+                    value={transactionData.ServiceDate}
+                    onChange={handleTransactionDataChange}
+                    className={errors.ServiceDate ? 'error' : ''}
+                  />
+                  {errors.ServiceDate && <span className="error-message">{errors.ServiceDate}</span>}
                 </div>
 
                 {/* NEW: 6 Time Fields (Mandatory - Chronological Order) */}
@@ -3908,6 +4173,18 @@ const DailyVehicleTransactionForm = () => {
                     className={errors.VehicleOutFromHubForDelivery ? 'error' : ''}
                   />
                   {errors.VehicleOutFromHubForDelivery && <span className="error-message">{errors.VehicleOutFromHubForDelivery}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Vehicle Return Date *</label>
+                  <input
+                    type="date"
+                    name="VehicleReturnDate"
+                    value={transactionData.VehicleReturnDate}
+                    onChange={handleTransactionDataChange}
+                    className={errors.VehicleReturnDate ? 'error' : ''}
+                  />
+                  {errors.VehicleReturnDate && <span className="error-message">{errors.VehicleReturnDate}</span>}
                 </div>
 
                 <div className="form-group">
@@ -4054,7 +4331,7 @@ const DailyVehicleTransactionForm = () => {
               <div className="form-grid">
                 {/* Date */}
                 <div className="form-group">
-                  <label>Date *</label>
+                  <label>Entry Date *</label>
                   <input
                     type="date"
                     name="Date"
@@ -4063,6 +4340,18 @@ const DailyVehicleTransactionForm = () => {
                     className={errors.Date ? 'error' : ''}
                   />
                   {errors.Date && <span className="error-message">{errors.Date}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Service Date *</label>
+                  <input
+                    type="date"
+                    name="ServiceDate"
+                    value={transactionData.ServiceDate}
+                    onChange={handleTransactionDataChange}
+                    className={errors.ServiceDate ? 'error' : ''}
+                  />
+                  {errors.ServiceDate && <span className="error-message">{errors.ServiceDate}</span>}
                 </div>
 
                 {/* Trip No */}
@@ -4238,6 +4527,18 @@ const DailyVehicleTransactionForm = () => {
                     className={errors.VehicleOutFromHubForDelivery ? 'error' : ''}
                   />
                   {errors.VehicleOutFromHubForDelivery && <span className="error-message">{errors.VehicleOutFromHubForDelivery}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label>Vehicle Return Date *</label>
+                  <input
+                    type="date"
+                    name="VehicleReturnDate"
+                    value={transactionData.VehicleReturnDate}
+                    onChange={handleTransactionDataChange}
+                    className={errors.VehicleReturnDate ? 'error' : ''}
+                  />
+                  {errors.VehicleReturnDate && <span className="error-message">{errors.VehicleReturnDate}</span>}
                 </div>
 
                 <div className="form-group">
@@ -5177,7 +5478,7 @@ const DailyVehicleTransactionForm = () => {
             </button>
           </div>
         </div>
-        
+
         {/* Progress bar overlay for importing */}
         {isImporting && (
           <div style={{
@@ -5191,16 +5492,16 @@ const DailyVehicleTransactionForm = () => {
             }}>
               <h3 style={{ marginTop: 0, color: '#007bff' }}>Importing Excel Data</h3>
               <p>Processing row {importProgress.current} of {importProgress.total}</p>
-              
+
               <div style={{ width: '100%', height: '10px', background: '#e9ecef', borderRadius: '5px', margin: '20px 0', overflow: 'hidden' }}>
-                <div style={{ 
-                  height: '100%', 
-                  background: '#28a745', 
+                <div style={{
+                  height: '100%',
+                  background: '#28a745',
                   width: `${importProgress.total ? (importProgress.current / importProgress.total) * 100 : 0}%`,
                   transition: 'width 0.2s ease'
                 }}></div>
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
                 <span style={{ color: '#28a745', fontWeight: 'bold' }}>✓ Success: {importProgress.success}</span>
                 <span style={{ color: '#dc3545', fontWeight: 'bold' }}>✗ Failed: {importProgress.failed}</span>

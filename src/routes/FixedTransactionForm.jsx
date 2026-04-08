@@ -18,6 +18,8 @@ const FixedTransactionForm = () => {
     ReplacementDriverName: '',
     ReplacementDriverNo: '',
     Date: getCurrentDate(),
+    ServiceDate: getCurrentDate(),
+    VehicleReturnDate: getCurrentDate(),
     ArrivalTimeAtHub: '',
     InTimeByCust: '',
     OutTimeFromHub: '',
@@ -340,11 +342,14 @@ const FixedTransactionForm = () => {
         ...ids,
         TripType: 'Fixed',
         TransactionDate: transactionData.Date,
+        ServiceDate: transactionData.ServiceDate,
+        VehicleReturnDate: transactionData.VehicleReturnDate,
         VehicleID: masterData.VehicleNo.length > 0 ? masterData.VehicleNo[0] : null,
         VendorCode: selectedVendor ? selectedVendor.VendorCode : null,
         OvertimeCostPerHour: transactionData.OvertimeCostPerHour ? Number(transactionData.OvertimeCostPerHour) : null,
         ArrivalTimeAtHub: transactionData.ArrivalTimeAtHub,
         ReturnReportingTime: transactionData.ReturnReportingTime,
+        ProjectName: masterData.Project || null,
       };
 
       delete payload.Date;
@@ -393,6 +398,8 @@ const FixedTransactionForm = () => {
       ...initialTransactionData,
       ...transaction,
       Date: formatDateForInput(transaction.TransactionDate),
+      ServiceDate: formatDateForInput(transaction.ServiceDate),
+      VehicleReturnDate: formatDateForInput(transaction.VehicleReturnDate),
       ArrivalTimeAtHub: transaction.ArrivalTimeAtHub,
       ReturnReportingTime: transaction.ReturnReportingTime,
     });
@@ -471,13 +478,23 @@ const FixedTransactionForm = () => {
               {errors.DriverID && <span className="error-message">{errors.DriverID}</span>}
             </div>
             <div className="form-group">
-              <label>Date *</label>
+              <label>Entry Date *</label>
               <input type="date" name="Date" value={transactionData.Date} onChange={handleTransactionDataChange} className={errors.Date ? 'error' : ''} />
               {errors.Date && <span className="error-message">{errors.Date}</span>}
+            </div>
+            <div className="form-group">
+              <label>Service Date *</label>
+              <input type="date" name="ServiceDate" value={transactionData.ServiceDate} onChange={handleTransactionDataChange} className={errors.ServiceDate ? 'error' : ''} />
+              {errors.ServiceDate && <span className="error-message">{errors.ServiceDate}</span>}
             </div>
           </div>
 
           <div className="form-row">
+            <div className="form-group">
+              <label>Vehicle Return Date *</label>
+              <input type="date" name="VehicleReturnDate" value={transactionData.VehicleReturnDate} onChange={handleTransactionDataChange} className={errors.VehicleReturnDate ? 'error' : ''} />
+              {errors.VehicleReturnDate && <span className="error-message">{errors.VehicleReturnDate}</span>}
+            </div>
             <div className="form-group">
               <label>Arrival Time at Hub</label>
               <input type="time" name="ArrivalTimeAtHub" value={transactionData.ArrivalTimeAtHub} onChange={handleTransactionDataChange} className={errors.ArrivalTimeAtHub ? 'error' : ''} />
@@ -534,7 +551,9 @@ const FixedTransactionForm = () => {
           columns={[
             { key: 'SerialNumber', label: 'S.No.' },
             { key: 'TripType', label: 'Type' },
-            { key: 'TransactionDate', label: 'Date' },
+            { key: 'TransactionDate', label: 'Entry Date', render: (val) => val ? new Date(val).toLocaleDateString('en-GB') : '-' },
+            { key: 'ServiceDate', label: 'Service Date', render: (val) => val ? new Date(val).toLocaleDateString('en-GB') : '-' },
+            { key: 'VehicleReturnDate', label: 'Return Date', render: (val) => val ? new Date(val).toLocaleDateString('en-GB') : '-' },
             { key: 'CustomerName', label: 'Customer' },
             { key: 'ProjectName', label: 'Project' },
             { key: 'VehicleRegistrationNo', label: 'Vehicle' },

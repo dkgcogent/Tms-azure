@@ -252,11 +252,24 @@ const DailyVehicleTransactionFormRefactored = () => {
           };
 
           if (validatedData.masterData.TypeOfTransaction === 'Fixed') {
+            // Look up ProjectName — try full projects list first (always loaded),
+            // then availableProjects (only set when customer was selected in this session),
+            // then fall back to whatever is already stored in transactionData (edit mode).
+            const projectId = parseInt(ids.ProjectID);
+            const selectedProject =
+              projects.find(p => p.ProjectID === projectId) ||
+              availableProjects.find(p => p.ProjectID === projectId);
+            const projectName =
+              selectedProject
+                ? selectedProject.ProjectName
+                : (validatedData.transactionData.ProjectName || null);
+
             payload = {
               ...payload,
               ...validatedData.supervisorData,
               VehicleIDs: JSON.stringify(validatedData.masterData.VehicleNo),
-              DriverIDs: JSON.stringify(validatedData.selectedDrivers.map(d => d.DriverID))
+              DriverIDs: JSON.stringify(validatedData.selectedDrivers.map(d => d.DriverID)),
+              ProjectName: projectName
             };
           }
 
@@ -294,7 +307,7 @@ const DailyVehicleTransactionFormRefactored = () => {
         apiHelpers.showError(new Error(validationResult.summary || 'Validation failed'), 'Please fix the errors and try again');
       }
     );
-  }, [masterData, transactionData, calculatedData, supervisorData, selectedDrivers, files, ids, editingTransaction, validateBeforeSubmit, resetForm, fetchTransactions]);
+  }, [masterData, transactionData, calculatedData, supervisorData, selectedDrivers, files, ids, projects, availableProjects, editingTransaction, validateBeforeSubmit, resetForm, fetchTransactions]);
 
   // Date filter handlers
   const handleDateFilterApply = useCallback(async () => {
@@ -395,9 +408,12 @@ const DailyVehicleTransactionFormRefactored = () => {
   // Transaction table columns
   const transactionColumns = [
     { key: 'TransactionID', label: 'ID', sortable: true },
-    { key: 'Date', label: 'Date', sortable: true },
+    { key: 'TransactionDate', label: 'Entry Date', sortable: true, render: (value) => value ? new Date(value).toLocaleDateString('en-GB') : '-' },
+    { key: 'ServiceDate', label: 'Service Date', sortable: true, render: (value) => value ? new Date(value).toLocaleDateString('en-GB') : '-' },
+    { key: 'VehicleReturnDate', label: 'Return Date', sortable: true, render: (value) => value ? new Date(value).toLocaleDateString('en-GB') : '-' },
     { key: 'TypeOfTransaction', label: 'Type', sortable: true },
     { key: 'CompanyName', label: 'Company', sortable: true },
+    { key: 'ProjectName', label: 'Project', sortable: true },
     { key: 'VehicleRegistrationNo', label: 'Vehicle', sortable: true },
     { key: 'DriverName', label: 'Driver', sortable: true },
     { key: 'TotalKM', label: 'Total KM', sortable: true },

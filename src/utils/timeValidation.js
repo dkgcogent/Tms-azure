@@ -9,28 +9,29 @@
  * @returns {number|null} - Minutes since midnight, or null if invalid
  */
 export const convertTimeToMinutes = (time12h) => {
-  if (!time12h || typeof time12h !== 'string') return null;
+  if (!time12h) return null;
   
   try {
-    // Handle both "HH:MM AM/PM" and "HHMM" formats
-    const trimmed = time12h.trim();
+    const trimmed = String(time12h).trim();
+    if (!trimmed) return null;
     
+    // Handle both "HH:MM AM/PM" and "HHMM" formats
     // Check if it contains AM/PM
-    if (trimmed.includes('AM') || trimmed.includes('PM') || trimmed.includes('am') || trimmed.includes('pm')) {
+    if (/am|pm/i.test(trimmed)) {
       // Format: "09:30 AM" or "9:30 PM"
-      const parts = trimmed.split(' ');
-      if (parts.length !== 2) return null;
+      const parts = trimmed.split(/\s+/);
+      const timePart = parts[0];
+      const modifier = parts[1];
       
-      const [time, modifier] = parts;
-      const [hoursStr, minutesStr] = time.split(':');
+      if (!timePart || !modifier) return null;
       
+      const [hoursStr, minutesStr] = timePart.split(':');
       if (!hoursStr || !minutesStr) return null;
       
       let hours = parseInt(hoursStr, 10);
       const minutes = parseInt(minutesStr, 10);
       
       if (isNaN(hours) || isNaN(minutes)) return null;
-      if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return null;
       
       // Convert to 24-hour format
       if (modifier.toUpperCase() === 'PM' && hours !== 12) {
@@ -40,12 +41,11 @@ export const convertTimeToMinutes = (time12h) => {
       }
       
       return hours * 60 + minutes;
-    } else {
-      // Assume 24-hour format: "09:30" or "21:30"
+    } 
+    
+    // Handle HH:MM (24-hour)
+    if (trimmed.includes(':')) {
       const [hoursStr, minutesStr] = trimmed.split(':');
-      
-      if (!hoursStr || !minutesStr) return null;
-      
       const hours = parseInt(hoursStr, 10);
       const minutes = parseInt(minutesStr, 10);
       
@@ -54,6 +54,28 @@ export const convertTimeToMinutes = (time12h) => {
       
       return hours * 60 + minutes;
     }
+    
+    // Handle HHMM (4 digits)
+    if (/^\d{4}$/.test(trimmed)) {
+      const hours = parseInt(trimmed.substring(0, 2), 10);
+      const minutes = parseInt(trimmed.substring(2, 4), 10);
+      
+      if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+      return hours * 60 + minutes;
+    }
+    
+    // Handle HH.MM (some users use dots)
+    if (trimmed.includes('.')) {
+      const [hoursStr, minutesStr] = trimmed.split('.');
+      const hours = parseInt(hoursStr, 10);
+      const minutes = parseInt(minutesStr, 10);
+      
+      if (!isNaN(hours) && !isNaN(minutes) && hours < 24 && minutes < 60) {
+        return hours * 60 + minutes;
+      }
+    }
+
+    return null;
   } catch (error) {
     console.error('Error converting time to minutes:', error);
     return null;

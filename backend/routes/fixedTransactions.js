@@ -105,6 +105,8 @@ router.post('/', async (req, res) => {
       CustomerID,
       ProjectID,
       LocationID,
+      ServiceDate,
+      VehicleReturnDate,
 
       // Driver and timing info
       ReplacementDriverID,
@@ -202,10 +204,17 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!TransactionDate || !VehicleID || !DriverID || !CustomerID || !OpeningKM || !ClosingKM) {
+    if (!TransactionDate || !VehicleID || (!CustomerID && !CompanyName) || !OpeningKM || !ClosingKM) {
+      const missing = [];
+      if (!TransactionDate) missing.push('TransactionDate');
+      if (!VehicleID) missing.push('VehicleID');
+      if (!CustomerID && !CompanyName) missing.push('CustomerID or CompanyName');
+      if (!OpeningKM) missing.push('OpeningKM');
+      if (!ClosingKM) missing.push('ClosingKM');
+
       return res.status(400).json({
         success: false,
-        error: 'Required fields: TransactionDate, VehicleID, DriverID, CustomerID, OpeningKM, ClosingKM'
+        error: `Required fields missing: ${missing.join(', ')}`
       });
     }
 
@@ -250,7 +259,7 @@ router.post('/', async (req, res) => {
 
     const query = `
       INSERT INTO fixed_transactions (
-        TripType, TransactionDate, Shift, VehicleIDs, DriverIDs, VendorID, CustomerID, ProjectID, LocationID,
+        TripType, TransactionDate, ServiceDate, VehicleReturnDate, Shift, VehicleIDs, DriverIDs, VendorID, CustomerID, ProjectID, LocationID,
         ReplacementDriverID, ReplacementDriverName, ReplacementDriverNo,
         ArrivalTimeAtHub, InTimeByCust, OutTimeFromHub, ReturnReportingTime,
         OpeningKM, ClosingKM, TotalDeliveries, TotalDeliveriesAttempted, TotalDeliveriesDone,
@@ -262,13 +271,13 @@ router.post('/', async (req, res) => {
         Revenue, Margin, MarginPercentage, DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
         OutTimeFrom, TotalShipmentsForDeliveries, TotalShipmentDeliveriesAttempted, TotalShipmentDeliveriesDone,
         TripNo, VehicleNumber, VendorName, VendorCode, VendorNumber, DriverName, DriverNumber, DriverAadharNumber,
-        DriverLicenceNumber, VehicleType, CompanyName, GSTNo, CustomerSite, Location,
+        DriverLicenceNumber, VehicleType, CompanyName, ProjectName, GSTNo, CustomerSite, Location,
         Remarks, Status, TripClose
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
-      TripType, TransactionDate, Shift, VehicleIDs, DriverIDs, VendorID, CustomerID, ProjectID, LocationID,
+      TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, Shift, VehicleIDs, DriverIDs, VendorID, CustomerID, ProjectID, LocationID,
       ReplacementDriverID, ReplacementDriverName, ReplacementDriverNo,
       ArrivalTimeAtHub, InTimeByCust, OutTimeFromHub, ReturnReportingTime,
       OpeningKM, ClosingKM, TotalDeliveries, TotalDeliveriesAttempted, TotalDeliveriesDone,
@@ -280,7 +289,7 @@ router.post('/', async (req, res) => {
       Revenue, Margin, MarginPercentage, DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
       OutTimeFrom, TotalShipmentsForDeliveries, TotalShipmentDeliveriesAttempted, TotalShipmentDeliveriesDone,
       TripNo, VehicleNumber, VendorName, VendorCode, VendorNumber, DriverName, DriverNumber, DriverAadharNumber,
-      DriverLicenceNumber, VehicleType, CompanyName, GSTNo, CustomerSite, Location,
+      DriverLicenceNumber, VehicleType, CompanyName, ProjectName, GSTNo, CustomerSite, Location,
       Remarks, Status, TripClose
     ];
 

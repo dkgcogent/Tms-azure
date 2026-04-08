@@ -91,15 +91,17 @@ module.exports = (pool) => {
       const fixedQuery = `
         SELECT
           ft.*,
-          c.Name as CustomerName,
-          c.GSTNo as CustomerGSTNo,
+          COALESCE(ft.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
+          COALESCE(ft.GSTNo, c.GSTNo, 'N/A') as CustomerGSTNo,
           v.VehicleRegistrationNo,
           v.VehicleType,
-          d.DriverName,
-          d.DriverMobileNo,
-          vend.VendorName,
-          p.ProjectName,
-          rd.DriverName as ReplacementDriverName,
+          COALESCE(ft.DriverName, d.DriverName) as DriverName,
+          COALESCE(ft.DriverNumber, d.DriverMobileNo) as DriverNumber,
+          COALESCE(ft.VendorName, vend.VendorName) as VendorName,
+          COALESCE(ft.VendorNumber, vend.VendorCode) as VendorNumber,
+          COALESCE(ft.ProjectName, p.ProjectName) as ProjectName,
+          COALESCE(ft.ReplacementDriverName, rd.DriverName) as ReplacementDriverName,
+          COALESCE(ft.ReplacementDriverNo, rd.DriverMobileNo) as ReplacementDriverNo,
           -- Handle multiple vehicles display
           CASE
             WHEN ft.VehicleIDs IS NOT NULL THEN
@@ -109,8 +111,8 @@ module.exports = (pool) => {
           -- Handle multiple drivers display
           CASE
             WHEN ft.DriverIDs IS NOT NULL THEN
-              CONCAT(d.DriverName, ' (+', JSON_LENGTH(ft.DriverIDs) - 1, ' more)')
-            ELSE d.DriverName
+              CONCAT(COALESCE(ft.DriverName, d.DriverName), ' (+', JSON_LENGTH(ft.DriverIDs) - 1, ' more)')
+            ELSE COALESCE(ft.DriverName, d.DriverName)
           END as DisplayDriver
         FROM fixed_transactions ft
         LEFT JOIN customer c ON ft.CustomerID = c.CustomerID
@@ -125,14 +127,15 @@ module.exports = (pool) => {
       const adhocQuery = `
         SELECT
           at.*,
-          c.Name as CustomerName,
-          c.GSTNo as CustomerGSTNo,
-          p.ProjectName,
+          COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
+          COALESCE(at.GSTNo, c.GSTNo, 'N/A') as CustomerGSTNo,
+          COALESCE(at.ProjectName, p.ProjectName) as ProjectName,
           at.VehicleNumber as VehicleRegistrationNo,
           at.VehicleType,
           at.DriverName,
-          at.DriverNumber as DriverMobileNo,
+          at.DriverNumber,
           at.VendorName,
+          at.VendorNumber,
           NULL as ReplacementDriverName,
           -- Handle multiple vehicles display for adhoc
           CASE
@@ -882,6 +885,11 @@ module.exports = (pool) => {
         GSTNo,
         Location,
         CustomerSite,
+        ProjectName,
+
+        // New fields
+        ServiceDate,
+        VehicleReturnDate,
 
         // Additional fields
         Shift,
@@ -901,10 +909,9 @@ module.exports = (pool) => {
         console.log('🔍 OpeningKM:', OpeningKM, 'Type:', typeof OpeningKM, 'Truthy:', !!OpeningKM);
 
         // Only validate the fields that are actually being submitted
-        if (!VehicleIDs || !DriverIDs || !TransactionDate || OpeningKM === null || OpeningKM === undefined) {
+        if (!VehicleIDs || !TransactionDate || OpeningKM === null || OpeningKM === undefined) {
           const missingFields = [];
           if (!VehicleIDs) missingFields.push('VehicleIDs');
-          if (!DriverIDs) missingFields.push('DriverIDs');
           if (!TransactionDate) missingFields.push('TransactionDate');
           if (OpeningKM === null || OpeningKM === undefined) missingFields.push('OpeningKM');
 
@@ -914,9 +921,18 @@ module.exports = (pool) => {
           });
         }
       } else if (TripType === 'Adhoc' || TripType === 'Replacement') {
-        if (!CustomerID || !TransactionDate || !OpeningKM || !VehicleNumber || !VendorName || !DriverName || !DriverNumber) {
+        if ((!CustomerID && !CompanyName) || !TransactionDate || !OpeningKM || !VehicleNumber || !VendorName || !DriverName || !DriverNumber) {
+          const missing = [];
+          if (!CustomerID && !CompanyName) missing.push('CustomerID or CompanyName');
+          if (!TransactionDate) missing.push('TransactionDate');
+          if (!OpeningKM) missing.push('OpeningKM');
+          if (!VehicleNumber) missing.push('VehicleNumber');
+          if (!VendorName) missing.push('VendorName');
+          if (!DriverName) missing.push('DriverName');
+          if (!DriverNumber) missing.push('DriverNumber');
+
           return res.status(400).json({
-            error: 'Required fields for Adhoc/Replacement: CustomerID, TransactionDate, OpeningKM, VehicleNumber, VendorName, DriverName, DriverNumber'
+            error: `Required fields for Adhoc/Replacement missing: ${missing.join(', ')}`
           });
         }
 
@@ -934,10 +950,15 @@ module.exports = (pool) => {
         }
       }
 
-      // Check if customer exists
-      const [customerCheck] = await pool.query('SELECT CustomerID FROM customer WHERE CustomerID = ?', [CustomerID]);
-      if (customerCheck.length === 0) {
-        return res.status(400).json({ error: 'Customer not found' });
+      // Check if customer exists ONLY if CustomerID is provided
+      if (CustomerID) {
+        const [customerCheck] = await pool.query('SELECT CustomerID FROM customer WHERE CustomerID = ?', [CustomerID]);
+        if (customerCheck.length === 0) {
+          return res.status(400).json({ error: 'Customer not found' });
+        }
+      } else if (!CompanyName) {
+        // If no CustomerID and no CompanyName, it's an error
+        return res.status(400).json({ error: 'Either CustomerID or CompanyName is required' });
       }
 
       // Handle vehicles and drivers from frontend (always as JSON arrays)
@@ -996,9 +1017,7 @@ module.exports = (pool) => {
         if (!primaryVehicleId || vehicleIds.length === 0) {
           return res.status(400).json({ error: 'At least one vehicle must be selected for Fixed transactions' });
         }
-        if (!primaryDriverId || driverIds.length === 0) {
-          return res.status(400).json({ error: 'At least one driver must be selected for Fixed transactions' });
-        }
+        // Removed mandatory driver check for Fixed transactions to allow loose imports
       } else if (TripType === 'Adhoc' || TripType === 'Replacement') {
         // For Adhoc/Replacement, validate manual entry fields
         if (!VehicleNumber) {
@@ -1024,7 +1043,7 @@ module.exports = (pool) => {
         // Insert into fixed_transactions table - include all vehicle, driver, and vendor details
         insertQuery = `
           INSERT INTO fixed_transactions (
-            TripType, TransactionDate, TripNo, Shift, VehicleIDs, DriverIDs, VendorID, CustomerID, ProjectID, LocationID,
+            TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, Shift, VehicleIDs, DriverIDs, VendorID, CustomerID, ProjectID, ProjectName, LocationID,
             ReplacementDriverID, ReplacementDriverName, ReplacementDriverNo,
             ArrivalTimeAtHub, InTimeByCust, OutTimeFromHub, ReturnReportingTime, OutTimeFrom,
             VehicleReportingAtHub, VehicleEntryInHub, VehicleOutFromHubForDelivery, VehicleReturnAtHub, VehicleEnteredAtHubReturn, VehicleOutFromHubFinal,
@@ -1035,7 +1054,7 @@ module.exports = (pool) => {
             CompanyName, GSTNo, Location, CustomerSite,
             DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
             OpeningKMImage, ClosingKMImage
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         // Calculate TotalFreight if freight values are provided
@@ -1044,8 +1063,8 @@ module.exports = (pool) => {
         const totalFreight = vFreightFix + vFreightVariable;
 
         values = [
-          TripType, TransactionDate, TripNo || '', Shift || null, JSON.stringify(vehicleIds), JSON.stringify(driverIds), VendorID || null,
-          CustomerID, ProjectID || null, null, ReplacementDriverID || null, ReplacementDriverName || null,
+          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', Shift || null, JSON.stringify(vehicleIds), JSON.stringify(driverIds), VendorID || null,
+          CustomerID, ProjectID || null, ProjectName || null, null, ReplacementDriverID || null, ReplacementDriverName || null,
           ReplacementDriverNo || null, ArrivalTimeAtHub || null, InTimeByCust || null, OutTimeFromHub || null,
           ReturnReportingTime || null, OutTimeFrom || null,
           VehicleReportingAtHub || null, VehicleEntryInHub || null, VehicleOutFromHubForDelivery || null,
@@ -1064,7 +1083,8 @@ module.exports = (pool) => {
         // Insert into adhoc_transactions table with multiple vehicles and drivers support
         insertQuery = `
           INSERT INTO adhoc_transactions (
-            TripType, TransactionDate, TripNo, CustomerID, ProjectID,
+            TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, CustomerID, ProjectID,
+            CompanyName, GSTNo, Location, CustomerSite, ProjectName,
             VehicleNumber, VehicleNumbers, VehicleType, VehicleTypes,
             VendorName, VendorNames, VendorNumber, VendorNumbers,
             DriverName, DriverNames, DriverNumber, DriverNumbers, DriverAadharNumber, DriverLicenceNumber,
@@ -1079,7 +1099,7 @@ module.exports = (pool) => {
             AdvancePaidAmount, AdvancePaidMode, AdvancePaidDate, AdvancePaidBy, EmployeeDetailsAdvance,
             BalanceToBePaid, BalancePaidAmount, Variance, BalancePaidDate, BalancePaidBy, EmployeeDetailsBalance,
             Revenue, Margin, MarginPercentage, Status, TripClose, Remarks
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         // Calculate TotalFreight if freight values are provided
@@ -1096,7 +1116,8 @@ module.exports = (pool) => {
         const driverNumbersJson = Array.isArray(DriverNumber) ? JSON.stringify(DriverNumber) : null;
 
         values = [
-          TripType, TransactionDate, TripNo || '', CustomerID || null, ProjectID || null,
+          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', CustomerID || null, ProjectID || null,
+          transaction.CompanyName || null, transaction.GSTNo || null, transaction.Location || null, transaction.CustomerSite || null, transaction.ProjectName || null,
           Array.isArray(VehicleNumber) ? VehicleNumber[0] : VehicleNumber, vehicleNumbersJson,
           Array.isArray(VehicleType) ? VehicleType[0] : VehicleType, vehicleTypesJson,
           Array.isArray(VendorName) ? VendorName[0] : VendorName, vendorNamesJson,
@@ -1165,11 +1186,13 @@ module.exports = (pool) => {
               c.GSTNo as CustomerGSTNo,
               v.VehicleRegistrationNo,
               v.VehicleType,
-              d.DriverName,
-              d.DriverMobileNo,
-              vend.VendorName,
+          COALESCE(ft.DriverName, d.DriverName) as DriverName,
+          COALESCE(ft.DriverNumber, d.DriverMobileNo) as DriverNumber,
+          COALESCE(ft.VendorName, vend.VendorName) as VendorName,
+          COALESCE(ft.VendorNumber, vend.VendorCode) as VendorNumber,
               p.ProjectName,
-              rd.DriverName as ReplacementDriverName
+              COALESCE(ft.ReplacementDriverName, rd.DriverName) as ReplacementDriverName,
+              COALESCE(ft.ReplacementDriverNo, rd.DriverMobileNo) as ReplacementDriverNo
             FROM fixed_transactions ft
             LEFT JOIN customer c ON ft.CustomerID = c.CustomerID
             LEFT JOIN vehicle v ON v.VehicleID = JSON_UNQUOTE(JSON_EXTRACT(ft.VehicleIDs, '$[0]'))
@@ -1407,6 +1430,7 @@ module.exports = (pool) => {
         GSTNo,
         Location,
         CustomerSite,
+        ProjectName,
 
         // Replacement driver fields
         ReplacementDriverName,
@@ -1448,6 +1472,10 @@ module.exports = (pool) => {
         Revenue,
         Margin,
         MarginPercentage,
+
+        // New fields
+        ServiceDate,
+        VehicleReturnDate,
 
         // Additional fields
         Shift,
@@ -1491,7 +1519,7 @@ module.exports = (pool) => {
       if (transactionTable === 'fixed_transactions') {
         updateQuery = `
           UPDATE fixed_transactions SET
-            TripType = ?, TransactionDate = ?, TripNo = ?, CustomerID = ?, ProjectID = ?, VehicleIDs = ?, DriverIDs = ?, VendorID = ?,
+            TripType = ?, TransactionDate = ?, ServiceDate = ?, VehicleReturnDate = ?, TripNo = ?, CustomerID = ?, ProjectID = ?, ProjectName = ?, VehicleIDs = ?, DriverIDs = ?, VendorID = ?,
             ArrivalTimeAtHub = ?, InTimeByCust = ?, OutTimeFromHub = ?, ReturnReportingTime = ?,
             VehicleReportingAtHub = ?, VehicleEntryInHub = ?, VehicleOutFromHubForDelivery = ?, VehicleReturnAtHub = ?, VehicleEnteredAtHubReturn = ?, VehicleOutFromHubFinal = ?,
             OpeningKM = ?, ClosingKM = ?, TotalDeliveries = ?, TotalDeliveriesAttempted = ?, TotalDeliveriesDone = ?,
@@ -1507,9 +1535,12 @@ module.exports = (pool) => {
         values = [
           TripType || 'Fixed',
           TransactionDate,
+          ServiceDate || null,
+          VehicleReturnDate || null,
           TripNo || '',
           preservedCustomerID,
           preservedProjectID,
+          ProjectName || null,
           VehicleIDs,
           DriverIDs,
           preservedVendorID,
@@ -1556,7 +1587,8 @@ module.exports = (pool) => {
         // Update for adhoc_transactions - use manual entry fields (no IDs)
         updateQuery = `
           UPDATE adhoc_transactions SET
-            TripType = ?, TransactionDate = ?, CustomerID = ?, ProjectID = ?, TripNo = ?,
+            TripType = ?, TransactionDate = ?, ServiceDate = ?, VehicleReturnDate = ?, CustomerID = ?, ProjectID = ?, TripNo = ?,
+            CompanyName = ?, GSTNo = ?, Location = ?, CustomerSite = ?, ProjectName = ?,
             VehicleNumber = ?, VehicleType = ?, VendorName = ?, VendorNumber = ?,
             DriverName = ?, DriverNumber = ?, DriverAadharNumber = ?, DriverLicenceNumber = ?,
             ArrivalTimeAtHub = ?, InTimeByCust = ?, OutTimeFromHub = ?, ReturnReportingTime = ?, OutTimeFrom = ?,
@@ -1587,9 +1619,16 @@ module.exports = (pool) => {
         values = [
           TripType || 'Adhoc',
           TransactionDate,
+          ServiceDate || null,
+          VehicleReturnDate || null,
           preservedCustomerID,
           preservedProjectID,
           TripNo || '',
+          transaction.CompanyName || null,
+          transaction.GSTNo || null,
+          transaction.Location || null,
+          transaction.CustomerSite || null,
+          transaction.ProjectName || null,
           VehicleNumber || null,
           VehicleType || null,
           VendorName || null,
@@ -1951,7 +1990,9 @@ module.exports = (pool) => {
         { header: 'Driver No.', key: 'DriverNo', width: 15 },
         { header: 'Replacement Driver Name', key: 'ReplacementDriverName', width: 25 },
         { header: 'Replacement Driver No.', key: 'ReplacementDriverNo', width: 20 },
-        { header: 'Date', key: 'TransactionDate', width: 15 },
+        { header: 'Entry Date', key: 'TransactionDate', width: 15 },
+        { header: 'Service Date', key: 'ServiceDate', width: 15 },
+        { header: 'Vehicle Return Date', key: 'VehicleReturnDate', width: 20 },
         { header: 'Arrival Time at Hub', key: 'ArrivalTimeAtHub', width: 20 },
         { header: 'In Time by Cust', key: 'InTimeByCust', width: 18 },
         { header: 'Opening KM', key: 'OpeningKM', width: 12 },
@@ -2084,6 +2125,8 @@ module.exports = (pool) => {
           ReplacementDriverName: row.ReplacementDriverName || 'None',
           ReplacementDriverNo: row.ReplacementDriverNo || 'None',
           TransactionDate: row.TransactionDate ? new Date(row.TransactionDate).toLocaleDateString() : '',
+          ServiceDate: row.ServiceDate ? new Date(row.ServiceDate).toLocaleDateString() : '',
+          VehicleReturnDate: row.VehicleReturnDate ? new Date(row.VehicleReturnDate).toLocaleDateString() : '',
           ArrivalTimeAtHub: row.ArrivalTimeAtHub || '',
           InTimeByCust: row.InTimeByCust || '',
           OpeningKM: row.OpeningKM || '',
@@ -2170,7 +2213,9 @@ module.exports = (pool) => {
         { header: 'Type of Vehicle Placement', key: 'TripType', width: 20 },
         { header: 'Fix Vehicle No.', key: 'FixVehicleNo', width: 15 },
         { header: 'Vehicle Type', key: 'VehicleType', width: 15 },
-        { header: 'Date', key: 'TransactionDate', width: 15 },
+        { header: 'Entry Date', key: 'TransactionDate', width: 15 },
+        { header: 'Service Date', key: 'ServiceDate', width: 15 },
+        { header: 'Vehicle Return Date', key: 'VehicleReturnDate', width: 20 },
         { header: 'Trip No.', key: 'TripNo', width: 15 },
         { header: 'Vehicle No.', key: 'VehicleNumber', width: 15 },
         { header: 'Vendor Name', key: 'VendorName', width: 20 },
@@ -2246,6 +2291,8 @@ module.exports = (pool) => {
           FixVehicleNo: 'None', // Adhoc transactions don't have fixed vehicles
           VehicleType: row.VehicleType || 'None',
           TransactionDate: row.TransactionDate ? new Date(row.TransactionDate).toLocaleDateString() : '',
+          ServiceDate: row.ServiceDate ? new Date(row.ServiceDate).toLocaleDateString() : '',
+          VehicleReturnDate: row.VehicleReturnDate ? new Date(row.VehicleReturnDate).toLocaleDateString() : '',
           TripNo: row.TripNo || 'None',
           VehicleNumber: row.VehicleNumber || 'None',
           VendorName: row.VendorName || 'None',
@@ -2323,7 +2370,7 @@ module.exports = (pool) => {
       const fixedQuery = `
         SELECT
           ft.*,
-          COALESCE(c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
+          COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           c.Name as CompanyName,
           c.GSTNo as GSTNo,
           COALESCE(p.ProjectName, 'N/A') as ProjectName,
@@ -2348,7 +2395,7 @@ module.exports = (pool) => {
       const adhocQuery = `
         SELECT
           at.*,
-          COALESCE(c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
+          COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(p.ProjectName, 'N/A') as ProjectName
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
@@ -2361,7 +2408,7 @@ module.exports = (pool) => {
       const replacementQuery = `
         SELECT
           at.*,
-          COALESCE(c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
+          COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(p.ProjectName, 'N/A') as ProjectName
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
@@ -2392,7 +2439,9 @@ module.exports = (pool) => {
           // Basic Transaction Info
           { header: 'Transaction ID', key: 'TransactionID', width: 15 },
           { header: 'Trip Type', key: 'TripType', width: 12 },
-          { header: 'Transaction Date', key: 'TransactionDate', width: 15 },
+          { header: 'Entry Date', key: 'TransactionDate', width: 15 },
+          { header: 'Service Date', key: 'ServiceDate', width: 15 },
+          { header: 'Vehicle Return Date', key: 'VehicleReturnDate', width: 20 },
           { header: 'Trip No', key: 'TripNo', width: 15 },
           { header: 'Status', key: 'Status', width: 12 },
           { header: 'Trip Close', key: 'TripClose', width: 12 },
@@ -2500,6 +2549,8 @@ module.exports = (pool) => {
             TransactionID: row.TransactionID || '',
             TripType: row.TripType || '',
             TransactionDate: row.TransactionDate ? new Date(row.TransactionDate).toISOString().split('T')[0] : '',
+            ServiceDate: row.ServiceDate ? new Date(row.ServiceDate).toISOString().split('T')[0] : '',
+            VehicleReturnDate: row.VehicleReturnDate ? new Date(row.VehicleReturnDate).toISOString().split('T')[0] : '',
             TripNo: row.TripNo || '',
             Status: row.Status || '',
             TripClose: row.TripClose ? 'Yes' : 'No',
@@ -2619,7 +2670,9 @@ module.exports = (pool) => {
           // Basic Transaction Info
           { header: 'Transaction ID', key: 'TransactionID', width: 15 },
           { header: 'Trip Type', key: 'TripType', width: 12 },
-          { header: 'Transaction Date', key: 'TransactionDate', width: 15 },
+          { header: 'Entry Date', key: 'TransactionDate', width: 15 },
+          { header: 'Service Date', key: 'ServiceDate', width: 15 },
+          { header: 'Vehicle Return Date', key: 'VehicleReturnDate', width: 20 },
           { header: 'Trip No', key: 'TripNo', width: 15 },
           { header: 'Status', key: 'Status', width: 12 },
           { header: 'Trip Close', key: 'TripClose', width: 12 },
@@ -2717,6 +2770,8 @@ module.exports = (pool) => {
             TransactionID: row.TransactionID || '',
             TripType: row.TripType || '',
             TransactionDate: row.TransactionDate ? new Date(row.TransactionDate).toISOString().split('T')[0] : '',
+            ServiceDate: row.ServiceDate ? new Date(row.ServiceDate).toISOString().split('T')[0] : '',
+            VehicleReturnDate: row.VehicleReturnDate ? new Date(row.VehicleReturnDate).toISOString().split('T')[0] : '',
             TripNo: row.TripNo || '',
             Status: row.Status || '',
             TripClose: row.TripClose ? 'Yes' : 'No',
@@ -2826,7 +2881,9 @@ module.exports = (pool) => {
           // Basic Transaction Info
           { header: 'Transaction ID', key: 'TransactionID', width: 15 },
           { header: 'Trip Type', key: 'TripType', width: 12 },
-          { header: 'Transaction Date', key: 'TransactionDate', width: 15 },
+          { header: 'Entry Date', key: 'TransactionDate', width: 15 },
+          { header: 'Service Date', key: 'ServiceDate', width: 15 },
+          { header: 'Vehicle Return Date', key: 'VehicleReturnDate', width: 20 },
           { header: 'Trip No', key: 'TripNo', width: 15 },
           { header: 'Status', key: 'Status', width: 12 },
           { header: 'Trip Close', key: 'TripClose', width: 12 },
@@ -2924,6 +2981,8 @@ module.exports = (pool) => {
             TransactionID: row.TransactionID || '',
             TripType: row.TripType || '',
             TransactionDate: row.TransactionDate ? new Date(row.TransactionDate).toISOString().split('T')[0] : '',
+            ServiceDate: row.ServiceDate ? new Date(row.ServiceDate).toISOString().split('T')[0] : '',
+            VehicleReturnDate: row.VehicleReturnDate ? new Date(row.VehicleReturnDate).toISOString().split('T')[0] : '',
             TripNo: row.TripNo || '',
             Status: row.Status || '',
             TripClose: row.TripClose ? 'Yes' : 'No',

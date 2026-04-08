@@ -31,6 +31,8 @@ const AdhocTransactionForm = () => {
 
   const initialTransactionData = {
     Date: getCurrentDate(),
+    ServiceDate: getCurrentDate(),
+    VehicleReturnDate: getCurrentDate(),
     TripNo: '',
     VehicleNumber: '',
     FixedVehicleNumber: '',
@@ -292,6 +294,8 @@ const AdhocTransactionForm = () => {
         CustomerID: ids.CustomerID,
         ProjectID: ids.ProjectID,
         TransactionDate: transactionData.Date,
+        ServiceDate: transactionData.ServiceDate,
+        VehicleReturnDate: transactionData.VehicleReturnDate,
         ArrivalTimeAtHub: transactionData.ArrivalTimeAtHub ? convert12HourTo24Hour(transactionData.ArrivalTimeAtHub) : null,
         InTimeByCust: transactionData.InTimeByCust ? convert12HourTo24Hour(transactionData.InTimeByCust) : null,
         OutTimeFromHub: transactionData.OutTimeFromHub ? convert12HourTo24Hour(transactionData.OutTimeFromHub) : null,
@@ -332,7 +336,7 @@ const AdhocTransactionForm = () => {
   const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
     setMasterData({ ...masterData, Customer: transaction.CustomerName, Project: transaction.ProjectName, TypeOfTransaction: transaction.TripType });
-    setTransactionData({ ...initialTransactionData, ...transaction, Date: formatDateForInput(transaction.TransactionDate) });
+    setTransactionData({ ...initialTransactionData, ...transaction, Date: formatDateForInput(transaction.TransactionDate), ServiceDate: formatDateForInput(transaction.ServiceDate), VehicleReturnDate: formatDateForInput(transaction.VehicleReturnDate) });
     setIds({ CustomerID: transaction.CustomerID, ProjectID: transaction.ProjectID });
   };
 
@@ -389,9 +393,19 @@ const AdhocTransactionForm = () => {
               {errors.TripNo && <span className="error-message">{errors.TripNo}</span>}
             </div>
             <div className="form-group">
-              <label>Date *</label>
+              <label>Entry Date *</label>
               <input type="date" name="Date" value={transactionData.Date} onChange={handleTransactionDataChange} className={errors.Date ? 'error' : ''} />
               {errors.Date && <span className="error-message">{errors.Date}</span>}
+            </div>
+            <div className="form-group">
+              <label>Service Date *</label>
+              <input type="date" name="ServiceDate" value={transactionData.ServiceDate} onChange={handleTransactionDataChange} className={errors.ServiceDate ? 'error' : ''} />
+              {errors.ServiceDate && <span className="error-message">{errors.ServiceDate}</span>}
+            </div>
+            <div className="form-group">
+              <label>Vehicle Return Date *</label>
+              <input type="date" name="VehicleReturnDate" value={transactionData.VehicleReturnDate} onChange={handleTransactionDataChange} className={errors.VehicleReturnDate ? 'error' : ''} />
+              {errors.VehicleReturnDate && <span className="error-message">{errors.VehicleReturnDate}</span>}
             </div>
           </div>
 
@@ -465,7 +479,9 @@ const AdhocTransactionForm = () => {
             { key: 'SerialNumber', label: 'S.No.' },
             { key: 'TripType', label: 'Type' },
             { key: 'TripNo', label: 'Trip No' },
-            { key: 'TransactionDate', label: 'Date' },
+            { key: 'TransactionDate', label: 'Entry Date', render: (val) => val ? new Date(val).toLocaleDateString('en-GB') : '-' },
+            { key: 'ServiceDate', label: 'Service Date', render: (val) => val ? new Date(val).toLocaleDateString('en-GB') : '-' },
+            { key: 'VehicleReturnDate', label: 'Return Date', render: (val) => val ? new Date(val).toLocaleDateString('en-GB') : '-' },
             { key: 'VehicleNumber', label: 'Vehicle' },
             { key: 'VendorName', label: 'Vendor' },
             { key: 'DriverName', label: 'Driver' },

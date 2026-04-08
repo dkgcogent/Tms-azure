@@ -165,6 +165,8 @@ router.get('/:id', async (req, res) => {
         TripNo,
         CustomerID,
         ProjectID,
+        ServiceDate,
+        VehicleReturnDate,
         VehicleNumber,
         VehicleType,
         VendorName,
@@ -225,10 +227,21 @@ router.get('/:id', async (req, res) => {
       } = req.body;
 
       // Validate required fields
-      if (!TripType || !TransactionDate || !VehicleNumber || !VendorName || !DriverName || !DriverNumber || !OpeningKM || !ClosingKM) {
+      if (!TripType || !TransactionDate || !VehicleNumber || !VendorName || !DriverName || !DriverNumber || !OpeningKM || !ClosingKM || (!CustomerID && !CompanyName)) {
+        const missing = [];
+        if (!TripType) missing.push('TripType');
+        if (!TransactionDate) missing.push('TransactionDate');
+        if (!VehicleNumber) missing.push('VehicleNumber');
+        if (!VendorName) missing.push('VendorName');
+        if (!DriverName) missing.push('DriverName');
+        if (!DriverNumber) missing.push('DriverNumber');
+        if (!OpeningKM) missing.push('OpeningKM');
+        if (!ClosingKM) missing.push('ClosingKM');
+        if (!CustomerID && !CompanyName) missing.push('CustomerID or CompanyName');
+
         return res.status(400).json({
           success: false,
-          error: 'Required fields: TripType, TransactionDate, VehicleNumber, VendorName, DriverName, DriverNumber, OpeningKM, ClosingKM'
+          error: `Required fields missing: ${missing.join(', ')}`
         });
       }
 
@@ -259,7 +272,7 @@ router.get('/:id', async (req, res) => {
 
       const query = `
         INSERT INTO adhoc_transactions (
-          TripType, TransactionDate, TripNo, CustomerID, ProjectID,
+          TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, CustomerID, ProjectID,
           VehicleNumber, VehicleType, VendorName, VendorCode, VendorNumber,
           DriverName, DriverNumber, DriverAadharNumber, DriverLicenceNumber,
           DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
@@ -267,15 +280,15 @@ router.get('/:id', async (req, res) => {
           OpeningKM, ClosingKM, TotalShipmentsForDeliveries, TotalShipmentDeliveriesAttempted, TotalShipmentDeliveriesDone,
           VFreightFix, FixKm, VFreightVariable, TotalFreight,
           TollExpenses, ParkingCharges, LoadingCharges, UnloadingCharges, OtherCharges, OtherChargesRemarks,
-          TotalDutyHours, OvertimeCostPerHour, CompanyName, AdvanceRequestNo, AdvanceToPaid, AdvanceApprovedAmount, AdvanceApprovedBy,
+          TotalDutyHours, OvertimeCostPerHour, CompanyName, ProjectName, AdvanceRequestNo, AdvanceToPaid, AdvanceApprovedAmount, AdvanceApprovedBy,
           AdvancePaidAmount, AdvancePaidMode, AdvancePaidDate, AdvancePaidBy, EmployeeDetailsAdvance,
           BalanceToBePaid, BalancePaidAmount, Variance, BalancePaidDate, BalancePaidBy, EmployeeDetailsBalance,
           Revenue, Margin, MarginPercentage, Status, TripClose, Remarks
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
-        TripType, TransactionDate, TripNo || '', CustomerID, ProjectID,
+        TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', CustomerID, ProjectID,
         VehicleNumber, VehicleType, VendorName, VendorCode, VendorNumber,
         DriverName, DriverNumber, DriverAadharNumber, DriverLicenceNumber,
         DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
@@ -283,7 +296,7 @@ router.get('/:id', async (req, res) => {
         OpeningKM, ClosingKM, TotalShipmentsForDeliveries, TotalShipmentDeliveriesAttempted, TotalShipmentDeliveriesDone,
         VFreightFix, FixKm, VFreightVariable, TotalFreight,
         TollExpenses, ParkingCharges, LoadingCharges, UnloadingCharges, OtherCharges, OtherChargesRemarks,
-        calculatedDutyHours, OvertimeCostPerHour, CompanyName, AdvanceRequestNo, AdvanceToPaid, AdvanceApprovedAmount, AdvanceApprovedBy,
+        calculatedDutyHours, OvertimeCostPerHour, CompanyName, ProjectName, AdvanceRequestNo, AdvanceToPaid, AdvanceApprovedAmount, AdvanceApprovedBy,
         AdvancePaidAmount, AdvancePaidMode, AdvancePaidDate, AdvancePaidBy, EmployeeDetailsAdvance,
         BalanceToBePaid, BalancePaidAmount, Variance, BalancePaidDate, BalancePaidBy, EmployeeDetailsBalance,
         Revenue, Margin, MarginPercentage, Status, TripClose, Remarks

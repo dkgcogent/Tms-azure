@@ -81,7 +81,8 @@ const initializeTransactionData = () => {
     ParkingCharges: '', LoadingCharges: '', UnloadingCharges: '', OtherCharges: '', OtherChargesRemarks: '',
     Date: getCurrentDate(), OpeningKM: '', ClosingKM: '', TripNo: '', VehicleNumber: '', VendorName: '',
     VendorNumber: '', DriverName: '', DriverNumber: '', DriverAadharNumber: '', TotalExpenses: '',
-    Revenue: '', Margin: '', MarginPercentage: '', TotalDutyHours: ''
+    Revenue: '', Margin: '', MarginPercentage: '', TotalDutyHours: '',
+    ServiceDate: getCurrentDate(), VehicleReturnDate: getCurrentDate()
   };
 };
 
@@ -354,7 +355,8 @@ export const useDailyVehicleTransactionForm = () => {
       AdvanceApprovedBy: '', AdvancePaidAmount: '', AdvancePaidMode: '', AdvancePaidDate: '',
       AdvancePaidBy: '', EmployeeDetailsAdvance: '', BalanceToBePaid: '', BalancePaidAmount: '',
       Variance: '', BalancePaidDate: '', BalancePaidBy: '', EmployeeDetailsBalance: '',
-      Revenue: '', Margin: '', MarginPercentage: '', TotalExpenses: '', TripClose: false
+      Revenue: '', Margin: '', MarginPercentage: '', TotalExpenses: '', TripClose: false,
+      ServiceDate: getCurrentDate(), VehicleReturnDate: getCurrentDate()
     });
     setCalculatedData({
       TotalKM: '', VFreightFix: '', TollExpenses: '', ParkingCharges: '', HandlingCharges: '',
