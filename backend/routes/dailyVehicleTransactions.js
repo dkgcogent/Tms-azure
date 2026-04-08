@@ -91,7 +91,7 @@ module.exports = (pool) => {
       const fixedQuery = `
         SELECT
           ft.*,
-          COALESCE(ft.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
+          COALESCE(ft.customer, ft.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(ft.GSTNo, c.GSTNo, 'N/A') as CustomerGSTNo,
           v.VehicleRegistrationNo,
           v.VehicleType,
@@ -575,7 +575,7 @@ module.exports = (pool) => {
         const fixedQuery = `
           SELECT
             ft.*,
-            COALESCE(c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
+            COALESCE(ft.customer, ft.CompanyName, c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
             COALESCE(c.GSTNo, 'N/A') as CustomerGSTNo,
             COALESCE(p.ProjectName, 'Unknown Project') as ProjectName,
             p.Location as ProjectLocation
@@ -594,7 +594,7 @@ module.exports = (pool) => {
         const adhocQuery = `
           SELECT
             at.*,
-            c.Name as CustomerName,
+            COALESCE(at.CompanyName, c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
             c.GSTNo as CustomerGSTNo,
             p.ProjectName,
             p.Location as ProjectLocation
@@ -614,7 +614,7 @@ module.exports = (pool) => {
         const fixedQuery = `
           SELECT
             ft.*,
-            c.Name as CustomerName,
+            COALESCE(ft.customer, ft.CompanyName, c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
             c.GSTNo as CustomerGSTNo,
             p.ProjectName,
             p.Location as ProjectLocation
@@ -627,7 +627,7 @@ module.exports = (pool) => {
         const adhocQuery = `
           SELECT
             at.*,
-            c.Name as CustomerName,
+            COALESCE(at.CompanyName, c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
             c.GSTNo as CustomerGSTNo,
             p.ProjectName,
             p.Location as ProjectLocation
@@ -882,6 +882,7 @@ module.exports = (pool) => {
 
         // Master data fields
         CompanyName,
+        CustomerName,
         GSTNo,
         Location,
         CustomerSite,
@@ -1043,7 +1044,7 @@ module.exports = (pool) => {
         // Insert into fixed_transactions table - include all vehicle, driver, and vendor details
         insertQuery = `
           INSERT INTO fixed_transactions (
-            TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, Shift, VehicleIDs, DriverIDs, VendorID, CustomerID, ProjectID, ProjectName, LocationID,
+            TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, Shift, VehicleIDs, DriverIDs, VendorID, CustomerID, customer, ProjectID, ProjectName, LocationID,
             ReplacementDriverID, ReplacementDriverName, ReplacementDriverNo,
             ArrivalTimeAtHub, InTimeByCust, OutTimeFromHub, ReturnReportingTime, OutTimeFrom,
             VehicleReportingAtHub, VehicleEntryInHub, VehicleOutFromHubForDelivery, VehicleReturnAtHub, VehicleEnteredAtHubReturn, VehicleOutFromHubFinal,
@@ -1054,7 +1055,7 @@ module.exports = (pool) => {
             CompanyName, GSTNo, Location, CustomerSite,
             DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
             OpeningKMImage, ClosingKMImage
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         // Calculate TotalFreight if freight values are provided
@@ -1064,7 +1065,7 @@ module.exports = (pool) => {
 
         values = [
           TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', Shift || null, JSON.stringify(vehicleIds), JSON.stringify(driverIds), VendorID || null,
-          CustomerID, ProjectID || null, ProjectName || null, null, ReplacementDriverID || null, ReplacementDriverName || null,
+          CustomerID, CustomerName || null, ProjectID || null, ProjectName || null, null, ReplacementDriverID || null, ReplacementDriverName || null,
           ReplacementDriverNo || null, ArrivalTimeAtHub || null, InTimeByCust || null, OutTimeFromHub || null,
           ReturnReportingTime || null, OutTimeFrom || null,
           VehicleReportingAtHub || null, VehicleEntryInHub || null, VehicleOutFromHubForDelivery || null,
@@ -1182,7 +1183,7 @@ module.exports = (pool) => {
           const [fixedTransaction] = await pool.query(`
             SELECT
               ft.*,
-              c.Name as CustomerName,
+              COALESCE(ft.customer, ft.CompanyName, c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
               c.GSTNo as CustomerGSTNo,
               v.VehicleRegistrationNo,
               v.VehicleType,
@@ -1207,7 +1208,7 @@ module.exports = (pool) => {
           const [adhocTransaction] = await pool.query(`
             SELECT
               at.*,
-              c.Name as CustomerName,
+              COALESCE(at.CompanyName, c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
               c.GSTNo as CustomerGSTNo,
               p.ProjectName
             FROM adhoc_transactions at

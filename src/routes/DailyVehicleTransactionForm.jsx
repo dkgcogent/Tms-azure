@@ -2298,18 +2298,12 @@ const DailyVehicleTransactionForm = () => {
         let payload = {};
 
         try {
-          // Attempt to map names to internal Foreign Keys using current component state values
-          let resolvedCustomerId = row['CustomerID'];
-          const customerNameRaw = row['Customer'] || row['CompanyName'] || row['CustomerName'] || row['CustomerID'];
-          if (!resolvedCustomerId && customerNameRaw && customers.length > 0) {
-            const foundC = customers.find(c =>
-              c.CustomerID == customerNameRaw ||
-              c.customer_id == customerNameRaw ||
-              (c.Name && c.Name.toLowerCase() === String(customerNameRaw).toLowerCase()) ||
-              (c.customer_name && c.customer_name.toLowerCase() === String(customerNameRaw).toLowerCase())
-            );
-            resolvedCustomerId = foundC ? (foundC.CustomerID || foundC.customer_id) : null;
-          }
+          // Excel import: CustomerID is always null — no ID resolution needed.
+          // The 'Customer' column value is sent directly as CompanyName (what the DB/UI shows).
+          // The 'Company Name' column is a separate field.
+          const customerNameRaw = row['Customer'] || row['CustomerName'] || row['Customer Name'] || '';
+          const resolvedCompanyName = row['CompanyName'] || row['Company Name'] || row['Operator Name'] || row['Operator'] || '';
+          console.log('📊 Excel Import - Customer Name:', { customerNameRaw, resolvedCompanyName });
 
           let resolvedProjectId = row['ProjectID'];
           const projectNameRaw = row['Project'];
@@ -2365,7 +2359,7 @@ const DailyVehicleTransactionForm = () => {
               TransactionDate: transactionDateStr,
               ServiceDate: serviceDateStr,
               VehicleReturnDate: vehicleReturnDateStr,
-              CustomerID: resolvedCustomerId || null,
+              CustomerID: null,
               ProjectID: resolvedProjectId || null,
               TripNo: row['TripNo'] || row['Trip No'] || '',
               VehicleIDs: JSON.stringify(resolvedVehicleIds),
@@ -2389,7 +2383,8 @@ const DailyVehicleTransactionForm = () => {
               Status: 'Pending',
               Location: row['Location'] || row['Customer Site'] || row['Loc'] || 'Default',
               CustomerSite: row['CustSite'] || row['Customer Site'] || 'Default',
-              CompanyName: row['CompanyName'] || row['Company Name'] || row['Customer'] || '',
+              CustomerName: customerNameRaw, // Send explicit Customer Name
+              CompanyName: resolvedCompanyName,
               ProjectName: row['ProjectName'] || row['Project Name'] || row['Project'] || '',
               GSTNo: row['GSTNo'] || row['GST No'] || row['GST Number'] || '',
               VehicleNumber: row['VehicleNumber'] || row['Vehicle Number'] || '',
@@ -2428,7 +2423,7 @@ const DailyVehicleTransactionForm = () => {
               TransactionDate: transactionDateStr,
               ServiceDate: serviceDateStr,
               VehicleReturnDate: vehicleReturnDateStr,
-              CustomerID: resolvedCustomerId || null,
+              CustomerID: null,
               ProjectID: resolvedProjectId || null,
               TripNo: row['TripNo'] || row['Trip No'] || '',
               VehicleNumber: row['VehicleNumber'] || row['Vehicle Number'] || row['VehicleNo'] || 'NA',
@@ -2460,7 +2455,8 @@ const DailyVehicleTransactionForm = () => {
               Status: 'Pending',
               Location: row['Location'] || row['Customer Site'] || 'Default',
               CustomerSite: row['CustSite'] || row['Customer Site'] || 'Default',
-              CompanyName: row['CompanyName'] || row['Company Name'] || row['Customer'] || '',
+              CustomerName: customerNameRaw, // Send explicit Customer Name
+              CompanyName: resolvedCompanyName,
               ProjectName: row['ProjectName'] || row['Project Name'] || row['Project'] || '',
               GSTNo: row['GSTNo'] || row['GST No'] || row['GST Number'] || '',
               VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || '',
