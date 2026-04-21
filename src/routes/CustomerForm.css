@@ -218,6 +218,11 @@
   box-sizing: border-box;
 }
 
+/* Commercial Form Specific - Ensure dropdowns open downwards */
+.commercial-form-wrapper {
+  padding-bottom: 50vh !important; /* Provide ample space for long dropdowns */
+}
+
 /* Contact Management Styles */
 .form-subsection {
   margin-bottom: 30px;

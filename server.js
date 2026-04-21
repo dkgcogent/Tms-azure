@@ -98,6 +98,7 @@ const ratesRoutes = require('./backend/routes/rates');
 const vehicleProjectLinkingRoutes = require('./backend/routes/vehicleProjectLinking');
 const vehicleRelationshipsRoutes = require('./backend/routes/vehicleRelationships');
 const sasUploadRoutes = require('./backend/routes/sasUpload');
+const customerCommercialRoutes = require('./backend/routes/customerCommercials');
 
 // Use routes with /api prefix
 app.use('/api/auth', authRoutes(pool));
@@ -124,6 +125,7 @@ app.use('/api/rates', ratesRoutes(pool));
 app.use('/api/vehicle-project-linking', vehicleProjectLinkingRoutes(pool));
 app.use('/api/vehicle-relationships', vehicleRelationshipsRoutes(pool));
 app.use('/api/sas-upload', sasUploadRoutes());
+app.use('/api/customer-commercials', customerCommercialRoutes(pool));
 
 // Health check endpoint with database verification
 app.get('/api/health', async (req, res) => {

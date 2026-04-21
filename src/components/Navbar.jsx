@@ -22,6 +22,7 @@ const Navbar = () => {
     { path: '/add-driver', label: 'Add Driver', icon: '👨‍💼' },
     { path: '/add-vehicle', label: 'Add Vehicle', icon: '🚛' },
     { path: '/daily-vehicle-transaction', label: 'Daily Vehicle Entry', icon: '📝' },
+    { path: '/add-commercial', label: 'Customer Commercial', icon: '💵' },
     { path: '/billing', label: 'Billing & Collections', icon: '💰' },
     { path: '/reports', label: 'Reports & Analysis', icon: '📊' },
   ];

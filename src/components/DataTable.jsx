@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import './DataTable.css';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const DataTable = ({
   title = "Data Table",
@@ -19,7 +20,8 @@ const DataTable = ({
   exportFilename = "data_export",
   exportEntity = null, // For backend export API
   customizable = true, // Enable column customization
-  bulkSelectable = false // Enable bulk selection functionality
+  bulkSelectable = false, // Enable bulk selection functionality
+  renderExtraControls = null // Function/Component to render extra controls
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
@@ -382,10 +384,17 @@ const DataTable = ({
         displayedColumns.forEach(column => {
           let value = item[column.key];
 
-          // Handle special render functions by extracting raw value
+          // Handle special render functions - use rendered text if available for easier reading
           if (column.render && typeof column.render === 'function') {
-            // For rendered content, try to get the original value
-            value = item[column.key];
+            const rendered = column.render(item[column.key], item);
+            if (typeof rendered === 'string' || typeof rendered === 'number') {
+              value = rendered;
+            } else if (rendered && typeof rendered === 'object' && rendered.props && rendered.props.children) {
+              // Extract text from React elements if possible
+              value = String(rendered.props.children);
+            } else {
+              value = item[column.key];
+            }
           }
 
           // Clean up the value
@@ -401,24 +410,56 @@ const DataTable = ({
       });
 
       // Create workbook and worksheet
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      // FALLBACK: Use ExcelJS for styled client-side export
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data');
 
-      // Auto-size columns
-      const columnWidths = displayedColumns.map(col => ({
-        wch: Math.max(col.label.length, 15)
+      // Define columns
+      const sheetColumns = displayedColumns.map(col => ({
+        header: typeof col.label === 'string' ? col.label : col.key,
+        key: col.label,
+        width: Math.max((typeof col.label === 'string' ? col.label.length : 10), 15)
       }));
-      worksheet['!cols'] = columnWidths;
-      
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-      
-      // Generate filename with timestamp
-      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-      const filename = `${exportFilename}_${timestamp}.xlsx`;
-      
-      // Save file
-      XLSX.writeFile(workbook, filename);
+      worksheet.columns = sheetColumns;
+
+      // Add data rows
+      exportData.forEach(row => {
+        worksheet.addRow(row);
+      });
+
+      // Style the header row
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFFD7A7' } // Standard peach color from transaction forms
+      };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Add borders to all cells
+      worksheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+
+      // Generate and download file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${exportFilename}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
       
     } catch (error) {
       console.error('Export error:', error);
@@ -649,6 +690,7 @@ const DataTable = ({
       <div className="data-table-header">
         <h2 className="data-table-title">{title}</h2>
         <div className="data-table-controls">
+          {renderExtraControls && renderExtraControls}
           {bulkSelectable && selectedRows.size > 0 && (
             <div className="bulk-actions">
               <button

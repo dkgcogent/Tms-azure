@@ -17,6 +17,7 @@ import ProjectFormRefactored from './routes/ProjectFormRefactored';
 import BillingForm from './routes/BillingForm';
 import ReportsForm from './routes/ReportsForm';
 import NotificationSettings from './components/NotificationSettings';
+import CommercialForm from './routes/CommercialForm';
 // import VehicleProjectLinking from './components/VehicleProjectLinking';
 import authService from './services/authService';
 import './App.css';
@@ -100,6 +101,11 @@ function App() {
             <Route path="/reports" element={
               <ProtectedRoute requiredRole="admin">
                 <ReportsForm />
+              </ProtectedRoute>
+            } />
+            <Route path="/add-commercial" element={
+              <ProtectedRoute>
+                <CommercialForm />
               </ProtectedRoute>
             } />
             <Route path="/notification-settings" element={

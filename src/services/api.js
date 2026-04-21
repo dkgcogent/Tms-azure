@@ -310,6 +310,15 @@ export const paymentAPI = {
   delete: (id) => api.delete(`/payments/${id}`),
 };
 
+// Customer Commercial API
+export const commercialAPI = {
+  getAll: (urlParams = '') => api.get(`/customer-commercials${urlParams}`),
+  getById: (id) => api.get(`/customer-commercials/${id}`),
+  create: (data) => api.post('/customer-commercials', data),
+  update: (id, data) => api.put(`/customer-commercials/${id}`, data),
+  delete: (id) => api.delete(`/customer-commercials/${id}`),
+  bulkDelete: (ids) => api.delete('/customer-commercials/bulk', { data: { ids } }),
+};
 
 // Reports API
 export const reportsAPI = {

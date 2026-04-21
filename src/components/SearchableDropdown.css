@@ -53,9 +53,8 @@
   font-size: 14px;
   color: #495057;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal; /* Allow wrapping */
+  word-break: break-word;
 }
 
 .dropdown-text.placeholder {
@@ -159,9 +158,8 @@
   transition: background-color 0.2s ease;
   display: flex;
   align-items: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal; /* Allow wrapping */
+  word-break: break-word;
 }
 
 .dropdown-option:last-child {

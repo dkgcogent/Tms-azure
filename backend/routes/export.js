@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
 
@@ -998,36 +999,74 @@ module.exports = (pool) => {
         return processedRow;
       });
 
-      // Create workbook and worksheet
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      // Create workbook and worksheet using ExcelJS
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data');
 
-      // Auto-size columns
-      const columnWidths = Object.keys(columns || {}).map(header => ({
-        wch: Math.max(header.length, 15)
+      // Define columns for ExcelJS
+      const sheetColumns = Object.entries(columns || {}).map(([header, dbField]) => ({
+        header: header,
+        key: dbField,
+        width: Math.max(header.length, 15)
       }));
-      worksheet['!cols'] = columnWidths;
+      worksheet.columns = sheetColumns;
 
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-
-      // Generate buffer
-      const buffer = XLSX.write(workbook, {
-        bookType: 'xlsx',
-        type: 'buffer',
-        bookSST: false
+      // Add data rows
+      data.forEach(row => {
+        // Clean row data for Excel
+        const cleanedRow = {};
+        Object.entries(columns || {}).forEach(([header, dbField]) => {
+          let value = row[dbField];
+          
+          // Convert boolean to Yes/No
+          if (typeof value === 'boolean') {
+            value = value ? 'Yes' : 'No';
+          }
+          
+          // Format numbers
+          if (dbField.includes('Amount') || dbField.includes('Value') || dbField.includes('KM')) {
+            if (value !== '' && !isNaN(value) && value !== 'N/A') {
+              value = parseFloat(value);
+            }
+          }
+          
+          cleanedRow[dbField] = value;
+        });
+        worksheet.addRow(cleanedRow);
       });
 
-      // Set response headers
+      // Style the header row
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFFD7A7' } // Standard peach color from transaction forms
+      };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Add borders to all cells for a professional look
+      worksheet.eachRow((row) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+
+      // Set response headers for Excel download
       const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
       const fullFilename = `${sanitizeFilename(filename)}_${timestamp}.xlsx`;
 
       res.setHeader('Content-Disposition', `attachment; filename="${fullFilename}"`);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Length', buffer.length);
 
-      // Send file
-      res.send(buffer);
+      // Send the workbook directly to the response
+      await workbook.xlsx.write(res);
+      res.end();
 
     } catch (error) {
       console.error('Export error:', error);
