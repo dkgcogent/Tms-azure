@@ -52,6 +52,16 @@ const AdhocReplacementSection = ({
       />
 
       <FormField
+        label="Vehicle Ownership Type"
+        name="VehicleOwnershipType"
+        type="text"
+        value={transactionData.VehicleOwnershipType}
+        onChange={onTransactionDataChange}
+        placeholder="Enter ownership type (e.g., Company, Rented)"
+      />
+
+      <FormField
+
         label="Vendor Name"
         name="VendorName"
         type="text"
@@ -85,6 +95,16 @@ const AdhocReplacementSection = ({
       />
 
       <FormField
+        label="Driver Type"
+        name="DriverType"
+        type="text"
+        value={transactionData.DriverType}
+        onChange={onTransactionDataChange}
+        placeholder="Enter driver type (e.g., Regular, Temporary)"
+      />
+
+      <FormField
+
         label="Driver Number"
         name="DriverNumber"
         type="text"
@@ -283,6 +303,17 @@ const AdhocReplacementSection = ({
         }}
       />
 
+      <FormField
+        label="Extra KM"
+        name="ExtraKM"
+        type="number"
+        value={transactionData.ExtraKM}
+        onChange={onTransactionDataChange}
+        step="0.01"
+        placeholder="Enter extra KM"
+      />
+
+
       {/* Auto-calculated Total KM */}
       <FormField
         label="Total KM"
@@ -322,6 +353,17 @@ const AdhocReplacementSection = ({
         step="0.01"
         placeholder="Enter variable freight per KM"
       />
+
+      <FormField
+        label="Extra KM Cost"
+        name="ExtraKMCost"
+        type="number"
+        value={transactionData.ExtraKMCost}
+        onChange={onTransactionDataChange}
+        step="0.01"
+        placeholder="Enter extra KM cost"
+      />
+
 
       {/* Expense Tracking */}
       <FormField
@@ -391,6 +433,17 @@ const AdhocReplacementSection = ({
       />
 
       <FormField
+        label="DCM Charges"
+        name="DCMCharges"
+        type="number"
+        value={transactionData.DCMCharges}
+        onChange={onTransactionDataChange}
+        step="0.01"
+        placeholder="Enter DCM charges"
+      />
+
+      <FormField
+
         label="Other Charges (if any)"
         name="OtherCharges"
         type="number"

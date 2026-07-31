@@ -379,13 +379,17 @@ const DataTable = ({
       }
 
       // Prepare data for export
-      const exportData = dataToExport.map(item => {
+      const exportData = dataToExport.map((item, index) => {
+
         const exportRow = {};
         displayedColumns.forEach(column => {
           let value = item[column.key];
 
-          // Handle special render functions - use rendered text if available for easier reading
-          if (column.render && typeof column.render === 'function') {
+          if (column.isSerialNumber) {
+            value = exportAll ? index + 1 : (currentPage - 1) * rowsPerPage + index + 1;
+          } else if (column.render && typeof column.render === 'function') {
+            // Handle special render functions - use rendered text if available for easier reading
+
             const rendered = column.render(item[column.key], item);
             if (typeof rendered === 'string' || typeof rendered === 'number') {
               value = rendered;

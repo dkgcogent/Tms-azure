@@ -345,6 +345,7 @@ const DailyVehicleTransactionForm = () => {
     if ((masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') &&
       transactionData.ArrivalTimeAtHub && transactionData.OutTimeFromHub) {
 
+
       try {
         // Convert 12-hour format to 24-hour format for calculation
         const convertTimeForCalculation = (timeStr) => {
@@ -356,6 +357,7 @@ const DailyVehicleTransactionForm = () => {
           }
 
           // If it's in 12-hour format, convert to 24-hour
+
           const time24 = convertTo24Hour(timeStr);
           return time24 ? `${time24}:00` : null;
         };
@@ -374,6 +376,7 @@ const DailyVehicleTransactionForm = () => {
             let diffMs = arrivalTime - outTime;
 
             // Handle case where arrival time is next day
+
             if (diffMs < 0) {
               diffMs += 24 * 60 * 60 * 1000; // Add 24 hours
             }
@@ -387,6 +390,7 @@ const DailyVehicleTransactionForm = () => {
 
             console.log('🧮 Adhoc/Replacement - Total Duty Hours calculated:', diffHours.toFixed(2));
             console.log('🧮 Adhoc/Replacement - OutTime:', outTime24, 'ArrivalTime:', arrivalTime24, 'Diff:', diffHours.toFixed(2), 'hours');
+
           }
         }
       } catch (error) {
@@ -394,6 +398,7 @@ const DailyVehicleTransactionForm = () => {
       }
     }
   }, [transactionData.ArrivalTimeAtHub, transactionData.OutTimeFromHub, masterData.TypeOfTransaction]);
+
 
   // Auto-calculate Total Freight for Adhoc/Replacement
   useEffect(() => {
@@ -409,6 +414,7 @@ const DailyVehicleTransactionForm = () => {
       const variableFreight = variableKM * vFreightVariable; // Variable KM × V.Freight (Variable)
       const totalFreight = fixFreight + variableFreight;
 
+
       console.log('🧮 ADHOC/REPLACEMENT Total Freight Calculation:', {
         totalKM,
         fixKm,
@@ -418,6 +424,7 @@ const DailyVehicleTransactionForm = () => {
         fixFreight: `${fixKm} × ₹${vFreightFix} = ₹${fixFreight}`,
         variableFreight: `${variableKM} × ₹${vFreightVariable} = ₹${variableFreight}`,
         totalFreight: `₹${fixFreight} + ₹${variableFreight} = ₹${totalFreight}`
+
       });
 
       setTransactionData(prev => ({
@@ -426,6 +433,7 @@ const DailyVehicleTransactionForm = () => {
       }));
     }
   }, [transactionData.VFreightFix, transactionData.VFreightVariable, transactionData.FixKm, calculatedData.TotalKM, masterData.TypeOfTransaction]);
+
 
   // Debug effect to track masterData.TypeOfTransaction changes
   useEffect(() => {
@@ -626,12 +634,30 @@ const DailyVehicleTransactionForm = () => {
     }
   };
 
+  // Auto-calculate Advance Paid Amount = Advance Approved Amount
+  useEffect(() => {
+    if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
+      const advanceApproved = transactionData.AdvanceApprovedAmount;
+      
+      if (advanceApproved !== undefined) {
+        setTransactionData(prev => ({
+          ...prev,
+          AdvancePaidAmount: advanceApproved || ''
+        }));
+      }
+    }
+  }, [transactionData.AdvanceApprovedAmount, masterData.TypeOfTransaction]);
+
   // Auto-calculate Variance for Adhoc/Replacement
   useEffect(() => {
     if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
-      const balanceToBePaid = parseFloat(transactionData.BalanceToBePaid) || 0;
+      const totalFreight = parseFloat(transactionData.TotalFreight) || 0;
+      const advanceApprovedAmount = parseFloat(transactionData.AdvanceApprovedAmount) || 0;
       const balancePaidAmount = parseFloat(transactionData.BalancePaidAmount) || 0;
-      const variance = balanceToBePaid - balancePaidAmount;
+      
+      // Formula: Total Freight - Advance Approved Amount - Balance Paid Amount
+      const variance = totalFreight - advanceApprovedAmount - balancePaidAmount;
+
 
       setTransactionData(prev => ({
         ...prev,
@@ -660,6 +686,7 @@ const DailyVehicleTransactionForm = () => {
       const margin = revenue - totalExpenses;
 
       // Margin Percentage = (Margin / Revenue) * 100
+
       const marginPercentage = revenue > 0 ? (margin / revenue) * 100 : 0;
 
       setTransactionData(prev => ({
@@ -679,6 +706,7 @@ const DailyVehicleTransactionForm = () => {
     transactionData.OtherCharges,
     masterData.TypeOfTransaction
   ]);
+
 
   // Auto-calculate Total Expenses for Fixed transactions (includes all charges)
   useEffect(() => {
@@ -2461,6 +2489,19 @@ const DailyVehicleTransactionForm = () => {
               GSTNo: row['GSTNo'] || row['GST No'] || row['GST Number'] || '',
               VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || '',
 
+              // New 10 Fields
+              State: row['State'] || '',
+              CustSite: row['CustSite'] || row['Cust Site'] || '',
+              VendorCode: row['VendorCode'] || row['Vendor Code'] || '',
+              DriverType: row['DriverType'] || row['Driver Type'] || '',
+              VehicleOwnershipType: row['VehicleOwnershipType'] || row['Vehicle Ownership Type'] || '',
+              ExtraKM: row['ExtraKM'] || row['Extra KM'] ? Number(row['ExtraKM'] || row['Extra KM']) : null,
+              ExtraKMCost: row['ExtraKMCost'] || row['Extra KM Cost'] ? Number(row['ExtraKMCost'] || row['Extra KM Cost']) : null,
+              DCMCharges: row['DCMCharges'] || row['DCM Charges'] ? Number(row['DCMCharges'] || row['DCM Charges']) : null,
+              AdvanceRequisitionDate: formatExcelDate(row['AdvanceRequisitionDate'] || row['Advance Requisition Date']) || null,
+              BalanceRequisitionDate: formatExcelDate(row['BalanceRequisitionDate'] || row['Balance Requisition Date']) || null,
+
+
               // Financial and Calculated Fields
               VFreightFix: getCellValue(row, ['VFreightFix', 'V. Freight (Fix)', 'V.Freight (Fix)', 'V. FREIGHT (FIX)']),
               FixKm: getCellValue(row, ['FixKm', 'Fix KM']),
@@ -2745,7 +2786,20 @@ const DailyVehicleTransactionForm = () => {
           BalancePaidDate: transactionData.BalancePaidDate || null,
           BalancePaidBy: transactionData.BalancePaidBy || null,
           EmployeeDetailsBalance: transactionData.EmployeeDetailsBalance || null,
-          ProjectName: masterData.Project || null
+          ProjectName: masterData.Project || null,
+
+          // New 10 Fields
+          State: transactionData.State || null,
+          CustSite: transactionData.CustSite || null,
+          VendorCode: transactionData.VendorCode || null,
+          DriverType: transactionData.DriverType || null,
+          VehicleOwnershipType: transactionData.VehicleOwnershipType || null,
+          ExtraKM: transactionData.ExtraKM ? Number(transactionData.ExtraKM) : null,
+          ExtraKMCost: transactionData.ExtraKMCost ? Number(transactionData.ExtraKMCost) : null,
+          DCMCharges: transactionData.DCMCharges ? Number(transactionData.DCMCharges) : null,
+          AdvanceRequisitionDate: transactionData.AdvanceRequisitionDate || null,
+          BalanceRequisitionDate: transactionData.BalanceRequisitionDate || null
+
         };
 
         console.log('🚀 Submit Trace - Adhoc Payload Final:', { 
@@ -4350,6 +4404,38 @@ const DailyVehicleTransactionForm = () => {
                   {errors.ServiceDate && <span className="error-message">{errors.ServiceDate}</span>}
                 </div>
 
+                {/* State */}
+                <div className="form-group">
+                  <label>State</label>
+                  <select
+                    name="State"
+                    value={transactionData.State || 'UP'}
+                    onChange={handleTransactionDataChange}
+                    className="form-control"
+                  >
+                    <option value="UP">UP</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Haryana">Haryana</option>
+                  </select>
+                </div>
+
+                {/* Cust Site */}
+                <div className="form-group">
+                  <label>Cust Site</label>
+                  <select
+                    name="CustSite"
+                    value={transactionData.CustSite || 'Rajaji Puram'}
+                    onChange={handleTransactionDataChange}
+                    className="form-control"
+                  >
+                    <option value="Rajaji Puram">Rajaji Puram</option>
+                    <option value="Sarojni Nagar">Sarojni Nagar</option>
+                    <option value="Faribadabad">Faribadabad</option>
+                    <option value="Ballabghar">Ballabghar</option>
+                  </select>
+                </div>
+
+
                 {/* Trip No */}
                 <div className="form-group">
                   <label>Trip No</label>
@@ -4378,6 +4464,19 @@ const DailyVehicleTransactionForm = () => {
                   {errors.VehicleNumber && <span className="error-message">{errors.VehicleNumber}</span>}
                 </div>
 
+                {/* Vehicle Ownership Type */}
+                <div className="form-group">
+                  <label>Vehicle Ownership Type</label>
+                  <input
+                    type="text"
+                    name="VehicleOwnershipType"
+                    value={transactionData.VehicleOwnershipType || ''}
+                    onChange={handleTransactionDataChange}
+                    placeholder="Enter ownership type (e.g., Company, Rented)"
+                  />
+                </div>
+
+
                 {/* Vendor Name - Manual Entry */}
                 <div className="form-group">
                   <label>Vendor Name *</label>
@@ -4391,6 +4490,19 @@ const DailyVehicleTransactionForm = () => {
                   />
                   {errors.VendorName && <span className="error-message">{errors.VendorName}</span>}
                 </div>
+
+                {/* Vendor Code */}
+                <div className="form-group">
+                  <label>Vendor code (If Adhoc by fixed vendor)</label>
+                  <input
+                    type="text"
+                    name="VendorCode"
+                    value={transactionData.VendorCode || ''}
+                    onChange={handleTransactionDataChange}
+                    placeholder="Enter vendor code"
+                  />
+                </div>
+
 
                 {/* Vendor Number - Manual Entry */}
                 <div className="form-group">
@@ -4419,6 +4531,19 @@ const DailyVehicleTransactionForm = () => {
                   />
                   {errors.DriverName && <span className="error-message">{errors.DriverName}</span>}
                 </div>
+
+                {/* Driver Type */}
+                <div className="form-group">
+                  <label>Driver Type</label>
+                  <input
+                    type="text"
+                    name="DriverType"
+                    value={transactionData.DriverType || ''}
+                    onChange={handleTransactionDataChange}
+                    placeholder="Enter driver type"
+                  />
+                </div>
+
 
                 {/* Driver Number - Manual Entry */}
                 <div className="form-group">
@@ -4722,6 +4847,33 @@ const DailyVehicleTransactionForm = () => {
                   />
                 </div>
 
+                {/* Extra KM */}
+                <div className="form-group">
+                  <label>Extra KM</label>
+                  <input
+                    type="number"
+                    name="ExtraKM"
+                    value={transactionData.ExtraKM || ''}
+                    onChange={handleTransactionDataChange}
+                    step="0.01"
+                    placeholder="Enter extra KM"
+                  />
+                </div>
+
+                {/* Extra KM Cost */}
+                <div className="form-group">
+                  <label>Extra KM Cost</label>
+                  <input
+                    type="number"
+                    name="ExtraKMCost"
+                    value={transactionData.ExtraKMCost || ''}
+                    onChange={handleTransactionDataChange}
+                    step="0.01"
+                    placeholder="Enter extra KM cost"
+                  />
+                </div>
+
+
                 {/* Toll Expenses */}
                 <div className="form-group">
                   <label>Toll Expenses</label>
@@ -4813,6 +4965,20 @@ const DailyVehicleTransactionForm = () => {
                     placeholder="Enter other charges"
                   />
                 </div>
+
+                {/* DCM Charges */}
+                <div className="form-group">
+                  <label>DCM Charges</label>
+                  <input
+                    type="number"
+                    name="DCMCharges"
+                    value={transactionData.DCMCharges || ''}
+                    onChange={handleTransactionDataChange}
+                    step="0.01"
+                    placeholder="Enter DCM charges"
+                  />
+                </div>
+
 
                 {/* Other Charges Remarks */}
                 <div className="form-group">
@@ -4949,6 +5115,18 @@ const DailyVehicleTransactionForm = () => {
                   />
                 </div>
 
+                {/* Advance Requisition Date */}
+                <div className="form-group">
+                  <label>Advance Requisition Date</label>
+                  <input
+                    type="date"
+                    name="AdvanceRequisitionDate"
+                    value={transactionData.AdvanceRequisitionDate || ''}
+                    onChange={handleTransactionDataChange}
+                  />
+                </div>
+
+
                 {/* Advance Paid By */}
                 <div className="form-group">
                   <label>Advance Paid By</label>
@@ -5025,6 +5203,18 @@ const DailyVehicleTransactionForm = () => {
                   />
                 </div>
 
+                {/* Balance Requisition Date */}
+                <div className="form-group">
+                  <label>Balance Requisition Date</label>
+                  <input
+                    type="date"
+                    name="BalanceRequisitionDate"
+                    value={transactionData.BalanceRequisitionDate || ''}
+                    onChange={handleTransactionDataChange}
+                  />
+                </div>
+
+
                 {/* Balance Paid By */}
                 <div className="form-group">
                   <label>Balance Paid By</label>
@@ -5072,9 +5262,9 @@ const DailyVehicleTransactionForm = () => {
                     type="number"
                     name="Revenue"
                     value={transactionData.Revenue}
-                    className="readonly-field calculated-field"
-                    readOnly
-                    style={{ backgroundColor: '#fff3cd', border: '1px solid #ffeaa7' }}
+                    onChange={handleTransactionDataChange}
+                    className="form-control"
+
                     step="0.01"
                   />
                 </div>

@@ -164,15 +164,22 @@ router.get('/:id', async (req, res) => {
         TransactionDate,
         TripNo,
         CustomerID,
+        State,
+        CustSite,
+
         ProjectID,
         ServiceDate,
         VehicleReturnDate,
         VehicleNumber,
+        VehicleOwnershipType,
+
         VehicleType,
         VendorName,
         VendorCode, // New field
         VendorNumber,
         DriverName,
+        DriverType,
+
         DriverNumber,
         DriverAadharNumber,
         DriverLicenceNumber,
@@ -187,18 +194,24 @@ router.get('/:id', async (req, res) => {
         OutTimeFrom,
         OpeningKM,
         ClosingKM,
+        ExtraKM,
+
         TotalShipmentsForDeliveries,
         TotalShipmentDeliveriesAttempted,
         TotalShipmentDeliveriesDone,
         VFreightFix,
         FixKm,
         VFreightVariable,
+        ExtraKMCost,
+
         TotalFreight,
         TollExpenses,
         ParkingCharges,
         LoadingCharges,
         UnloadingCharges,
         OtherCharges,
+        DCMCharges,
+
         OtherChargesRemarks,
         TotalDutyHours,
         OvertimeCostPerHour, // New field
@@ -210,12 +223,16 @@ router.get('/:id', async (req, res) => {
         AdvancePaidAmount,
         AdvancePaidMode,
         AdvancePaidDate,
+        AdvanceRequisitionDate,
+
         AdvancePaidBy,
         EmployeeDetailsAdvance,
         BalanceToBePaid,
         BalancePaidAmount,
         Variance,
         BalancePaidDate,
+        BalanceRequisitionDate,
+
         BalancePaidBy,
         EmployeeDetailsBalance,
         Revenue,
@@ -272,33 +289,34 @@ router.get('/:id', async (req, res) => {
 
       const query = `
         INSERT INTO adhoc_transactions (
-          TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, CustomerID, ProjectID,
-          VehicleNumber, VehicleType, VendorName, VendorCode, VendorNumber,
-          DriverName, DriverNumber, DriverAadharNumber, DriverLicenceNumber,
+          TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, CustomerID, State, CustSite, ProjectID,
+          VehicleNumber, VehicleOwnershipType, VehicleType, VendorName, VendorCode, VendorNumber,
+          DriverName, DriverType, DriverNumber, DriverAadharNumber, DriverLicenceNumber,
           DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
           ArrivalTimeAtHub, InTimeByCust, OutTimeFromHub, ReturnReportingTime, OutTimeFrom,
-          OpeningKM, ClosingKM, TotalShipmentsForDeliveries, TotalShipmentDeliveriesAttempted, TotalShipmentDeliveriesDone,
-          VFreightFix, FixKm, VFreightVariable, TotalFreight,
-          TollExpenses, ParkingCharges, LoadingCharges, UnloadingCharges, OtherCharges, OtherChargesRemarks,
+          OpeningKM, ClosingKM, ExtraKM, TotalShipmentsForDeliveries, TotalShipmentDeliveriesAttempted, TotalShipmentDeliveriesDone,
+          VFreightFix, FixKm, VFreightVariable, ExtraKMCost, TotalFreight,
+          TollExpenses, ParkingCharges, LoadingCharges, UnloadingCharges, OtherCharges, DCMCharges, OtherChargesRemarks,
           TotalDutyHours, OvertimeCostPerHour, CompanyName, ProjectName, AdvanceRequestNo, AdvanceToPaid, AdvanceApprovedAmount, AdvanceApprovedBy,
-          AdvancePaidAmount, AdvancePaidMode, AdvancePaidDate, AdvancePaidBy, EmployeeDetailsAdvance,
-          BalanceToBePaid, BalancePaidAmount, Variance, BalancePaidDate, BalancePaidBy, EmployeeDetailsBalance,
+          AdvancePaidAmount, AdvancePaidMode, AdvancePaidDate, AdvanceRequisitionDate, AdvancePaidBy, EmployeeDetailsAdvance,
+          BalanceToBePaid, BalancePaidAmount, Variance, BalancePaidDate, BalanceRequisitionDate, BalancePaidBy, EmployeeDetailsBalance,
           Revenue, Margin, MarginPercentage, Status, TripClose, Remarks
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
-        TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', CustomerID, ProjectID,
-        VehicleNumber, VehicleType, VendorName, VendorCode, VendorNumber,
-        DriverName, DriverNumber, DriverAadharNumber, DriverLicenceNumber,
+        TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', CustomerID, State || 'UP', CustSite || 'Rajaji Puram', ProjectID,
+        VehicleNumber, VehicleOwnershipType, VehicleType, VendorName, VendorCode, VendorNumber,
+        DriverName, DriverType, DriverNumber, DriverAadharNumber, DriverLicenceNumber,
         DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
         ArrivalTimeAtHub, InTimeByCust, OutTimeFromHub, ReturnReportingTime, OutTimeFrom,
-        OpeningKM, ClosingKM, TotalShipmentsForDeliveries, TotalShipmentDeliveriesAttempted, TotalShipmentDeliveriesDone,
-        VFreightFix, FixKm, VFreightVariable, TotalFreight,
-        TollExpenses, ParkingCharges, LoadingCharges, UnloadingCharges, OtherCharges, OtherChargesRemarks,
+        OpeningKM, ClosingKM, ExtraKM, TotalShipmentsForDeliveries, TotalShipmentDeliveriesAttempted, TotalShipmentDeliveriesDone,
+        VFreightFix, FixKm, VFreightVariable, ExtraKMCost, TotalFreight,
+        TollExpenses, ParkingCharges, LoadingCharges, UnloadingCharges, OtherCharges, DCMCharges, OtherChargesRemarks,
         calculatedDutyHours, OvertimeCostPerHour, CompanyName, ProjectName, AdvanceRequestNo, AdvanceToPaid, AdvanceApprovedAmount, AdvanceApprovedBy,
-        AdvancePaidAmount, AdvancePaidMode, AdvancePaidDate, AdvancePaidBy, EmployeeDetailsAdvance,
-        BalanceToBePaid, BalancePaidAmount, Variance, BalancePaidDate, BalancePaidBy, EmployeeDetailsBalance,
+        AdvancePaidAmount, AdvancePaidMode, AdvancePaidDate, AdvanceRequisitionDate || null, AdvancePaidBy, EmployeeDetailsAdvance,
+        BalanceToBePaid, BalancePaidAmount, Variance, BalancePaidDate, BalanceRequisitionDate || null, BalancePaidBy, EmployeeDetailsBalance,
+
         Revenue, Margin, MarginPercentage, Status, TripClose, Remarks
       ];
 

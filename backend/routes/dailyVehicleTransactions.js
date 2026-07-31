@@ -91,7 +91,8 @@ module.exports = (pool) => {
       const fixedQuery = `
         SELECT
           ft.*,
-          COALESCE(ft.customer, ft.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
+COALESCE(ft.customer, ft.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
+
           COALESCE(ft.GSTNo, c.GSTNo, 'N/A') as CustomerGSTNo,
           v.VehicleRegistrationNo,
           v.VehicleType,
@@ -99,7 +100,8 @@ module.exports = (pool) => {
           COALESCE(ft.DriverNumber, d.DriverMobileNo) as DriverNumber,
           COALESCE(ft.VendorName, vend.VendorName) as VendorName,
           COALESCE(ft.VendorNumber, vend.VendorCode) as VendorNumber,
-          COALESCE(ft.ProjectName, p.ProjectName) as ProjectName,
+COALESCE(ft.ProjectName, p.ProjectName) as ProjectName,
+
           COALESCE(ft.ReplacementDriverName, rd.DriverName) as ReplacementDriverName,
           COALESCE(ft.ReplacementDriverNo, rd.DriverMobileNo) as ReplacementDriverNo,
           -- Handle multiple vehicles display
@@ -127,9 +129,10 @@ module.exports = (pool) => {
       const adhocQuery = `
         SELECT
           at.*,
-          COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
+COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(at.GSTNo, c.GSTNo, 'N/A') as CustomerGSTNo,
           COALESCE(at.ProjectName, p.ProjectName) as ProjectName,
+
           at.VehicleNumber as VehicleRegistrationNo,
           at.VehicleType,
           at.DriverName,
@@ -877,6 +880,12 @@ module.exports = (pool) => {
         BalancePaidDate,
         BalancePaidBy,
         EmployeeDetailsBalance,
+        BalanceToBePaid,
+        Variance,
+        Revenue,
+        Margin,
+        MarginPercentage,
+
         ReplacementDriverName,
         ReplacementDriverNo,
 
@@ -895,7 +904,18 @@ module.exports = (pool) => {
         // Additional fields
         Shift,
         Remarks,
-        Status = 'Pending'
+        Status = 'Pending',
+        State,
+        CustSite,
+        VendorCode,
+        DriverType,
+        VehicleOwnershipType,
+        ExtraKM,
+        ExtraKMCost,
+        DCMCharges,
+        AdvanceRequisitionDate,
+        BalanceRequisitionDate
+
       } = transaction;
 
       const TripClose = convertToBoolean(transaction.TripClose);
@@ -1099,14 +1119,27 @@ module.exports = (pool) => {
             TotalDutyHours, AdvanceRequestNo, AdvanceToPaid, AdvanceApprovedAmount, AdvanceApprovedBy,
             AdvancePaidAmount, AdvancePaidMode, AdvancePaidDate, AdvancePaidBy, EmployeeDetailsAdvance,
             BalanceToBePaid, BalancePaidAmount, Variance, BalancePaidDate, BalancePaidBy, EmployeeDetailsBalance,
-            Revenue, Margin, MarginPercentage, Status, TripClose, Remarks
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            Revenue, Margin, MarginPercentage, Status, TripClose, Remarks,
+            State, CustSite, VendorCode, DriverType, VehicleOwnershipType, ExtraKM, ExtraKMCost, DCMCharges, AdvanceRequisitionDate, BalanceRequisitionDate
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
         `;
 
         // Calculate TotalFreight if freight values are provided
         const vFreightFix = parseFloat(VFreightFix) || 0;
         const vFreightVariable = parseFloat(VFreightVariable) || 0;
-        const totalFreight = vFreightFix + vFreightVariable;
+        const fixKmVal = parseFloat(FixKm) || 0;
+        const totalKmVal = (parseFloat(ClosingKM) || 0) - (parseFloat(OpeningKM) || 0);
+        const variableKmVal = Math.max(0, totalKmVal - fixKmVal);
+        
+        const tollExp = parseFloat(TollExpenses) || 0;
+        const parkingChg = parseFloat(ParkingCharges) || 0;
+        const loadingChg = parseFloat(LoadingCharges) || 0;
+        const unloadingChg = parseFloat(UnloadingCharges) || 0;
+        const otherChg = parseFloat(OtherCharges) || 0;
+        
+        const totalFreight = vFreightFix + (variableKmVal * vFreightVariable) + tollExp + parkingChg + loadingChg + unloadingChg + otherChg;
+
 
         // For adhoc, we'll store multiple vehicle/driver info in JSON fields if arrays are provided
         const vehicleNumbersJson = Array.isArray(VehicleNumber) ? JSON.stringify(VehicleNumber) : null;
@@ -1136,8 +1169,10 @@ module.exports = (pool) => {
           TollExpenses || null, ParkingCharges || null, LoadingCharges || null, UnloadingCharges || null, OtherCharges || null, OtherChargesRemarks || null,
           TotalDutyHours || null, AdvanceRequestNo || null, AdvanceToPaid || null, AdvanceApprovedAmount || null, AdvanceApprovedBy || null,
           AdvancePaidAmount || null, AdvancePaidMode || null, AdvancePaidDate || null, AdvancePaidBy || null, EmployeeDetailsAdvance || null,
-          null, BalancePaidAmount || null, null, BalancePaidDate || null, BalancePaidBy || null, EmployeeDetailsBalance || null,
-          null, null, null, Status, convertToBoolean(TripClose), Remarks || null
+          BalanceToBePaid || null, BalancePaidAmount || null, Variance || null, BalancePaidDate || null, BalancePaidBy || null, EmployeeDetailsBalance || null,
+          Revenue || null, Margin || null, MarginPercentage || null, Status, convertToBoolean(TripClose), Remarks || null,
+          State || null, CustSite || null, VendorCode || null, DriverType || null, VehicleOwnershipType || null, ExtraKM || null, ExtraKMCost || null, DCMCharges || null, AdvanceRequisitionDate || null, BalanceRequisitionDate || null
+
         ];
 
       } else {

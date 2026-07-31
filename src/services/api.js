@@ -320,6 +320,17 @@ export const commercialAPI = {
   bulkDelete: (ids) => api.delete('/customer-commercials/bulk', { data: { ids } }),
 };
 
+// Vendor Commercial API
+export const vendorCommercialAPI = {
+  getAll: (urlParams = '') => api.get(`/vendor-commercials${urlParams}`),
+  getById: (id) => api.get(`/vendor-commercials/${id}`),
+  create: (data) => api.post('/vendor-commercials', data),
+  update: (id, data) => api.put(`/vendor-commercials/${id}`, data),
+  delete: (id) => api.delete(`/vendor-commercials/${id}`),
+  bulkDelete: (ids) => api.delete('/vendor-commercials/bulk', { data: { ids } }),
+};
+
+
 // Reports API
 export const reportsAPI = {
   getDailyTrips: (params) => api.get('/reports/daily-trips', { params }),

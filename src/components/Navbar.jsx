@@ -19,6 +19,8 @@ const Navbar = () => {
     { path: '/add-customer', label: 'Add Customer', icon: '👥' },
     { path: '/add-project', label: 'Add Project', icon: '📁' },
     { path: '/add-vendor', label: 'Add Vendor', icon: '🏢' },
+    { path: '/vendor-commercial', label: 'Vendor Commercial', icon: '📝' },
+
     { path: '/add-driver', label: 'Add Driver', icon: '👨‍💼' },
     { path: '/add-vehicle', label: 'Add Vehicle', icon: '🚛' },
     { path: '/daily-vehicle-transaction', label: 'Daily Vehicle Entry', icon: '📝' },

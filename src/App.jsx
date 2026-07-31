@@ -19,6 +19,8 @@ import ReportsForm from './routes/ReportsForm';
 import NotificationSettings from './components/NotificationSettings';
 import CommercialForm from './routes/CommercialForm';
 // import VehicleProjectLinking from './components/VehicleProjectLinking';
+import VendorCommercialForm from './routes/VendorCommercialForm';
+
 import authService from './services/authService';
 import './App.css';
 
@@ -108,6 +110,12 @@ function App() {
                 <CommercialForm />
               </ProtectedRoute>
             } />
+            <Route path="/vendor-commercial" element={
+              <ProtectedRoute>
+                <VendorCommercialForm />
+              </ProtectedRoute>
+            } />
+
             <Route path="/notification-settings" element={
               <ProtectedRoute>
                 <NotificationSettings />

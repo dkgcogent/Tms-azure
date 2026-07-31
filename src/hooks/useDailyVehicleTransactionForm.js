@@ -82,7 +82,9 @@ const initializeTransactionData = () => {
     Date: getCurrentDate(), OpeningKM: '', ClosingKM: '', TripNo: '', VehicleNumber: '', VendorName: '',
     VendorNumber: '', DriverName: '', DriverNumber: '', DriverAadharNumber: '', TotalExpenses: '',
     Revenue: '', Margin: '', MarginPercentage: '', TotalDutyHours: '',
-    ServiceDate: getCurrentDate(), VehicleReturnDate: getCurrentDate()
+    ServiceDate: getCurrentDate(), VehicleReturnDate: getCurrentDate(),
+    DriverType: '', VehicleOwnershipType: '', ExtraKM: '', ExtraKMCost: '', DCMCharges: ''
+
   };
 };
 
