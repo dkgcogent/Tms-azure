@@ -83,10 +83,13 @@ const DataTable = ({
     if (savedColumns) {
       try {
         const parsed = JSON.parse(savedColumns);
+        const propKeys = columns.map(c => c.key);
+        const missingPropKeys = propKeys.filter(k => !parsed.includes(k));
+        const merged = [...parsed, ...missingPropKeys];
         // Always ensure serial number is included
-        const columnsWithSerial = parsed.includes('__serial_number__')
-          ? parsed
-          : ['__serial_number__', ...parsed.filter(col => col !== '__serial_number__')];
+        const columnsWithSerial = merged.includes('__serial_number__')
+          ? merged
+          : ['__serial_number__', ...merged.filter(col => col !== '__serial_number__')];
         return columnsWithSerial.length > 0 ? columnsWithSerial : defaultColumns;
       } catch (e) {
         return defaultColumns;

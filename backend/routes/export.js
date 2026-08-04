@@ -460,6 +460,11 @@ module.exports = (pool) => {
           query: `
             SELECT
               IFNULL(v.VehicleID, 'N/A') as VehicleID,
+              IFNULL(v.CustomerCompanyName, 'N/A') as CustomerCompanyName,
+              IFNULL(v.Project, 'N/A') as Project,
+              IFNULL(v.Location, 'N/A') as Location,
+              IFNULL(v.CustomerSite, 'N/A') as CustomerSite,
+              IFNULL(v.CogentEmployee, 'N/A') as CogentEmployee,
               IFNULL(v.VehicleRegistrationNo, 'N/A') as VehicleRegistrationNo,
               IFNULL(v.VehicleCode, 'N/A') as VehicleCode,
               IFNULL(v.RCUpload, 'N/A') as RCUpload,
@@ -516,6 +521,11 @@ module.exports = (pool) => {
           filename: 'Vehicle_Master',
           columns: {
             'Vehicle ID': 'VehicleID',
+            'Customer Company Name': 'CustomerCompanyName',
+            'Project': 'Project',
+            'Location': 'Location',
+            'Customer Site': 'CustomerSite',
+            'Cogent Employee': 'CogentEmployee',
             'Registration Number': 'VehicleRegistrationNo',
             'Vehicle Code': 'VehicleCode',
             'RC Upload': 'RCUpload',

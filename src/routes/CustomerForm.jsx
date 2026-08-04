@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { customerAPI, locationAPI, apiHelpers } from '../services/api';
+import { customerAPI, locationAPI, employeeAPI, apiHelpers } from '../services/api';
 import DataTable from '../components/DataTable';
 
 import AddressForm from '../components/AddressForm';
@@ -82,7 +82,7 @@ const CustomerForm = () => {
     CustomerCode: '', // Auto-generated, read-only
     TypeOfServices: '',
     ServiceCode: '', // Auto-selected based on TypeOfServices
-    CustomerSite: [{ location: '', sites: [''] }], // Grouped: one location with multiple sites
+    CustomerSite: [{ location: '', sites: [{ name: '', employee_id: '' }] }], // Grouped: one location with multiple sites
 
     // Agreement & Terms Section
     Agreement: 'No',
@@ -184,6 +184,7 @@ const CustomerForm = () => {
   const [customerData, setCustomerData] = useState(getInitialState());
   const [customers, setCustomers] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -319,7 +320,7 @@ const CustomerForm = () => {
     setCustomerData(prev => ({
       ...prev,
       CustomerSite: prev.CustomerSite.map((item, i) =>
-        i === locationIndex ? { ...item, sites: [...item.sites, ''] } : item
+        i === locationIndex ? { ...item, sites: [...item.sites, { name: '', employee_id: '' }] } : item
       )
     }));
   };
@@ -337,14 +338,14 @@ const CustomerForm = () => {
   };
 
   // Handle site value change
-  const handleSiteChange = (locationIndex, siteIndex, value) => {
+  const handleSiteChange = (locationIndex, siteIndex, field, value) => {
     setCustomerData(prev => ({
       ...prev,
       CustomerSite: prev.CustomerSite.map((item, i) =>
         i === locationIndex
           ? {
             ...item,
-            sites: item.sites.map((site, si) => (si === siteIndex ? value : site))
+            sites: item.sites.map((site, si) => (si === siteIndex ? { ...site, [field]: value } : site))
           }
           : item
       )
@@ -493,6 +494,7 @@ const CustomerForm = () => {
   useEffect(() => {
     loadCustomers();
     loadLocations();
+    loadEmployees();
   }, []);
 
   // Auto-generate customer code when MasterCustomerName or Name changes
@@ -758,6 +760,15 @@ const CustomerForm = () => {
       console.error('Error loading locations:', error);
       // Use specialized error handler for data loading
       apiHelpers.handleLoadError(error, 'location data');
+    }
+  };
+
+  const loadEmployees = async () => {
+    try {
+      const response = await employeeAPI.getAll();
+      setEmployees(response.data.data || response.data || []);
+    } catch (error) {
+      console.error('Error loading employees:', error);
     }
   };
 
@@ -1657,8 +1668,12 @@ const CustomerForm = () => {
           .filter(locationGroup => locationGroup.location?.trim())
           .flatMap(locationGroup =>
             locationGroup.sites
-              .filter(site => site?.trim())
-              .map(site => `${locationGroup.location.trim()} - ${site.trim()}`)
+              .filter(site => site && (typeof site === 'object' ? site.name?.trim() : site?.trim()))
+              .map(site => {
+                const siteName = typeof site === 'object' ? site.name.trim() : site.trim();
+                const empStr = (typeof site === 'object' && site.employee_id) ? ` (Emp: ${site.employee_id})` : '';
+                return `${locationGroup.location.trim()} - ${siteName}${empStr}`;
+              })
           )
           .join(', ');
       }
@@ -1792,11 +1807,20 @@ const CustomerForm = () => {
 
           editableCustomerData[key] = Array.from(locationMap.entries()).map(([location, sites]) => ({
             location,
-            sites: sites.length > 0 ? sites : ['']
+            sites: sites.length > 0 ? sites.map(siteName => {
+              let name = siteName;
+              let employee_id = '';
+              const empMatch = siteName.match(/\(Emp: ([^)]+)\)/);
+              if (empMatch) {
+                employee_id = empMatch[1];
+                name = siteName.replace(empMatch[0], '').trim();
+              }
+              return { name, employee_id };
+            }) : [{ name: '', employee_id: '' }]
           }));
 
           if (editableCustomerData[key].length === 0) {
-            editableCustomerData[key] = [{ location: '', sites: [''] }];
+            editableCustomerData[key] = [{ location: '', sites: [{ name: '', employee_id: '' }] }];
           }
         } else {
           editableCustomerData[key] = customer[key] || '';
@@ -2390,21 +2414,42 @@ const CustomerForm = () => {
                     display: 'flex',
                     alignItems: 'center'
                   }}>
-                    <input
-                      type="text"
-                      value={site}
-                      onChange={(e) => handleSiteChange(locationIndex, siteIndex, e.target.value)}
-                      placeholder="Enter customer site (e.g., Dwarka Sec 21)"
-                      className="multiple-input"
-                      style={{
-                        flex: 1,
-                        width: '100%',
-                        padding: '8px 10px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        fontSize: '13px'
-                      }}
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '4px' }}>
+                      <input
+                        type="text"
+                        value={typeof site === 'object' ? site.name : site}
+                        onChange={(e) => handleSiteChange(locationIndex, siteIndex, 'name', e.target.value)}
+                        placeholder="Enter customer site (e.g., Dwarka Sec 21)"
+                        className="multiple-input"
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          border: '1px solid #ccc',
+                          borderRadius: '4px',
+                          fontSize: '13px'
+                        }}
+                      />
+                      <select
+                        value={typeof site === 'object' ? (site.employee_id || '') : ''}
+                        onChange={(e) => handleSiteChange(locationIndex, siteIndex, 'employee_id', e.target.value)}
+                        className="multiple-input"
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          border: '1px solid #ccc',
+                          borderRadius: '4px',
+                          fontSize: '13px',
+                          backgroundColor: '#fff'
+                        }}
+                      >
+                        <option value="">-- Assign Employee --</option>
+                        {employees.map(emp => (
+                          <option key={emp.id || emp.employee_id || emp.employee_code} value={emp.employee_code ? `${emp.employee_code}/${emp.employee_name}` : emp.employee_name}>
+                            {emp.employee_code ? `${emp.employee_code}/` : ''}{emp.employee_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     {locationGroup.sites.length > 1 && (
                       <button
                         type="button"
@@ -2585,15 +2630,15 @@ const CustomerForm = () => {
       key: 'Locations',
       label: 'Locations',
       sortable: true,
-      minWidth: '140px',
-      render: (value) => value ? (value.length > 30 ? value.substring(0, 30) + '...' : value) : '-'
+      minWidth: '200px',
+      render: (value) => value ? <div style={{ whiteSpace: 'normal', wordBreak: 'break-word', minWidth: '200px' }}>{value}</div> : '-'
     },
     {
       key: 'CustomerSite',
       label: 'Customer Site',
       sortable: true,
-      minWidth: '120px',
-      render: (value) => value ? (value.length > 25 ? value.substring(0, 25) + '...' : value) : '-'
+      minWidth: '250px',
+      render: (value) => value ? <div style={{ whiteSpace: 'normal', wordBreak: 'break-word', minWidth: '250px' }}>{value}</div> : '-'
     },
     {
       key: 'TypeOfServices',

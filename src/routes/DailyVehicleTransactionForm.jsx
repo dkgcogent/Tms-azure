@@ -1294,11 +1294,16 @@ const DailyVehicleTransactionForm = () => {
 
       console.log('🚗 Vehicle Auto-Populate - Complete vehicle details:', vehicleDetails);
 
-      // Initialize auto-populated data with vehicle info
+      // Initialize auto-populated data with vehicle info directly from vehicle master
       const autoPopulatedData = {
         VehicleNo: [selectedVehicleId],
         VehicleType: vehicleDetails.VehicleType || vehicle.VehicleType || '',
-        VehiclePlacementType: 'Fixed' // Default for vehicle-based selection
+        VehiclePlacementType: 'Fixed', // Default for vehicle-based selection
+        CompanyName: vehicleDetails.CustomerCompanyName || vehicle.CustomerCompanyName || '',
+        Customer: vehicleDetails.CustomerCompanyName || vehicle.CustomerCompanyName || '',
+        Project: vehicleDetails.Project || vehicle.Project || '',
+        Location: vehicleDetails.Location || vehicle.Location || vehicleDetails.CustomerSite || vehicle.CustomerSite || '',
+        CustSite: vehicleDetails.CustomerSite || vehicle.CustomerSite || vehicleDetails.Location || vehicle.Location || ''
       };
 
       // Step 1: Get Vendor information from vehicle
@@ -1373,6 +1378,12 @@ const DailyVehicleTransactionForm = () => {
             autoPopulatedData.Customer = customerData.Name || ''; // Use name for readonly field
             autoPopulatedData.CompanyName = customerData.Name || '';
             autoPopulatedData.GSTNo = customerData.GSTNo || '';
+            if (!autoPopulatedData.Location || autoPopulatedData.Location === 'N/A') {
+              autoPopulatedData.Location = customerData.Locations || customerData.Location || customerData.CustomerSite || '';
+            }
+            if (!autoPopulatedData.CustSite || autoPopulatedData.CustSite === 'N/A') {
+              autoPopulatedData.CustSite = customerData.CustomerSite || customerData.Locations || customerData.Location || '';
+            }
             console.log('✅ Customer data found:', customerData.Name);
           }
         } catch (error) {

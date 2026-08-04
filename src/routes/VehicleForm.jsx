@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { vehicleAPI, vendorAPI, driverAPI, apiHelpers } from '../services/api';
+import { vehicleAPI, vendorAPI, driverAPI, customerAPI, projectAPI, employeeAPI, apiHelpers } from '../services/api';
 import DataTable from '../components/DataTable';
 import SearchableDropdown from '../components/SearchableDropdown';
 
@@ -458,6 +458,11 @@ const VehicleForm = () => {
     // Vehicle Information Fields
     VehicleRegistrationNo: '',
     VehicleCode: '',
+    CustomerCompanyName: '',
+    Project: '',
+    Location: '',
+    CustomerSite: '',
+    CogentEmployee: '',
     VendorCompany: '', // Vendor company name
     vendor_id: '', // Assigned vendor
     driver_id: '', // Assigned driver
@@ -571,6 +576,15 @@ const VehicleForm = () => {
   const [showModal, setShowModal] = useState(false);
 
   const [vehiclePhotos, setVehiclePhotos] = useState({});
+
+  // Customer/Project/Employee dropdown data
+  const [allCustomers, setAllCustomers] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [parsedSiteData, setParsedSiteData] = useState([]); // [{location, site, employee}]
+  const [filteredLocations, setFilteredLocations] = useState([]); // unique locations for dropdown
+  const [filteredSites, setFilteredSites] = useState([]); // sites for selected location
+  const [allEmployees, setAllEmployees] = useState([]);
 
   // Draft Management
   const user = authService.getUser();
@@ -802,6 +816,78 @@ const VehicleForm = () => {
       setVehicleData(prev => ({ ...prev, DriverTotalExperience: experience }));
     }
   }, [vehicleData.DriverLicenseIssueDate]);
+
+  // Fetch customers, projects, employees for dropdown fields
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        const [custResp, empResp] = await Promise.all([
+          customerAPI.getAll(),
+          employeeAPI.getAll()
+        ]);
+        setAllCustomers(custResp.data?.data || custResp.data || []);
+        setAllEmployees(empResp.data?.data || empResp.data || []);
+      } catch (err) {
+        console.error('Error fetching dropdown data:', err);
+      }
+    };
+    fetchDropdownData();
+  }, []);
+
+  // Helper: parse CustomerSite string into [{location, site, employee}]
+  const parseSiteString = (siteStr) => {
+    if (!siteStr) return [];
+    return siteStr.split(',').map(entry => {
+      entry = entry.trim();
+      const empMatch = entry.match(/\(Emp:\s*([^)]+)\)/);
+      const employee = empMatch ? empMatch[1].trim() : '';
+      const siteOnly = entry.replace(/\(Emp:[^)]+\)/, '').trim();
+      const dashIdx = siteOnly.indexOf(' - ');
+      const location = dashIdx >= 0 ? siteOnly.substring(0, dashIdx).trim() : siteOnly;
+      const site = dashIdx >= 0 ? siteOnly.substring(dashIdx + 3).trim() : '';
+      return { location, site, employee, raw: entry };
+    }).filter(e => e.location);
+  };
+
+  // When CustomerCompanyName changes, load projects & parse sites
+  useEffect(() => {
+    const selectedCustomer = allCustomers.find(c => c.Name === vehicleData.CustomerCompanyName);
+    if (!selectedCustomer) {
+      setFilteredProjects([]);
+      setParsedSiteData([]);
+      setFilteredLocations([]);
+      setFilteredSites([]);
+      setVehicleData(prev => ({ ...prev, Project: '', Location: '', CustomerSite: '', CogentEmployee: '' }));
+      return;
+    }
+    // Load projects for selected customer
+    projectAPI.getByCustomer(selectedCustomer.CustomerID).then(resp => {
+      setFilteredProjects(resp.data?.data || resp.data || []);
+    }).catch(err => console.error('Error loading projects:', err));
+
+    // Parse customer sites into structured objects
+    const parsed = parseSiteString(selectedCustomer.CustomerSite);
+    setParsedSiteData(parsed);
+    // Extract unique locations
+    const uniqueLocs = [...new Set(parsed.map(e => e.location))];
+    setFilteredLocations(uniqueLocs);
+    setFilteredSites([]);
+
+    // Reset dependent fields
+    setVehicleData(prev => ({ ...prev, Project: '', Location: '', CustomerSite: '', CogentEmployee: '' }));
+  }, [vehicleData.CustomerCompanyName, allCustomers]);
+
+  // When Location changes, filter sites for that location
+  useEffect(() => {
+    if (!vehicleData.Location) {
+      setFilteredSites([]);
+      setVehicleData(prev => ({ ...prev, CustomerSite: '', CogentEmployee: '' }));
+      return;
+    }
+    const sitesForLocation = parsedSiteData.filter(e => e.location === vehicleData.Location);
+    setFilteredSites(sitesForLocation);
+    setVehicleData(prev => ({ ...prev, CustomerSite: '', CogentEmployee: '' }));
+  }, [vehicleData.Location, parsedSiteData]);
 
   const fetchVehicles = async () => {
     setIsLoading(true);
@@ -1277,6 +1363,11 @@ const VehicleForm = () => {
       const backendToFrontendMapping = {
         // Direct field mappings from API response
         VehicleID: 'VehicleID',
+        CustomerCompanyName: 'CustomerCompanyName',
+        Project: 'Project',
+        Location: 'Location',
+        CustomerSite: 'CustomerSite',
+        CogentEmployee: 'CogentEmployee',
         VehicleRegistrationNo: 'VehicleRegistrationNo',
         VehicleCode: 'VehicleCode',
         VehicleChasisNo: 'VehicleChasisNo',
@@ -1718,6 +1809,11 @@ const VehicleForm = () => {
   };
 
   const vehicleColumns = [
+    { key: 'CustomerCompanyName', label: 'Company Name', sortable: true },
+    { key: 'Project', label: 'Project', sortable: true },
+    { key: 'Location', label: 'Location', sortable: true },
+    { key: 'CustomerSite', label: 'Customer Site', sortable: true },
+    { key: 'CogentEmployee', label: 'Cogent Employee', sortable: true },
     { key: 'VehicleRegistrationNo', label: 'Registration No', sortable: true },
     { key: 'VendorCompany', label: 'Vendor Company', sortable: true },
     { key: 'VehicleCode', label: 'Vehicle Code', sortable: true },
@@ -1769,6 +1865,85 @@ const VehicleForm = () => {
             <div className="form-section">
               <h4>🚗 Vehicle Information</h4>
               <div className="form-grid">
+                {/* Customer Company Name Dropdown */}
+                <div className="form-field">
+                  <label className="form-field-label">Customer Company Name</label>
+                  <SearchableDropdown
+                    name="CustomerCompanyName"
+                    value={vehicleData.CustomerCompanyName}
+                    onChange={handleInputChange}
+                    options={allCustomers.map(c => ({ id: c.Name, name: c.Name }))}
+                    placeholder="Select..."
+                    emptyLabel="Select..."
+                  />
+                </div>
+
+                {/* Project Dropdown (filtered by customer) */}
+                <div className="form-field">
+                  <label className="form-field-label">Project</label>
+                  <SearchableDropdown
+                    name="Project"
+                    value={vehicleData.Project}
+                    onChange={handleInputChange}
+                    options={filteredProjects.map(p => ({ id: p.ProjectName, name: p.ProjectName }))}
+                    placeholder="Select..."
+                    emptyLabel="Select..."
+                    disabled={!vehicleData.CustomerCompanyName}
+                  />
+                </div>
+
+                {/* Location Dropdown (unique locations from customer sites) */}
+                <div className="form-field">
+                  <label className="form-field-label">Location</label>
+                  <SearchableDropdown
+                    name="Location"
+                    value={vehicleData.Location}
+                    onChange={handleInputChange}
+                    options={filteredLocations.map(loc => ({ id: loc, name: loc }))}
+                    placeholder="Select..."
+                    emptyLabel="Select..."
+                    disabled={!vehicleData.CustomerCompanyName || filteredLocations.length === 0}
+                  />
+                  {vehicleData.CustomerCompanyName && filteredLocations.length === 0 && (
+                    <small style={{ color: '#888', fontSize: '11px' }}>No locations found for this customer</small>
+                  )}
+                </div>
+
+                {/* Customer Site Dropdown (filtered by selected location) */}
+                <div className="form-field">
+                  <label className="form-field-label">Customer Site</label>
+                  <SearchableDropdown
+                    name="CustomerSite"
+                    value={vehicleData.CustomerSite}
+                    onChange={(e) => {
+                      const siteVal = e.target.value;
+                      const selectedSiteObj = filteredSites.find(s => s.site === siteVal);
+                      setVehicleData(prev => ({
+                        ...prev,
+                        CustomerSite: siteVal,
+                        CogentEmployee: selectedSiteObj ? selectedSiteObj.employee : prev.CogentEmployee
+                      }));
+                    }}
+                    options={filteredSites.map(siteObj => ({ id: siteObj.site, name: siteObj.site }))}
+                    placeholder="Select..."
+                    emptyLabel="Select..."
+                    disabled={!vehicleData.Location || filteredSites.length === 0}
+                  />
+                </div>
+
+                {/* Cogent Employee – auto-filled from site selection */}
+                <div className="form-field">
+                  <label className="form-field-label">Cogent Employee</label>
+                  <input
+                    type="text"
+                    name="CogentEmployee"
+                    value={vehicleData.CogentEmployee}
+                    readOnly
+                    placeholder="Auto-filled when site is selected"
+                    className="form-input"
+                    style={{ backgroundColor: '#f5f5f5', cursor: 'not-allowed' }}
+                  />
+                </div>
                 {/* Vehicle Basic Info - Simple Straight Line */}
                 <div className="form-field">
                   <label className="form-field-label">

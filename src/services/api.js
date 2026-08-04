@@ -92,6 +92,11 @@ export const locationAPI = {
   delete: (id) => api.delete(`/locations/${id}`),
 };
 
+// Employee API
+export const employeeAPI = {
+  getAll: () => api.get('/employees'),
+};
+
 // Vendor API
 export const vendorAPI = {
   getAll: (urlParams = '') => api.get(`/vendors${urlParams}`),

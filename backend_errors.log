@@ -1335,3 +1335,173 @@ SyntaxError: Unexpected token 'const'
     at require (node:internal/modules/helpers:147:16)
     at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:95:22)
 
+[2026-08-04T13:10:23.357Z] UNCAUGHT EXCEPTION: Unexpected token 'return'
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:999
+        return res.status(404).json({ error: 'Vehicle not found' });
+        ^^^^^^
+
+SyntaxError: Unexpected token 'return'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
+[2026-08-04T13:10:57.811Z] UNCAUGHT EXCEPTION: Unexpected token 'const'
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:990
+          const freightQuery = 'UPDATE vehicle_freight SET FixRate = ?, FuelRate = ?, HandlingCharges = ? WHERE VehicleID = ?';
+          ^^^^^
+
+SyntaxError: Unexpected token 'const'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
+[2026-08-04T13:11:21.446Z] UNCAUGHT EXCEPTION: Unexpected token 'const'
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:990
+          const freightQuery = 'UPDATE vehicle_freight SET FixRate = ?, FuelRate = ?, HandlingCharges = ? WHERE VehicleID = ?';
+          ^^^^^
+
+SyntaxError: Unexpected token 'const'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
+[2026-08-04T13:12:11.223Z] UNCAUGHT EXCEPTION: Unexpected token 'const'
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:990
+          const freightQuery = 'UPDATE vehicle_freight SET FixRate = ?, FuelRate = ?, HandlingCharges = ? WHERE VehicleID = ?';
+          ^^^^^
+
+SyntaxError: Unexpected token 'const'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
+[2026-08-04T13:12:20.825Z] UNCAUGHT EXCEPTION: Missing catch or finally after try
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:1026
+      }
+      ^
+
+SyntaxError: Missing catch or finally after try
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
+[2026-08-04T13:14:35.252Z] UNCAUGHT EXCEPTION: Missing catch or finally after try
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:1026
+      }
+      ^
+
+SyntaxError: Missing catch or finally after try
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
+[2026-08-04T13:14:50.847Z] UNCAUGHT EXCEPTION: Unexpected token 'catch'
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:810
+    } catch (error) {
+      ^^^^^
+
+SyntaxError: Unexpected token 'catch'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
+[2026-08-04T13:15:18.519Z] UNCAUGHT EXCEPTION: Unexpected token 'catch'
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:810
+    } catch (error) {
+      ^^^^^
+
+SyntaxError: Unexpected token 'catch'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
+[2026-08-04T13:15:57.466Z] UNCAUGHT EXCEPTION: Unexpected token ')'
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:786
+        );
+        ^
+
+SyntaxError: Unexpected token ')'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
+[2026-08-04T13:16:40.118Z] UNCAUGHT EXCEPTION: Unexpected token ')'
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\vehicle.js:786
+        );
+        ^
+
+SyntaxError: Unexpected token ')'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
+
