@@ -230,6 +230,7 @@ const DailyVehicleTransactionForm = () => {
   // File import state
   const [isImporting, setIsImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0, success: 0, failed: 0 });
+  const [importErrors, setImportErrors] = useState([]);
   const fileInputRef = useRef(null);
 
   // Date filter state
@@ -276,6 +277,7 @@ const DailyVehicleTransactionForm = () => {
 
   // State for project-based location filtering
   const [availableProjects, setAvailableProjects] = useState([]);
+  const [availableCustSites, setAvailableCustSites] = useState([]);
 
 
   // Internal IDs to submit to API (only single-value IDs, vehicles and drivers use arrays)
@@ -521,6 +523,7 @@ const DailyVehicleTransactionForm = () => {
       }));
       setIds(prev => ({ ...prev, CustomerID: null, ProjectID: null }));
       setAvailableProjects([]);
+      setAvailableCustSites([]);
       setIsProjectDropdownVisible(false);
       return;
     }
@@ -550,6 +553,15 @@ const DailyVehicleTransactionForm = () => {
       // Extract customer info (GST No from Customer Master)
       const customerInfo = customerResponse.data || selectedCompany;
       const gstNo = customerInfo.GSTNo || '';
+      
+      // Extract customer sites
+      let sites = [];
+      if (customerInfo.CustomerSite) {
+        sites = customerInfo.CustomerSite.split(',').map(s => s.trim()).filter(Boolean);
+      } else if (customerInfo.Locations) {
+        sites = customerInfo.Locations.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      setAvailableCustSites(sites);
 
       // Extract project info and implement dynamic project field logic
       const projectsData = projectsResponse.data?.data || [];
@@ -628,6 +640,7 @@ const DailyVehicleTransactionForm = () => {
       }));
 
       setAvailableProjects([]);
+      setAvailableCustSites([]);
       setIsProjectDropdownVisible(false);
 
       console.log('🏢 ADHOC/REPLACEMENT - Fallback to dropdown data');
@@ -2301,6 +2314,7 @@ const DailyVehicleTransactionForm = () => {
 
     setIsImporting(true);
     setImportProgress({ current: 0, total: 0, success: 0, failed: 0 });
+    setImportErrors([]);
 
     try {
       const data = await file.arrayBuffer();
@@ -2360,6 +2374,12 @@ const DailyVehicleTransactionForm = () => {
             }
           }
 
+          if (tripType === 'Fixed' && resolvedVehicleIds.length === 0) {
+            throw new Error(rawVehicle 
+              ? `Vehicle '${rawVehicle}' not found. Fixed transactions require a pre-registered vehicle.` 
+              : 'Vehicle Number is missing. At least one valid vehicle must be provided for Fixed transactions.');
+          }
+
           let resolvedDriverIds = [];
           const rawDriver = row['DriverID'] || row['Driver Name'] || row['DriverName'];
           if (rawDriver) {
@@ -2377,8 +2397,8 @@ const DailyVehicleTransactionForm = () => {
           }
 
           // Format dates using the helper with expanded column variations
-          const transactionDateStr = formatExcelDate(row['Date'] || row['TransactionDate'] || row['Transaction Date'] || row['Transaction_Date'] || row['Entry Date'] || row['EntryDate'] || row['Entry_Date']) || getCurrentDate();
-          const serviceDateStr = formatExcelDate(row['ServiceDate'] || row['Service Date'] || row['Service_Date'] || row['Date'] || row['TransactionDate'] || row['Entry Date']) || transactionDateStr;
+          const transactionDateStr = getCurrentDate(); // Entry data will always be the date when data is imported
+          const serviceDateStr = formatExcelDate(row['ServiceDate'] || row['Service Date'] || row['Service_Date'] || row['Date'] || row['TransactionDate'] || row['Transaction Date'] || row['Transaction_Date'] || row['Entry Date'] || row['EntryDate'] || row['Entry_Date']) || transactionDateStr;
           const vehicleReturnDateStr = formatExcelDate(row['VehicleReturnDate'] || row['Vehicle Return Date'] || row['Vehicle_Return_Date'] || row['Date'] || row['TransactionDate']) || transactionDateStr;
 
           if (tripType === 'Fixed') {
@@ -2528,8 +2548,7 @@ const DailyVehicleTransactionForm = () => {
           failedCount++;
           console.error(`Row ${i + 2} failed:`, apiError);
           const errorMsg = apiError.response?.data?.error || apiError.message;
-          const details = apiError.response?.data?.details || '';
-          alert(`Row ${i + 2} Failed to Save!\nError: ${errorMsg}\nDetails: ${JSON.stringify(details)}\nPayload Dump: ${JSON.stringify(payload)}`);
+          setImportErrors(prev => [...prev, `Row ${i + 2} Failed: ${errorMsg}`]);
         }
       }
 
@@ -4424,14 +4443,23 @@ const DailyVehicleTransactionForm = () => {
                   <label>Cust Site</label>
                   <select
                     name="CustSite"
-                    value={transactionData.CustSite || 'Rajaji Puram'}
+                    value={transactionData.CustSite || ''}
                     onChange={handleTransactionDataChange}
                     className="form-control"
                   >
-                    <option value="Rajaji Puram">Rajaji Puram</option>
-                    <option value="Sarojni Nagar">Sarojni Nagar</option>
-                    <option value="Faribadabad">Faribadabad</option>
-                    <option value="Ballabghar">Ballabghar</option>
+                    <option value="">Select Site</option>
+                    {availableCustSites.length > 0 ? (
+                      availableCustSites.map((site, index) => (
+                        <option key={index} value={site}>{site}</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Rajaji Puram">Rajaji Puram</option>
+                        <option value="Sarojni Nagar">Sarojni Nagar</option>
+                        <option value="Faribadabad">Faribadabad</option>
+                        <option value="Ballabghar">Ballabghar</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -5695,6 +5723,21 @@ const DailyVehicleTransactionForm = () => {
             </div>
           </div>
         )}
+        
+        {importErrors.length > 0 && (
+          <div style={{ padding: '15px', marginBottom: '20px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '5px', border: '1px solid #f5c6cb' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h4 style={{ margin: 0 }}>Import Errors ({importErrors.length})</h4>
+              <button onClick={() => setImportErrors([])} style={{ background: 'none', border: 'none', color: '#721c24', cursor: 'pointer', fontWeight: 'bold' }}>✖ Dismiss</button>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: '20px', maxHeight: '150px', overflowY: 'auto', fontSize: '14px' }}>
+              {importErrors.map((err, idx) => (
+                <li key={idx} style={{ marginBottom: '5px' }}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <DataTable
           title=""
           data={transactions}

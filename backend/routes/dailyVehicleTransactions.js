@@ -2406,17 +2406,17 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       const fixedQuery = `
         SELECT
           ft.*,
-          COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
-          c.Name as CompanyName,
-          c.GSTNo as GSTNo,
-          COALESCE(p.ProjectName, 'N/A') as ProjectName,
-          v.VehicleRegistrationNo as VehicleNumber,
-          v.VehicleType as VehicleType,
-          vend.VendorName as VendorName,
-          vend.VendorCode as VendorNumber,
-          d.DriverName as DriverName,
-          d.DriverMobileNo as DriverNumber,
-          d.DriverLicenceNo as DriverLicenceNumber
+          COALESCE(NULLIF(ft.customer, ''), c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
+          COALESCE(NULLIF(ft.CompanyName, ''), c.Name) as CompanyName,
+          COALESCE(NULLIF(ft.GSTNo, ''), c.GSTNo) as GSTNo,
+          COALESCE(NULLIF(ft.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName,
+          COALESCE(NULLIF(ft.VehicleNumber, ''), v.VehicleRegistrationNo) as VehicleNumber,
+          COALESCE(NULLIF(ft.VehicleType, ''), v.VehicleType) as VehicleType,
+          COALESCE(NULLIF(ft.VendorName, ''), vend.VendorName) as VendorName,
+          COALESCE(NULLIF(ft.VendorNumber, ''), vend.VendorCode) as VendorNumber,
+          COALESCE(NULLIF(ft.DriverName, ''), d.DriverName) as DriverName,
+          COALESCE(NULLIF(ft.DriverNumber, ''), d.DriverMobileNo) as DriverNumber,
+          COALESCE(NULLIF(ft.DriverLicenceNumber, ''), d.DriverLicenceNo) as DriverLicenceNumber
         FROM fixed_transactions ft
         LEFT JOIN Customer c ON ft.CustomerID = c.CustomerID
         LEFT JOIN Project p ON ft.ProjectID = p.ProjectID
@@ -2432,7 +2432,8 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         SELECT
           at.*,
           COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
-          COALESCE(p.ProjectName, 'N/A') as ProjectName
+          COALESCE(NULLIF(at.CompanyName, ''), c.Name) as CompanyName,
+          COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
         LEFT JOIN Project p ON at.ProjectID = p.ProjectID
@@ -2445,7 +2446,8 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         SELECT
           at.*,
           COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
-          COALESCE(p.ProjectName, 'N/A') as ProjectName
+          COALESCE(NULLIF(at.CompanyName, ''), c.Name) as CompanyName,
+          COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
         LEFT JOIN Project p ON at.ProjectID = p.ProjectID

@@ -62,6 +62,11 @@ const SearchableDropdown = ({
       return option;
     }
     
+    // Special case for Projects to show both name and ID in dropdowns
+    if ((name === 'Project' || name === 'project') && option.ProjectName && option.ProjectID) {
+      return `${option.ProjectName} - ${option.ProjectID}`;
+    }
+    
     // Try multiple possible label fields based on actual database structure
     return option[labelKey] || 
            option.Name ||                    // Customer table uses 'Name'
