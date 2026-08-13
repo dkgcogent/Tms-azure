@@ -18,7 +18,7 @@ module.exports = (pool) => {
         INSERT INTO vendor_commercial (
           vendor_name, vendor_company_name, project, state, 
           type_of_vehicle_placement, type_of_vehicle, type_of_body, 
-          no_of_days_per_month, hours, fixed_rate, 
+          sunday_option, no_of_days_per_month, hours, fixed_rate, 
           km_include_in_fix_rate, additional_rate_per_km, toll, 
           parking, fixed_charges_loading_unloading, da_applicable, 
           da_charges, no_entry_pass_charges, above_551_lts, 
@@ -28,17 +28,18 @@ module.exports = (pool) => {
           driver_charges, over_time_charges, holiday_working_charges, 
           additional_delivery_points_charges, per_kg_cost, 
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `;
 
       const params = [
-        sanitizeValue(data.vendor_name), // New vendor field
-        sanitizeValue(data.vendor_company_name), // New vendor field
+        sanitizeValue(data.vendor_name),
+        sanitizeValue(data.vendor_company_name),
         sanitizeValue(data.project),
         sanitizeValue(data.state),
         sanitizeValue(data.type_of_vehicle_placement),
         sanitizeValue(data.type_of_vehicle),
         sanitizeValue(data.type_of_body),
+        sanitizeValue(data.sunday_option || 'Sunday Including'),
         sanitizeValue(data.no_of_days_per_month),
         sanitizeValue(data.hours),
         sanitizeValue(data.fixed_rate),
@@ -104,7 +105,7 @@ module.exports = (pool) => {
         UPDATE vendor_commercial SET
           vendor_name = ?, vendor_company_name = ?, project = ?, state = ?, 
           type_of_vehicle_placement = ?, type_of_vehicle = ?, type_of_body = ?, 
-          no_of_days_per_month = ?, hours = ?, fixed_rate = ?, 
+          sunday_option = ?, no_of_days_per_month = ?, hours = ?, fixed_rate = ?, 
           km_include_in_fix_rate = ?, additional_rate_per_km = ?, toll = ?, 
           parking = ?, fixed_charges_loading_unloading = ?, da_applicable = ?, 
           da_charges = ?, no_entry_pass_charges = ?, above_551_lts = ?, 
@@ -125,6 +126,7 @@ module.exports = (pool) => {
         sanitizeValue(data.type_of_vehicle_placement),
         sanitizeValue(data.type_of_vehicle),
         sanitizeValue(data.type_of_body),
+        sanitizeValue(data.sunday_option || 'Sunday Including'),
         sanitizeValue(data.no_of_days_per_month),
         sanitizeValue(data.hours),
         sanitizeValue(data.fixed_rate),

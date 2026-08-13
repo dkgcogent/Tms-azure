@@ -9,7 +9,11 @@ import './DailyVehicleTransactionForm.css';
 
 // Date utility functions
 const getCurrentDate = () => {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 
@@ -259,17 +263,36 @@ const DailyVehicleTransactionForm = () => {
       const totalKM = parseFloat(calculatedData.TotalKM) || 0;
       const fixKm = parseFloat(transactionData.FixKm) || 0;
 
+      const tollExpenses = parseFloat(transactionData.TollExpenses) || 0;
+      const parkingCharges = parseFloat(transactionData.ParkingCharges) || 0;
+      const loadingCharges = parseFloat(transactionData.LoadingCharges) || 0;
+      const unloadingCharges = parseFloat(transactionData.UnloadingCharges) || 0;
+      const otherCharges = parseFloat(transactionData.OtherCharges) || 0;
+
       // Calculate variable freight: (Total KM - Fix KM) * Variable Rate
       const variableKM = Math.max(0, totalKM - fixKm);
       const variableFreight = variableKM * vFreightVariable;
-      const totalFreight = vFreightFix + variableFreight;
+      const totalFreight = vFreightFix + variableFreight + tollExpenses + parkingCharges + loadingCharges + unloadingCharges + otherCharges;
 
       setTransactionData(prev => ({
         ...prev,
+        ExtraKM: variableKM.toFixed(2),
+        ExtraKMCost: variableFreight.toFixed(2),
         TotalFreight: totalFreight.toFixed(2)
       }));
     }
-  }, [transactionData.VFreightFix, transactionData.VFreightVariable, transactionData.FixKm, calculatedData.TotalKM, masterData.TypeOfTransaction]);
+  }, [
+    transactionData.VFreightFix,
+    transactionData.VFreightVariable,
+    transactionData.FixKm,
+    transactionData.TollExpenses,
+    transactionData.ParkingCharges,
+    transactionData.LoadingCharges,
+    transactionData.UnloadingCharges,
+    transactionData.OtherCharges,
+    calculatedData.TotalKM,
+    masterData.TypeOfTransaction
+  ]);
 
   // Auto-calculate Balance to be Paid for Adhoc/Replacement
   useEffect(() => {

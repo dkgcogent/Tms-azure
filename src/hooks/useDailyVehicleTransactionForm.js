@@ -2,11 +2,33 @@ import { useState, useEffect } from 'react';
 import { vehicleTransactionAPI, customerAPI, vehicleAPI, driverAPI, projectAPI, vendorAPI, apiHelpers } from '../services/api';
 
 // Date utility functions
-const getCurrentDate = () => new Date().toISOString().split('T')[0];
-const formatDateForInput = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
+const getCurrentDate = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatDateForInput = (date) => {
+  if (!date) return '';
+  if (date instanceof Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  if (typeof date === 'string') {
+    if (date.match(/^\d{4}-\d{2}-\d{2}$/)) return date;
+    const parsedDate = new Date(date);
+    if (!isNaN(parsedDate.getTime())) {
+      const year = parsedDate.getFullYear();
+      const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(parsedDate.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return date;
 };
 
 // Time utility functions for 12-hour format
@@ -174,37 +196,48 @@ export const useDailyVehicleTransactionForm = () => {
 
   // Auto-calculate Total Duty Hours for Adhoc/Replacement
   useEffect(() => {
-    if ((masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') &&
-      transactionData.ArrivalTimeAtHub && transactionData.OutTimeFromHub) {
-      try {
-        const convertTimeForCalculation = (timeStr) => {
-          if (!timeStr) return null;
-          if (timeStr.match(/^\d{1,2}:\d{2}$/) && !timeStr.match(/AM|PM/i)) return `${timeStr}:00`;
-          const time24 = convertTo24Hour(timeStr);
-          return time24 ? `${time24}:00` : null;
-        };
+    if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
+      const startTimeStr = transactionData.VehicleReportingAtHub || transactionData.ArrivalTimeAtHub;
+      const endTimeStr = transactionData.VehicleOutFromHubFinal || transactionData.OutTimeFromHub || transactionData.ReturnReportingTime;
 
-        const arrivalTime24 = convertTimeForCalculation(transactionData.ArrivalTimeAtHub);
-        const outTime24 = convertTimeForCalculation(transactionData.OutTimeFromHub);
+      if (startTimeStr && endTimeStr) {
+        try {
+          const convertTimeForCalculation = (timeStr) => {
+            if (!timeStr) return null;
+            if (timeStr.match(/^\d{1,2}:\d{2}$/) && !timeStr.match(/AM|PM/i)) return `${timeStr}:00`;
+            const time24 = convertTo24Hour(timeStr);
+            return time24 ? `${time24}:00` : null;
+          };
 
-        if (arrivalTime24 && outTime24) {
-          const arrivalTime = new Date(`2000-01-01T${arrivalTime24}`);
-          const outTime = new Date(`2000-01-01T${outTime24}`);
+          const start24 = convertTimeForCalculation(startTimeStr);
+          const end24 = convertTimeForCalculation(endTimeStr);
 
-          if (!isNaN(arrivalTime.getTime()) && !isNaN(outTime.getTime())) {
-            let diffMs = arrivalTime - outTime;
-            if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
-            const diffHours = diffMs / (1000 * 60 * 60);
-            setTransactionData(prev => ({ ...prev, TotalDutyHours: diffHours.toFixed(2) }));
+          if (start24 && end24) {
+            const startTime = new Date(`2000-01-01T${start24}`);
+            const endTime = new Date(`2000-01-01T${end24}`);
+
+            if (!isNaN(startTime.getTime()) && !isNaN(endTime.getTime())) {
+              let diffMs = endTime - startTime;
+              if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
+              const diffHours = diffMs / (1000 * 60 * 60);
+              setTransactionData(prev => ({ ...prev, TotalDutyHours: diffHours.toFixed(2) }));
+            }
           }
+        } catch (error) {
+          // Silent fail
         }
-      } catch (error) {
-        // Silent fail
       }
     }
-  }, [transactionData.ArrivalTimeAtHub, transactionData.OutTimeFromHub, masterData.TypeOfTransaction]);
+  }, [
+    transactionData.VehicleReportingAtHub,
+    transactionData.VehicleOutFromHubFinal,
+    transactionData.ArrivalTimeAtHub,
+    transactionData.OutTimeFromHub,
+    transactionData.ReturnReportingTime,
+    masterData.TypeOfTransaction
+  ]);
 
-  // Auto-calculate Total Freight for Adhoc/Replacement
+  // Auto-calculate Total Freight, Extra KM, and Extra KM Cost for Adhoc/Replacement
   useEffect(() => {
     if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
       const vFreightFix = parseFloat(transactionData.VFreightFix) || 0;
@@ -212,13 +245,34 @@ export const useDailyVehicleTransactionForm = () => {
       const totalKM = parseFloat(calculatedData.TotalKM) || 0;
       const fixKm = parseFloat(transactionData.FixKm) || 0;
 
+      const tollExpenses = parseFloat(transactionData.TollExpenses) || 0;
+      const parkingCharges = parseFloat(transactionData.ParkingCharges) || 0;
+      const loadingCharges = parseFloat(transactionData.LoadingCharges) || 0;
+      const unloadingCharges = parseFloat(transactionData.UnloadingCharges) || 0;
+      const otherCharges = parseFloat(transactionData.OtherCharges) || 0;
+
       const variableKM = Math.max(0, totalKM - fixKm);
-      const fixFreight = fixKm * vFreightFix;
       const variableFreight = variableKM * vFreightVariable;
-      const totalFreight = fixFreight + variableFreight;
-      setTransactionData(prev => ({ ...prev, TotalFreight: totalFreight.toFixed(2) }));
+      const totalFreight = vFreightFix + variableFreight + tollExpenses + parkingCharges + loadingCharges + unloadingCharges + otherCharges;
+      setTransactionData(prev => ({
+        ...prev,
+        ExtraKM: variableKM.toFixed(2),
+        ExtraKMCost: variableFreight.toFixed(2),
+        TotalFreight: totalFreight.toFixed(2)
+      }));
     }
-  }, [transactionData.VFreightFix, transactionData.VFreightVariable, transactionData.FixKm, calculatedData.TotalKM, masterData.TypeOfTransaction]);
+  }, [
+    transactionData.VFreightFix,
+    transactionData.VFreightVariable,
+    transactionData.FixKm,
+    transactionData.TollExpenses,
+    transactionData.ParkingCharges,
+    transactionData.LoadingCharges,
+    transactionData.UnloadingCharges,
+    transactionData.OtherCharges,
+    calculatedData.TotalKM,
+    masterData.TypeOfTransaction
+  ]);
 
   // Auto-calculate Balance to be Paid for Adhoc/Replacement
   useEffect(() => {
@@ -270,28 +324,21 @@ export const useDailyVehicleTransactionForm = () => {
   useEffect(() => {
     if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
       const totalFreight = parseFloat(transactionData.TotalFreight) || 0;
-      const tollExpenses = parseFloat(transactionData.TollExpenses) || 0;
-      const parkingCharges = parseFloat(transactionData.ParkingCharges) || 0;
-      const loadingCharges = parseFloat(transactionData.LoadingCharges) || 0;
-      const unloadingCharges = parseFloat(transactionData.UnloadingCharges) || 0;
-      const otherCharges = parseFloat(transactionData.OtherCharges) || 0;
-
-      const revenue = totalFreight;
-      const totalExpenses = tollExpenses + parkingCharges + loadingCharges + unloadingCharges + otherCharges;
-      const margin = revenue - totalExpenses;
+      const rawRevenue = parseFloat(transactionData.Revenue);
+      
+      const revenue = (!isNaN(rawRevenue) && rawRevenue > 0) ? rawRevenue : totalFreight;
+      const margin = revenue - totalFreight;
       const marginPercentage = revenue > 0 ? (margin / revenue) * 100 : 0;
 
       setTransactionData(prev => ({
         ...prev,
-        Revenue: revenue.toFixed(2),
         Margin: margin.toFixed(2),
-        MarginPercentage: marginPercentage.toFixed(2),
-        TotalExpenses: totalExpenses.toFixed(2)
+        MarginPercentage: marginPercentage.toFixed(2)
       }));
     }
   }, [
-    transactionData.TotalFreight, transactionData.TollExpenses, transactionData.ParkingCharges,
-    transactionData.LoadingCharges, transactionData.UnloadingCharges, transactionData.OtherCharges,
+    transactionData.TotalFreight,
+    transactionData.Revenue,
     masterData.TypeOfTransaction
   ]);
 

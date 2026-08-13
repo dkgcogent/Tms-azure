@@ -14,6 +14,7 @@ const VendorCommercialForm = () => {
     type_of_vehicle_placement: '',
     type_of_vehicle: '',
     type_of_body: '',
+    sunday_option: 'Sunday Including',
     no_of_days_per_month: '',
     hours: '',
     fixed_rate: '',
@@ -149,11 +150,26 @@ const VendorCommercialForm = () => {
         .filter(opt => opt.name)
     : [];
 
+  const calculateDaysInMonth = (sundayOption, year = new Date().getFullYear(), month = new Date().getMonth()) => {
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    let sundayCount = 0;
+    for (let day = 1; day <= totalDays; day++) {
+      if (new Date(year, month, day).getDay() === 0) {
+        sundayCount++;
+      }
+    }
+    return sundayOption === 'Sunday Excluding' ? totalDays - sundayCount : totalDays;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
     setFormData(prev => {
       const newData = { ...prev, [name]: value };
+      
+      if (name === 'sunday_option') {
+        newData.no_of_days_per_month = calculateDaysInMonth(value);
+      }
       
       // Cascading logic: reset children when parent changes
       if (name === 'vendor_name') {
@@ -419,7 +435,8 @@ const VendorCommercialForm = () => {
             type_of_vehicle_placement: getVal(['type_of_vehicle_placement', 'Vehicle Placement', 'Placement Type', 'Placement']) || 'Fixed',
             type_of_vehicle: getVal(['type_of_vehicle', 'Vehicle Type', 'Type of Vehicle', 'Vehicle']),
             type_of_body: getVal(['type_of_body', 'Body Type', 'Type of Body', 'Body']),
-            no_of_days_per_month: parseNumeric(getVal(['no_of_days_per_month', 'Days Per Month', 'No of Days', 'Days/Month', 'No. of Days / Month'])),
+            sunday_option: getVal(['sunday_option', 'Sunday Option', 'Sunday']) || 'Sunday Including',
+            no_of_days_per_month: parseNumeric(getVal(['no_of_days_per_month', 'Days Per Month', 'No of Days', 'Days/Month', 'No. of Days / Month'])) || calculateDaysInMonth(getVal(['sunday_option', 'Sunday Option', 'Sunday']) || 'Sunday Including'),
             hours: parseNumeric(getVal(['hours', 'Hours'])),
             fixed_rate: parseNumeric(getVal(['fixed_rate', 'Fixed Rate'])),
             km_include_in_fix_rate: parseNumeric(getVal(['km_include_in_fix_rate', 'KM Included', 'Included KM', 'KM Inc', 'KM Include in Fix Rate'])),
@@ -559,6 +576,7 @@ const VendorCommercialForm = () => {
     { key: 'type_of_vehicle_placement', label: 'Placement', sortable: true },
     { key: 'type_of_vehicle', label: 'Vehicle', sortable: true },
     { key: 'type_of_body', label: 'Body', sortable: true },
+    { key: 'sunday_option', label: 'Sunday Option', sortable: true },
     { key: 'no_of_days_per_month', label: 'Days/Month', sortable: true },
     { key: 'hours', label: 'Hours', sortable: true },
     { key: 'fixed_rate', label: 'Fixed Rate', sortable: true, render: (val) => val ? `₹${val}` : '-' },
@@ -683,8 +701,15 @@ const VendorCommercialForm = () => {
           <h4>Rates & Charges</h4>
           <div className="form-grid">
             <div className="form-group">
+              <label>Sunday Option</label>
+              <select name="sunday_option" value={formData.sunday_option || 'Sunday Including'} onChange={handleChange} className="form-input">
+                <option value="Sunday Including">Sunday Including (All days)</option>
+                <option value="Sunday Excluding">Sunday Excluding (Excl. Sundays)</option>
+              </select>
+            </div>
+            <div className="form-group">
               <label>No. of Days / Month</label>
-              <input type="number" name="no_of_days_per_month" value={formData.no_of_days_per_month} onChange={handleChange} className="form-input" />
+              <input type="number" name="no_of_days_per_month" value={formData.no_of_days_per_month} onChange={handleChange} className="form-input" placeholder="Calculated automatically" />
             </div>
             <div className="form-group">
               <label>Hours</label>

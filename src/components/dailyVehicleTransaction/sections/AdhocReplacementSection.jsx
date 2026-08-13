@@ -306,11 +306,9 @@ const AdhocReplacementSection = ({
       <FormField
         label="Extra KM"
         name="ExtraKM"
-        type="number"
+        type="calculated"
         value={transactionData.ExtraKM}
-        onChange={onTransactionDataChange}
-        step="0.01"
-        placeholder="Enter extra KM"
+        readOnly
       />
 
 
@@ -357,11 +355,9 @@ const AdhocReplacementSection = ({
       <FormField
         label="Extra KM Cost"
         name="ExtraKMCost"
-        type="number"
+        type="calculated"
         value={transactionData.ExtraKMCost}
-        onChange={onTransactionDataChange}
-        step="0.01"
-        placeholder="Enter extra KM cost"
+        readOnly
       />
 
 
@@ -631,9 +627,11 @@ const AdhocReplacementSection = ({
       <FormField
         label="Revenue"
         name="Revenue"
-        type="calculated"
+        type="number"
         value={transactionData.Revenue}
-        readOnly
+        onChange={onTransactionDataChange}
+        step="0.01"
+        placeholder="Enter revenue (defaults to Total Freight)"
       />
 
       <FormField

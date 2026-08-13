@@ -1,0 +1,558 @@
+[
+  {
+    "table": "active_ifsc_cache",
+    "rowCount": "View / Special"
+  },
+  {
+    "table": "actual_bank_charges",
+    "rowCount": 0
+  },
+  {
+    "table": "actual_corporate_expenses",
+    "rowCount": 0
+  },
+  {
+    "table": "actual_depreciation",
+    "rowCount": 0
+  },
+  {
+    "table": "actual_revenue_direct_expenses",
+    "rowCount": 0
+  },
+  {
+    "table": "actual_salaries",
+    "rowCount": 0
+  },
+  {
+    "table": "actual_summary_inputs",
+    "rowCount": 0
+  },
+  {
+    "table": "actual_totals",
+    "rowCount": 0
+  },
+  {
+    "table": "adhoc_transactions",
+    "rowCount": 0
+  },
+  {
+    "table": "audit_logs",
+    "rowCount": 0
+  },
+  {
+    "table": "billing",
+    "rowCount": 1
+  },
+  {
+    "table": "budget_bank_charges",
+    "rowCount": 0
+  },
+  {
+    "table": "budget_corporate_expenses",
+    "rowCount": 12
+  },
+  {
+    "table": "budget_depreciation",
+    "rowCount": 0
+  },
+  {
+    "table": "budget_revenue_direct_expenses",
+    "rowCount": 0
+  },
+  {
+    "table": "budget_salaries",
+    "rowCount": 12
+  },
+  {
+    "table": "budget_totals",
+    "rowCount": 4
+  },
+  {
+    "table": "customer",
+    "rowCount": 4
+  },
+  {
+    "table": "customer_cndn_notes",
+    "rowCount": 2
+  },
+  {
+    "table": "customer_cogent_contact",
+    "rowCount": 4
+  },
+  {
+    "table": "customer_commercial",
+    "rowCount": 1
+  },
+  {
+    "table": "customer_invoices",
+    "rowCount": 3
+  },
+  {
+    "table": "customer_key_contact",
+    "rowCount": 0
+  },
+  {
+    "table": "customer_office_address",
+    "rowCount": 1
+  },
+  {
+    "table": "driver",
+    "rowCount": 39
+  },
+  {
+    "table": "employee_imprests",
+    "rowCount": 1
+  },
+  {
+    "table": "fixed_transactions",
+    "rowCount": 3
+  },
+  {
+    "table": "geo_location_logs",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_appointment_letters",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_appraisal_categories",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_asset_assignments",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_asset_history",
+    "rowCount": 2
+  },
+  {
+    "table": "hrms_asset_id_sequence",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_asset_photos",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_asset_transfers",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_assets",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_attendance_records",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_audit_logs",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_awards",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_banks",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_biometric_devices",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_birthday_reminders",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_candidates",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_certifications",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_claim_documents",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_customers",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_departments",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_designations",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_document_types",
+    "rowCount": 2
+  },
+  {
+    "table": "hrms_employee_documents",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_employee_qualifications",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_employee_salary",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_employee_training",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_employees",
+    "rowCount": 2
+  },
+  {
+    "table": "hrms_esi_records",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_exit_asset_handovers",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_exit_formalities",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_exit_interviews",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_exit_processes",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_expense_categories",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_expense_requests",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_feedback",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_ff_settlement_components",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_ff_settlements",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_generated_letters",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_geo_location_logs",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_goals",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_gratuity_records",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_id_cards",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_insurance_claims",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_insurance_policies",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_interviews",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_job_activities",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_job_openings",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_leave_balances",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_leave_requests",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_leave_types",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_letter_custom_variables",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_letter_template_variables",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_letter_templates",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_location_settings",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_manpower_types",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_manual_attendance_requests",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_notification_history",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_notification_recipient_history",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_notification_recipients_history",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_notification_settings",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_notification_settings_channels",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_notification_templates",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_notifications",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_offer_letters",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_office_locations",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_payment_modes",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_payslips",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_performance_reviews",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_pf_records",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_policies",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_policy_beneficiaries",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_policy_family_coverage",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_projects",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_promotions",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_qualifications",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_regularization_requests",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_salary_components",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_shifts",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_task_activity_log",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_task_comments",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_task_files",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_tasks",
+    "rowCount": 1
+  },
+  {
+    "table": "hrms_template_channels",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_template_specific_recipients",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_template_variables",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_training_programs",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_untitled_table_62",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_users",
+    "rowCount": 3
+  },
+  {
+    "table": "hrms_visiting_cards",
+    "rowCount": 0
+  },
+  {
+    "table": "hrms_work_locations",
+    "rowCount": 1
+  },
+  {
+    "table": "ifsc_cache",
+    "rowCount": 3
+  },
+  {
+    "table": "kra_assignments",
+    "rowCount": 0
+  },
+  {
+    "table": "kra_audit_logs",
+    "rowCount": 14
+  },
+  {
+    "table": "kra_scores",
+    "rowCount": 5
+  },
+  {
+    "table": "kra_template_items",
+    "rowCount": 2
+  },
+  {
+    "table": "kra_templates",
+    "rowCount": 1
+  },
+  {
+    "table": "location",
+    "rowCount": 0
+  },
+  {
+    "table": "manual_attendance_requests",
+    "rowCount": 0
+  },
+  {
+    "table": "paymentcollection",
+    "rowCount": 0
+  },
+  {
+    "table": "pincode_lookup",
+    "rowCount": 39
+  },
+  {
+    "table": "project",
+    "rowCount": 10
+  },
+  {
+    "table": "regularization_requests",
+    "rowCount": 0
+  },
+  {
+    "table": "summary_inputs",
+    "rowCount": 0
+  },
+  {
+    "table": "users",
+    "rowCount": 19
+  },
+  {
+    "table": "vehicle",
+    "rowCount": 41
+  },
+  {
+    "table": "vehicle_freight",
+    "rowCount": 5
+  },
+  {
+    "table": "vehicle_project_assignments",
+    "rowCount": 0
+  },
+  {
+    "table": "vehicletransaction",
+    "rowCount": 0
+  },
+  {
+    "table": "vendor",
+    "rowCount": 21
+  },
+  {
+    "table": "vendor_cndn_notes",
+    "rowCount": 3
+  },
+  {
+    "table": "vendor_commercial",
+    "rowCount": 5
+  },
+  {
+    "table": "vendor_invoices",
+    "rowCount": 4
+  }
+]
