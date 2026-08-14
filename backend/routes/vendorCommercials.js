@@ -16,7 +16,7 @@ module.exports = (pool) => {
     try {
       const query = `
         INSERT INTO vendor_commercial (
-          vendor_name, vendor_company_name, project, state, 
+          vendor_id, vendor_name, vendor_company_name, project, state, 
           type_of_vehicle_placement, type_of_vehicle, type_of_body, 
           sunday_option, no_of_days_per_month, hours, fixed_rate, 
           km_include_in_fix_rate, additional_rate_per_km, toll, 
@@ -28,10 +28,11 @@ module.exports = (pool) => {
           driver_charges, over_time_charges, holiday_working_charges, 
           additional_delivery_points_charges, per_kg_cost, 
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `;
 
       const params = [
+        sanitizeValue(data.vendor_id),
         sanitizeValue(data.vendor_name),
         sanitizeValue(data.vendor_company_name),
         sanitizeValue(data.project),
@@ -103,7 +104,7 @@ module.exports = (pool) => {
     try {
       const query = `
         UPDATE vendor_commercial SET
-          vendor_name = ?, vendor_company_name = ?, project = ?, state = ?, 
+          vendor_id = ?, vendor_name = ?, vendor_company_name = ?, project = ?, state = ?, 
           type_of_vehicle_placement = ?, type_of_vehicle = ?, type_of_body = ?, 
           sunday_option = ?, no_of_days_per_month = ?, hours = ?, fixed_rate = ?, 
           km_include_in_fix_rate = ?, additional_rate_per_km = ?, toll = ?, 
@@ -119,6 +120,7 @@ module.exports = (pool) => {
       `;
 
       const params = [
+        sanitizeValue(data.vendor_id),
         sanitizeValue(data.vendor_name),
         sanitizeValue(data.vendor_company_name),
         sanitizeValue(data.project),
