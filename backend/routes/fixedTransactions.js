@@ -16,13 +16,19 @@ router.get('/', async (req, res) => {
         d.DriverName,
         d.DriverMobileNo,
         vh.VehicleRegistrationNo,
-        vh.VehicleType
+        vh.VehicleType,
+        cc.fixed_rate as customer_commercial_fixed_rate,
+        cc.additional_rate_per_km as customer_commercial_extra_km_rate,
+        vc.fixed_rate as vendor_commercial_fixed_rate,
+        vc.additional_rate_per_km as vendor_commercial_extra_km_rate
       FROM fixed_transactions ft
       LEFT JOIN customer c ON ft.CustomerID = c.CustomerID
       LEFT JOIN project p ON ft.ProjectID = p.ProjectID
       LEFT JOIN vendor v ON ft.VendorID = v.VendorID
       LEFT JOIN driver d ON JSON_EXTRACT(ft.DriverIDs, '$[0]') = d.DriverID
       LEFT JOIN vehicle vh ON JSON_EXTRACT(ft.VehicleIDs, '$[0]') = vh.VehicleID
+      LEFT JOIN customer_commercial cc ON ft.customer_commercial_id = cc.id
+      LEFT JOIN vendor_commercial vc ON ft.vendor_commercial_id = vc.id
       ORDER BY ft.TransactionDate DESC, ft.TransactionID DESC
     `;
 
@@ -58,13 +64,19 @@ router.get('/:id', async (req, res) => {
         d.DriverName,
         d.DriverMobileNo,
         vh.VehicleRegistrationNo,
-        vh.VehicleType
+        vh.VehicleType,
+        cc.fixed_rate as customer_commercial_fixed_rate,
+        cc.additional_rate_per_km as customer_commercial_extra_km_rate,
+        vc.fixed_rate as vendor_commercial_fixed_rate,
+        vc.additional_rate_per_km as vendor_commercial_extra_km_rate
       FROM fixed_transactions ft
       LEFT JOIN customer c ON ft.CustomerID = c.CustomerID
       LEFT JOIN project p ON ft.ProjectID = p.ProjectID
       LEFT JOIN vendor v ON ft.VendorID = v.VendorID
       LEFT JOIN driver d ON JSON_EXTRACT(ft.DriverIDs, '$[0]') = d.DriverID
       LEFT JOIN vehicle vh ON JSON_EXTRACT(ft.VehicleIDs, '$[0]') = vh.VehicleID
+      LEFT JOIN customer_commercial cc ON ft.customer_commercial_id = cc.id
+      LEFT JOIN vendor_commercial vc ON ft.vendor_commercial_id = vc.id
       WHERE ft.TransactionID = ?
     `;
 

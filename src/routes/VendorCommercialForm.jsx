@@ -63,7 +63,7 @@ const VendorCommercialForm = () => {
         ]);
         setVendors(vendorRes.data.value || vendorRes.data || []);
         setProjects(projectRes.data.value || projectRes.data || []);
-        
+
         // Handle different vehicle data structures correctly
         const vehiclesData = vehicleRes.data?.data || (Array.isArray(vehicleRes.data) ? vehicleRes.data : []);
         setVehicles(vehiclesData);
@@ -89,39 +89,39 @@ const VendorCommercialForm = () => {
   }, []);
 
   // Vendor Name: Group by name and show representative ID
-  const vendorNameOptions = Array.isArray(vendors) 
+  const vendorNameOptions = Array.isArray(vendors)
     ? [...new Map(vendors.map(c => [c.VendorName, c])).values()]
-        .filter(c => c.VendorName)
-        .map(c => ({
-          name: c.VendorName,
-          displayText: `${c.VendorName} / ${c.VendorID}`
-        }))
+      .filter(c => c.VendorName)
+      .map(c => ({
+        name: c.VendorName,
+        displayText: `${c.VendorName} / ${c.VendorID}`
+      }))
     : [];
-    
+
   // Project: Show projects filtered by the selected Company or Vendor Name
   const projectOptions = Array.isArray(projects)
     ? projects
-        .filter(p => {
-          // Show all projects since vendors might work across multiple projects
-          return true;
-        })
-        .map(p => ({
-          id: p.ProjectID,
-          name: p.ProjectName,
-          displayText: `${p.ProjectName} / ${p.ProjectID}`
-        }))
+      .filter(p => {
+        // Show all projects since vendors might work across multiple projects
+        return true;
+      })
+      .map(p => ({
+        id: p.ProjectID,
+        name: p.ProjectName,
+        displayText: `${p.ProjectName} / ${p.ProjectID}`
+      }))
     : [];
-    
+
   const stateOptions = [
-    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
-    "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", 
-    "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", 
-    "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", 
-    "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", 
-    "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", 
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
+    "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+    "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+    "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh",
+    "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
+    "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir",
     "Ladakh", "Lakshadweep", "Puducherry"
   ];
-  
+
   // Standard options from Add Vehicle Form
   const standardVehicleTypes = ['LP', 'LPT', 'Tata Ace', 'Pickup', 'Tata 407 10ft', 'Tata 407 14ft', 'Eicher 17ft'];
   const standardBodyTypes = ['Open', 'CBD', 'Container'];
@@ -130,24 +130,24 @@ const VendorCommercialForm = () => {
   const vehicleTypeOptions = Array.isArray(vehicles)
     ? [...new Set([...standardVehicleTypes, ...vehicles.map(v => v.VehicleType).filter(Boolean)])]
     : standardVehicleTypes;
-    
+
   const bodyTypeOptions = Array.isArray(vehicles)
     ? [...new Set([...standardBodyTypes, ...vehicles.map(v => v.TypeOfBody).filter(Boolean)])]
     : standardBodyTypes;
 
   // Fixed options as per Daily Entry Form
   const placementOptions = ["Fixed", "Adhoc", "Replacement"];
-  
+
   // Optionally filter company names by the selected master customer
   const companyNameOptions = Array.isArray(vendors)
     ? vendors
-        .filter(c => formData.vendor_name ? c.VendorName === formData.vendor_name : true)
-        .map(c => ({
-          id: c.VendorID,
-          name: c.CompanyName,
-          displayText: `${c.CompanyName} / ${c.VendorID}`
-        }))
-        .filter(opt => opt.name)
+      .filter(c => formData.vendor_name ? c.VendorName === formData.vendor_name : true)
+      .map(c => ({
+        id: c.VendorID,
+        name: c.CompanyName,
+        displayText: `${c.CompanyName} / ${c.VendorID}`
+      }))
+      .filter(opt => opt.name)
     : [];
 
   const calculateDaysInMonth = (sundayOption, year = new Date().getFullYear(), month = new Date().getMonth()) => {
@@ -163,14 +163,14 @@ const VendorCommercialForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     setFormData(prev => {
       const newData = { ...prev, [name]: value };
-      
+
       if (name === 'sunday_option') {
         newData.no_of_days_per_month = calculateDaysInMonth(value);
       }
-      
+
       // Cascading logic: reset children when parent changes
       if (name === 'vendor_name') {
         newData.vendor_company_name = '';
@@ -178,19 +178,19 @@ const VendorCommercialForm = () => {
       } else if (name === 'vendor_company_name') {
         newData.project = '';
       }
-      
+
       return newData;
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       // Prepare the data for submission
       // Convert numeric strings to actual numbers and "Yes/No" to 1/0
       const saveData = { ...formData };
-      
+
       // Numeric fields (Decimals and Integers)
       const numericFields = [
         'no_of_days_per_month', 'hours', 'fixed_rate', 'km_include_in_fix_rate',
@@ -200,7 +200,7 @@ const VendorCommercialForm = () => {
         'driver_charges', 'over_time_charges', 'holiday_working_charges',
         'additional_delivery_points_charges', 'per_kg_cost'
       ];
-      
+
       numericFields.forEach(field => {
         if (saveData[field] !== '' && saveData[field] !== null) {
           saveData[field] = parseFloat(saveData[field]);
@@ -208,11 +208,11 @@ const VendorCommercialForm = () => {
           saveData[field] = null;
         }
       });
-      
+
       // Boolean fields (tinyint in DB)
       saveData.da_applicable = formData.da_applicable === 'Yes' ? 1 : 0;
       saveData.handling_charges_applicable = formData.handling_charges_applicable === 'Yes' ? 1 : 0;
-      
+
       // Format Company and Project as "Name / ID" for database storage as requested
       if (saveData.vendor_company_name) {
         const company = vendors.find(c => c.VendorID.toString() === saveData.vendor_company_name.toString());
@@ -220,7 +220,7 @@ const VendorCommercialForm = () => {
           saveData.vendor_company_name = `${company.CompanyName} / ${company.VendorID}`;
         }
       }
-      
+
       if (saveData.project) {
         const proj = projects.find(p => p.ProjectID.toString() === saveData.project.toString());
         if (proj) {
@@ -229,23 +229,23 @@ const VendorCommercialForm = () => {
       }
 
       console.log('Final Payload to DB:', saveData);
-      
+
       let response;
       if (isEditing) {
         response = await vendorCommercialAPI.update(editId, saveData);
       } else {
         response = await vendorCommercialAPI.create(saveData);
       }
-      
+
       if (response.status === 201 || response.status === 200) {
         apiHelpers.showSuccess(isEditing ? 'Agreement updated successfully!' : 'Agreement saved successfully!');
-        
+
         // Reset state
         if (isEditing) {
           setIsEditing(false);
           setEditId(null);
         }
-        
+
         // Refresh the list after save
         try {
           const listResponse = await vendorCommercialAPI.getAll();
@@ -253,7 +253,7 @@ const VendorCommercialForm = () => {
         } catch (fetchErr) {
           console.error('Error refreshing list after save:', fetchErr);
         }
-        
+
         // Reset form for new entry or after edit
         if (!isEditing) {
           setFormData(prev => ({
@@ -316,24 +316,24 @@ const VendorCommercialForm = () => {
   const formatExcelDate = (dateVal) => {
     if (!dateVal) return null;
     if (dateVal instanceof Date) return dateVal.toISOString().split('T')[0];
-    
+
     // Excel serial date handling
     if (typeof dateVal === 'number' && dateVal > 25569) {
       const d = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
       return d.toISOString().split('T')[0];
     }
-    
+
     // String date handling
     const str = String(dateVal).trim();
     if (str.match(/^\d{4}-\d{2}-\d{2}/)) return str; // ALready YYYY-MM-DD
-    
+
     const parts = str.split(/[-/]/);
     if (parts.length === 3) {
       // Try to parse common formats like DD-MM-YYYY or MM-DD-YYYY
       let d = new Date(str);
       if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
     }
-    
+
     return str;
   };
 
@@ -399,9 +399,9 @@ const VendorCommercialForm = () => {
               const parts = resolvedCompanyId.split('/');
               resolvedCompanyId = parts[parts.length - 1].trim();
             }
-            
-            const foundC = vendors.find(c => 
-              c.VendorID.toString() === resolvedCompanyId.toString() || 
+
+            const foundC = vendors.find(c =>
+              c.VendorID.toString() === resolvedCompanyId.toString() ||
               (c.CompanyName && String(c.CompanyName).toLowerCase() === String(resolvedCompanyId).toLowerCase())
             );
             if (foundC) resolvedCompanyId = foundC.VendorID;
@@ -415,9 +415,9 @@ const VendorCommercialForm = () => {
               const parts = resolvedProjectId.split('/');
               resolvedProjectId = parts[parts.length - 1].trim();
             }
-            
-            const foundP = projects.find(p => 
-              p.ProjectID.toString() === resolvedProjectId.toString() || 
+
+            const foundP = projects.find(p =>
+              p.ProjectID.toString() === resolvedProjectId.toString() ||
               (p.ProjectName && String(p.ProjectName).toLowerCase() === String(resolvedProjectId).toLowerCase())
             );
             if (foundP) resolvedProjectId = foundP.ProjectID;
@@ -425,7 +425,7 @@ const VendorCommercialForm = () => {
 
           const payload = {
             vendor_name: getVal(['vendor_name', 'Vendor Name', 'Customer']),
-            vendor_company_name: resolvedCompanyId && vendors.length > 0 
+            vendor_company_name: resolvedCompanyId && vendors.length > 0
               ? `${vendors.find(c => c.VendorID.toString() === resolvedCompanyId.toString())?.CompanyName || ''} / ${resolvedCompanyId}`
               : getVal(['vendor_company_name', 'Company Name', 'Company', 'Company / ID']),
             project: resolvedProjectId && projects.length > 0
@@ -460,7 +460,7 @@ const VendorCommercialForm = () => {
             additional_delivery_points_charges: parseNumeric(getVal(['additional_delivery_points_charges', 'Additional Points Charges', 'Addl Points', 'Additional Delivery Points Charges'])),
             per_kg_cost: parseNumeric(getVal(['per_kg_cost', 'Per Kg Cost']))
           };
-          
+
           console.log(`Row ${i + 1} Parsed Payload:`, payload);
 
           await vendorCommercialAPI.create(payload);
@@ -476,7 +476,7 @@ const VendorCommercialForm = () => {
       // Refresh list
       const listResponse = await vendorCommercialAPI.getAll();
       setCommercials(listResponse.data || []);
-      
+
     } catch (error) {
       console.error('Excel Import Error:', error);
       apiHelpers.showError(error, 'Failed to import Excel file. Check format and try again.');
@@ -489,7 +489,7 @@ const VendorCommercialForm = () => {
   const handleEdit = (item) => {
     setIsEditing(true);
     setEditId(item.id);
-    
+
     // Map database values back to form structure
     const editData = { ...item };
 
@@ -498,23 +498,23 @@ const VendorCommercialForm = () => {
       const parts = editData.vendor_company_name.split(' / ');
       editData.vendor_company_name = parts[parts.length - 1].trim();
     }
-    
+
     if (editData.project && String(editData.project).includes(' / ')) {
       const parts = editData.project.split(' / ');
       editData.project = parts[parts.length - 1].trim();
     }
-    
+
     // Convert numbers back to strings for form inputs
     Object.keys(editData).forEach(key => {
       if (editData[key] === null) editData[key] = '';
     });
-    
+
     // Convert 1/0 back to Yes/No
     editData.da_applicable = item.da_applicable === 1 ? 'Yes' : 'No';
     editData.handling_charges_applicable = item.handling_charges_applicable === 1 ? 'Yes' : 'No';
-    
+
     setFormData(editData);
-    
+
     // Scroll to top of form
     window.scrollTo({ top: 0, behavior: 'smooth' });
     apiHelpers.showSuccess('Form loaded for editing');
@@ -540,7 +540,7 @@ const VendorCommercialForm = () => {
 
   const handleDelete = async (item) => {
     if (!window.confirm('Are you sure you want to delete this commercial agreement?')) return;
-    
+
     try {
       await vendorCommercialAPI.delete(item.id);
       apiHelpers.showSuccess('Commercial agreement deleted.');
@@ -564,14 +564,18 @@ const VendorCommercialForm = () => {
 
   const tableColumns = [
     { key: 'vendor_name', label: 'Vendor Name', sortable: true },
-    { key: 'vendor_company_name', label: 'Company / ID', sortable: true, render: (val) => {
-      const company = vendors.find(c => c.VendorID.toString() === val?.toString());
-      return company ? `${company.CompanyName} / ${val}` : val;
-    }},
-    { key: 'project', label: 'Project / ID', sortable: true, render: (val) => {
-      const proj = projects.find(p => p.ProjectID.toString() === val?.toString());
-      return proj ? `${proj.ProjectName} / ${val}` : val;
-    }},
+    {
+      key: 'vendor_company_name', label: 'Company / ID', sortable: true, render: (val) => {
+        const company = vendors.find(c => c.VendorID.toString() === val?.toString());
+        return company ? `${company.CompanyName} / ${val}` : val;
+      }
+    },
+    {
+      key: 'project', label: 'Project / ID', sortable: true, render: (val) => {
+        const proj = projects.find(p => p.ProjectID.toString() === val?.toString());
+        return proj ? `${proj.ProjectName} / ${val}` : val;
+      }
+    },
     { key: 'state', label: 'State', sortable: true },
     { key: 'type_of_vehicle_placement', label: 'Placement', sortable: true },
     { key: 'type_of_vehicle', label: 'Vehicle', sortable: true },
@@ -607,238 +611,238 @@ const VendorCommercialForm = () => {
       <div className="form-header">
         <h2>Vendor Commercial</h2>
       </div>
-      
+
       <div className="customer-form">
         <form onSubmit={handleSubmit} className="form-sections">
           <div className="form-section">
             <h4>Basic Details</h4>
             <div className="form-grid">
-            <div className="form-group">
-              <label>Vendor Name</label>
-              <SearchableDropdown
-                name="vendor_name"
-                value={formData.vendor_name}
-                onChange={handleChange}
-                options={vendorNameOptions}
-                labelKey="displayText"
-                valueKey="name"
-                placeholder="Search/Select Vendor Name"
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>Vendor Company Name</label>
-              <SearchableDropdown
-                name="vendor_company_name"
-                value={formData.vendor_company_name}
-                onChange={handleChange}
-                options={companyNameOptions}
-                labelKey="displayText"
-                valueKey="id"
-                placeholder="Search/Select Company Name"
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>Project</label>
-              <SearchableDropdown
-                name="project"
-                value={formData.project}
-                onChange={handleChange}
-                options={projectOptions}
-                labelKey="displayText"
-                valueKey="id"
-                placeholder="Search/Select Project"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>State</label>
-              <SearchableDropdown
-                name="state"
-                value={formData.state}
-                onChange={handleChange}
-                options={stateOptions}
-                placeholder="Search/Select State"
-              />
-            </div>
-          </div>
-          
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Type of Vehicle Placement</label>
-              <select name="type_of_vehicle_placement" value={formData.type_of_vehicle_placement} onChange={handleChange} className="form-input">
-                <option value="">Select Placement</option>
-                {placementOptions.map(option => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label>Type of Vehicle</label>
-              <select name="type_of_vehicle" value={formData.type_of_vehicle} onChange={handleChange} className="form-input">
-                <option value="">Select Vehicle</option>
-                {vehicleTypeOptions.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label>Type of Body</label>
-              <select name="type_of_body" value={formData.type_of_body} onChange={handleChange} className="form-input">
-                <option value="">Select Body</option>
-                {bodyTypeOptions.map(body => (
-                  <option key={body} value={body}>{body}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h4>Rates & Charges</h4>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Sunday Option</label>
-              <select name="sunday_option" value={formData.sunday_option || 'Sunday Including'} onChange={handleChange} className="form-input">
-                <option value="Sunday Including">Sunday Including (All days)</option>
-                <option value="Sunday Excluding">Sunday Excluding (Excl. Sundays)</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>No. of Days / Month</label>
-              <input type="number" name="no_of_days_per_month" value={formData.no_of_days_per_month} onChange={handleChange} className="form-input" placeholder="Calculated automatically" />
-            </div>
-            <div className="form-group">
-              <label>Hours</label>
-              <input type="number" name="hours" value={formData.hours} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Fixed Rate</label>
-              <input type="number" step="0.01" name="fixed_rate" value={formData.fixed_rate} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>KM Include in Fix Rate</label>
-              <input type="number" step="0.01" name="km_include_in_fix_rate" value={formData.km_include_in_fix_rate} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Additional Rate per KM</label>
-              <input type="number" step="0.01" name="additional_rate_per_km" value={formData.additional_rate_per_km} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Toll</label>
-              <input type="number" step="0.01" name="toll" value={formData.toll} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Parking</label>
-              <input type="number" step="0.01" name="parking" value={formData.parking} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Fixed Charges for Loading / Unloading</label>
-              <input type="number" step="0.01" name="fixed_charges_loading_unloading" value={formData.fixed_charges_loading_unloading} onChange={handleChange} className="form-input" />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section">
-          <h4>SBS Charges (RIL)</h4>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>DA Applicable</label>
-              <select name="da_applicable" value={formData.da_applicable} onChange={handleChange} className="form-input">
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </div>
-            {formData.da_applicable === 'Yes' && (
               <div className="form-group">
-                <label>DA Charges</label>
-                <input type="number" step="0.01" name="da_charges" value={formData.da_charges} onChange={handleChange} className="form-input" />
+                <label>Vendor Name</label>
+                <SearchableDropdown
+                  name="vendor_name"
+                  value={formData.vendor_name}
+                  onChange={handleChange}
+                  options={vendorNameOptions}
+                  labelKey="displayText"
+                  valueKey="name"
+                  placeholder="Search/Select Vendor Name"
+                />
               </div>
-            )}
-            <div className="form-group">
-              <label>No Entry Pass Charges</label>
-              <input type="number" step="0.01" name="no_entry_pass_charges" value={formData.no_entry_pass_charges} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>{'(>551) Lts'}</label>
-              <input type="number" step="0.01" name="above_551_lts" value={formData.above_551_lts} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>{'(351–550) Lts'}</label>
-              <input type="number" step="0.01" name="between_351_550_lts" value={formData.between_351_550_lts} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>If Description Only SBS</label>
-              <input type="text" name="description_only_sbs" value={formData.description_only_sbs} onChange={handleChange} className="form-input" />
-            </div>
-          </div>
-        </div>
 
-        <div className="form-section">
-          <h4>Other Charges</h4>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Handling Charges Applicable</label>
-              <select name="handling_charges_applicable" value={formData.handling_charges_applicable} onChange={handleChange} className="form-input">
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </div>
-            {formData.handling_charges_applicable === 'Yes' && (
               <div className="form-group">
-                <label>Handling Charges</label>
-                <input type="number" step="0.01" name="handling_charges" value={formData.handling_charges} onChange={handleChange} className="form-input" />
+                <label>Vendor Company Name</label>
+                <SearchableDropdown
+                  name="vendor_company_name"
+                  value={formData.vendor_company_name}
+                  onChange={handleChange}
+                  options={companyNameOptions}
+                  labelKey="displayText"
+                  valueKey="id"
+                  placeholder="Search/Select Company Name"
+                />
               </div>
-            )}
-            <div className="form-group">
-              <label>State Tax Charges</label>
-              <input type="number" step="0.01" name="state_tax_charges" value={formData.state_tax_charges} onChange={handleChange} className="form-input" />
+
+              <div className="form-group">
+                <label>Project</label>
+                <SearchableDropdown
+                  name="project"
+                  value={formData.project}
+                  onChange={handleChange}
+                  options={projectOptions}
+                  labelKey="displayText"
+                  valueKey="id"
+                  placeholder="Search/Select Project"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>State</label>
+                <SearchableDropdown
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  options={stateOptions}
+                  placeholder="Search/Select State"
+                />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Floor Delivery Charges</label>
-              <input type="number" step="0.01" name="floor_delivery_charges" value={formData.floor_delivery_charges} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Driver Charges</label>
-              <input type="number" step="0.01" name="driver_charges" value={formData.driver_charges} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Over Time Charges</label>
-              <input type="number" step="0.01" name="over_time_charges" value={formData.over_time_charges} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Holiday Working Charges</label>
-              <input type="number" step="0.01" name="holiday_working_charges" value={formData.holiday_working_charges} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Additional Delivery Points Charges</label>
-              <input type="number" step="0.01" name="additional_delivery_points_charges" value={formData.additional_delivery_points_charges} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Per KG Cost</label>
-              <input type="number" step="0.01" name="per_kg_cost" value={formData.per_kg_cost} onChange={handleChange} className="form-input" />
+
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Type of Vehicle Placement</label>
+                <select name="type_of_vehicle_placement" value={formData.type_of_vehicle_placement} onChange={handleChange} className="form-input">
+                  <option value="">Select Placement</option>
+                  {placementOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Type of Vehicle</label>
+                <select name="type_of_vehicle" value={formData.type_of_vehicle} onChange={handleChange} className="form-input">
+                  <option value="">Select Vehicle</option>
+                  {vehicleTypeOptions.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Type of Body</label>
+                <select name="type_of_body" value={formData.type_of_body} onChange={handleChange} className="form-input">
+                  <option value="">Select Body</option>
+                  {bodyTypeOptions.map(body => (
+                    <option key={body} value={body}>{body}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="form-actions">
-          {isEditing && (
-            <button 
-              type="button" 
-              className="btn btn-secondary" 
-              onClick={handleCancelEdit}
-              style={{ marginRight: '10px' }}
-            >
-              Cancel Edit
+          <div className="form-section">
+            <h4>Rates & Charges</h4>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Sunday Option</label>
+                <select name="sunday_option" value={formData.sunday_option || 'Sunday Including'} onChange={handleChange} className="form-input">
+                  <option value="Sunday Including">Sunday Including (All days)</option>
+                  <option value="Sunday Excluding">Sunday Excluding (Excl. Sundays)</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>No. of Days / Month</label>
+                <input type="number" name="no_of_days_per_month" value={formData.no_of_days_per_month} onChange={handleChange} className="form-input" placeholder="Calculated automatically" />
+              </div>
+              <div className="form-group">
+                <label>Hours</label>
+                <input type="number" name="hours" value={formData.hours} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Fixed Rate</label>
+                <input type="number" step="0.01" name="fixed_rate" value={formData.fixed_rate} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>KM Include in Fix Rate</label>
+                <input type="number" step="0.01" name="km_include_in_fix_rate" value={formData.km_include_in_fix_rate} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Additional Rate per KM</label>
+                <input type="number" step="0.01" name="additional_rate_per_km" value={formData.additional_rate_per_km} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Toll</label>
+                <input type="number" step="0.01" name="toll" value={formData.toll} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Parking</label>
+                <input type="number" step="0.01" name="parking" value={formData.parking} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Fixed Charges for Loading / Unloading</label>
+                <input type="number" step="0.01" name="fixed_charges_loading_unloading" value={formData.fixed_charges_loading_unloading} onChange={handleChange} className="form-input" />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h4>SBS Charges (RIL)</h4>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>DA Applicable</label>
+                <select name="da_applicable" value={formData.da_applicable} onChange={handleChange} className="form-input">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              {formData.da_applicable === 'Yes' && (
+                <div className="form-group">
+                  <label>DA Charges</label>
+                  <input type="number" step="0.01" name="da_charges" value={formData.da_charges} onChange={handleChange} className="form-input" />
+                </div>
+              )}
+              <div className="form-group">
+                <label>No Entry Pass Charges</label>
+                <input type="number" step="0.01" name="no_entry_pass_charges" value={formData.no_entry_pass_charges} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>{'(>551) Lts'}</label>
+                <input type="number" step="0.01" name="above_551_lts" value={formData.above_551_lts} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>{'(351–550) Lts'}</label>
+                <input type="number" step="0.01" name="between_351_550_lts" value={formData.between_351_550_lts} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>If Description Only SBS</label>
+                <input type="text" name="description_only_sbs" value={formData.description_only_sbs} onChange={handleChange} className="form-input" />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h4>Other Charges</h4>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Handling Charges Applicable</label>
+                <select name="handling_charges_applicable" value={formData.handling_charges_applicable} onChange={handleChange} className="form-input">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              {formData.handling_charges_applicable === 'Yes' && (
+                <div className="form-group">
+                  <label>Handling Charges</label>
+                  <input type="number" step="0.01" name="handling_charges" value={formData.handling_charges} onChange={handleChange} className="form-input" />
+                </div>
+              )}
+              <div className="form-group">
+                <label>State Tax Charges</label>
+                <input type="number" step="0.01" name="state_tax_charges" value={formData.state_tax_charges} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Floor Delivery Charges</label>
+                <input type="number" step="0.01" name="floor_delivery_charges" value={formData.floor_delivery_charges} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Driver Charges</label>
+                <input type="number" step="0.01" name="driver_charges" value={formData.driver_charges} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Over Time Charges</label>
+                <input type="number" step="0.01" name="over_time_charges" value={formData.over_time_charges} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Holiday Working Charges</label>
+                <input type="number" step="0.01" name="holiday_working_charges" value={formData.holiday_working_charges} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Additional Delivery Points Charges</label>
+                <input type="number" step="0.01" name="additional_delivery_points_charges" value={formData.additional_delivery_points_charges} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Per KG Cost</label>
+                <input type="number" step="0.01" name="per_kg_cost" value={formData.per_kg_cost} onChange={handleChange} className="form-input" />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-actions">
+            {isEditing && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleCancelEdit}
+                style={{ marginRight: '10px' }}
+              >
+                Cancel Edit
+              </button>
+            )}
+            <button type="submit" className="btn btn-primary submit-btn">
+              {isEditing ? 'Update Commercial' : 'Save Commercial'}
             </button>
-          )}
-          <button type="submit" className="btn btn-primary submit-btn">
-            {isEditing ? 'Update Commercial' : 'Save Commercial'}
-          </button>
-        </div>
+          </div>
         </form>
       </div>
 

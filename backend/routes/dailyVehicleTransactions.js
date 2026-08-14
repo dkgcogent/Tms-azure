@@ -971,6 +971,28 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         }
       }
 
+      // Auto-resolve CustomerID if missing but CompanyName / CustomerName provided
+      if (!CustomerID && (CustomerName || CompanyName)) {
+        const targetName = (CustomerName || CompanyName).trim();
+        const [cMatch] = await pool.query(
+          'SELECT CustomerID FROM customer WHERE MasterCustomerName = ? OR Name = ? OR CustomerCode = ? LIMIT 1',
+          [targetName, targetName, targetName]
+        );
+        if (cMatch.length > 0) CustomerID = cMatch[0].CustomerID;
+      }
+
+      // Auto-resolve ProjectID if missing but ProjectName provided
+      if (!ProjectID && ProjectName) {
+        const [pMatch] = await pool.query(
+          'SELECT ProjectID, CustomerID FROM project WHERE ProjectName = ? AND (CustomerID = ? OR ? IS NULL) LIMIT 1',
+          [ProjectName.trim(), CustomerID || null, CustomerID || null]
+        );
+        if (pMatch.length > 0) {
+          ProjectID = pMatch[0].ProjectID;
+          if (!CustomerID) CustomerID = pMatch[0].CustomerID;
+        }
+      }
+
       // Check if customer exists ONLY if CustomerID is provided
       if (CustomerID) {
         const [customerCheck] = await pool.query('SELECT CustomerID FROM customer WHERE CustomerID = ?', [CustomerID]);
@@ -1009,6 +1031,42 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         } catch (e) {
           return res.status(400).json({ error: 'Invalid VehicleIDs format' });
         }
+      }
+
+      // Auto-resolve VendorID if missing
+      let resolvedVendorID = VendorID || null;
+      if (!resolvedVendorID) {
+        if (primaryVehicleId) {
+          const [vMatch] = await pool.query('SELECT VendorID FROM vehicle WHERE VehicleID = ?', [primaryVehicleId]);
+          if (vMatch.length > 0 && vMatch[0].VendorID) resolvedVendorID = vMatch[0].VendorID;
+        }
+        if (!resolvedVendorID && VendorName) {
+          const [vMatch] = await pool.query(
+            'SELECT VendorID FROM vendor WHERE VendorName = ? OR CompanyName = ? LIMIT 1',
+            [VendorName.trim(), VendorName.trim()]
+          );
+          if (vMatch.length > 0) resolvedVendorID = vMatch[0].VendorID;
+        }
+      }
+
+      // Auto-resolve customer_commercial_id & vendor_commercial_id
+      let customer_commercial_id = req.body.customer_commercial_id || null;
+      let vendor_commercial_id = req.body.vendor_commercial_id || null;
+
+      if (!customer_commercial_id && CustomerID && ProjectID) {
+        const [ccMatch] = await pool.query(
+          'SELECT id FROM customer_commercial WHERE customer_id = ? AND project_id = ? ORDER BY id DESC LIMIT 1',
+          [CustomerID, ProjectID]
+        );
+        if (ccMatch.length > 0) customer_commercial_id = ccMatch[0].id;
+      }
+
+      if (!vendor_commercial_id && resolvedVendorID && ProjectID) {
+        const [vcMatch] = await pool.query(
+          'SELECT id FROM vendor_commercial WHERE vendor_id = ? AND project_id = ? ORDER BY id DESC LIMIT 1',
+          [resolvedVendorID, ProjectID]
+        );
+        if (vcMatch.length > 0) vendor_commercial_id = vcMatch[0].id;
       }
 
       // Process DriverIDs (always expect JSON string from frontend)
@@ -1055,8 +1113,6 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         }
       }
 
-
-
       // Route to correct table based on TripType and store multiple vehicles/drivers in single row
       let insertQuery, values;
 
@@ -1065,6 +1121,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         insertQuery = `
           INSERT INTO fixed_transactions (
             TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, Shift, VehicleIDs, DriverIDs, VendorID, CustomerID, customer, ProjectID, ProjectName, LocationID,
+            customer_commercial_id, vendor_commercial_id,
             ReplacementDriverID, ReplacementDriverName, ReplacementDriverNo,
             ArrivalTimeAtHub, InTimeByCust, OutTimeFromHub, ReturnReportingTime, OutTimeFrom,
             VehicleReportingAtHub, VehicleEntryInHub, VehicleOutFromHubForDelivery, VehicleReturnAtHub, VehicleEnteredAtHubReturn, VehicleOutFromHubFinal,
@@ -1075,7 +1132,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
             CompanyName, GSTNo, Location, CustomerSite,
             DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
             OpeningKMImage, ClosingKMImage
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         // Calculate TotalFreight if freight values are provided
@@ -1084,8 +1141,10 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         const totalFreight = vFreightFix + vFreightVariable;
 
         values = [
-          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', Shift || null, JSON.stringify(vehicleIds), JSON.stringify(driverIds), VendorID || null,
-          CustomerID, CustomerName || null, ProjectID || null, ProjectName || null, null, ReplacementDriverID || null, ReplacementDriverName || null,
+          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', Shift || null, JSON.stringify(vehicleIds), JSON.stringify(driverIds), resolvedVendorID,
+          CustomerID, CustomerName || null, ProjectID || null, ProjectName || null, null,
+          customer_commercial_id, vendor_commercial_id,
+          ReplacementDriverID || null, ReplacementDriverName || null,
           ReplacementDriverNo || null, ArrivalTimeAtHub || null, InTimeByCust || null, OutTimeFromHub || null,
           ReturnReportingTime || null, OutTimeFrom || null,
           VehicleReportingAtHub || null, VehicleEntryInHub || null, VehicleOutFromHubForDelivery || null,
@@ -1131,13 +1190,13 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         const fixKmVal = parseFloat(FixKm) || 0;
         const totalKmVal = (parseFloat(ClosingKM) || 0) - (parseFloat(OpeningKM) || 0);
         const variableKmVal = Math.max(0, totalKmVal - fixKmVal);
-        
+
         const tollExp = parseFloat(TollExpenses) || 0;
         const parkingChg = parseFloat(ParkingCharges) || 0;
         const loadingChg = parseFloat(LoadingCharges) || 0;
         const unloadingChg = parseFloat(UnloadingCharges) || 0;
         const otherChg = parseFloat(OtherCharges) || 0;
-        
+
         const totalFreight = vFreightFix + (variableKmVal * vFreightVariable) + tollExp + parkingChg + loadingChg + unloadingChg + otherChg;
 
 

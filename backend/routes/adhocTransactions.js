@@ -10,13 +10,19 @@ router.get('/', async (req, res) => {
       SELECT
         at.*,
         c.Name as CustomerName,
-        p.ProjectName
+        p.ProjectName,
+        cc.fixed_rate as customer_commercial_fixed_rate,
+        cc.additional_rate_per_km as customer_commercial_extra_km_rate,
+        vc.fixed_rate as vendor_commercial_fixed_rate,
+        vc.additional_rate_per_km as vendor_commercial_extra_km_rate
       FROM adhoc_transactions at
       LEFT JOIN customer c ON at.CustomerID = c.CustomerID
       LEFT JOIN project p ON at.ProjectID = p.ProjectID
+      LEFT JOIN customer_commercial cc ON at.customer_commercial_id = cc.id
+      LEFT JOIN vendor_commercial vc ON at.vendor_commercial_id = vc.id
       ORDER BY at.TransactionDate DESC, at.TransactionID DESC
     `;
-    
+
     const [rows] = await pool.query(query);
 
     // Format date fields for all transactions to avoid timezone issues
@@ -66,10 +72,16 @@ router.get('/:id', async (req, res) => {
       SELECT
         at.*,
         c.Name as CustomerName,
-        p.ProjectName
+        p.ProjectName,
+        cc.fixed_rate as customer_commercial_fixed_rate,
+        cc.additional_rate_per_km as customer_commercial_extra_km_rate,
+        vc.fixed_rate as vendor_commercial_fixed_rate,
+        vc.additional_rate_per_km as vendor_commercial_extra_km_rate
       FROM adhoc_transactions at
       LEFT JOIN customer c ON at.CustomerID = c.CustomerID
       LEFT JOIN project p ON at.ProjectID = p.ProjectID
+      LEFT JOIN customer_commercial cc ON at.customer_commercial_id = cc.id
+      LEFT JOIN vendor_commercial vc ON at.vendor_commercial_id = vc.id
       WHERE at.TransactionID = ?
     `;
 

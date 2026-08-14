@@ -66,9 +66,9 @@ module.exports = (pool) => {
       ];
 
       const [result] = await pool.query(query, params);
-      
+
       console.log('✅ Vendor Commercial Agreement saved successfully, ID:', result.insertId);
-      
+
       res.status(201).json({
         success: true,
         message: 'Vendor Commercial agreement saved successfully',
@@ -76,9 +76,9 @@ module.exports = (pool) => {
       });
     } catch (error) {
       console.error('❌ Error saving vendor commercial agreement:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Internal server error',
-        message: error.message 
+        message: error.message
       });
     }
   });
@@ -154,11 +154,11 @@ module.exports = (pool) => {
       ];
 
       const [result] = await pool.query(query, params);
-      
+
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Vendor Commercial agreement not found' });
       }
-      
+
       console.log('✅ Vendor Commercial Agreement updated successfully, ID:', id);
       res.json({ success: true, message: 'Vendor Commercial agreement updated successfully' });
     } catch (error) {
