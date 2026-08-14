@@ -188,7 +188,7 @@ const FixedTransactionForm = () => {
     setMasterData(prev => ({ ...prev, [name]: value }));
 
     if (name === 'Customer') {
-      const selectedCustomer = customers.find(c => c.label === value);
+      const selectedCustomer = customers.find(c => c.CustomerID.toString() === value.toString());
       if (selectedCustomer) {
         setIds(prev => ({ ...prev, CustomerID: selectedCustomer.CustomerID }));
         fetchProjects(selectedCustomer.CustomerID);
@@ -196,14 +196,14 @@ const FixedTransactionForm = () => {
     }
 
     if (name === 'Project') {
-      const selectedProject = projects.find(p => p.label === value);
+      const selectedProject = projects.find(p => p.ProjectID.toString() === value.toString());
       if (selectedProject) {
         setIds(prev => ({ ...prev, ProjectID: selectedProject.ProjectID }));
       }
     }
 
     if (name === 'VendorName') {
-      const selectedVendor = vendors.find(v => v.VendorName === value);
+      const selectedVendor = vendors.find(v => v.VendorID.toString() === value.toString());
       if (selectedVendor) {
         setIds(prev => ({ ...prev, VendorID: selectedVendor.VendorID }));
         setTransactionData(prev => ({ ...prev, VendorCode: selectedVendor.VendorCode }));
