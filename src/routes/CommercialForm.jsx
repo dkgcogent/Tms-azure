@@ -209,36 +209,15 @@ const CommercialForm = () => {
       saveData.handling_charges_applicable = formData.handling_charges_applicable === 'Yes' ? 1 : 0;
       
       // Format Company and Project as "Name / ID" for database storage as requested
-      // Extract IDs for the new database structure
-      let extractedCustomerId = null;
-      let extractedProjectId = null;
-      
-      if (typeof saveData.company_name === 'string' && saveData.company_name.includes('/')) {
-        const parts = saveData.company_name.split('/');
-        extractedCustomerId = parts[parts.length - 1].trim();
-      } else if (saveData.company_name) {
-        extractedCustomerId = saveData.company_name;
-      }
-      
-      if (typeof saveData.project === 'string' && saveData.project.includes('/')) {
-        const parts = saveData.project.split('/');
-        extractedProjectId = parts[parts.length - 1].trim();
-      } else if (saveData.project) {
-        extractedProjectId = saveData.project;
-      }
-      
-      saveData.customer_id = extractedCustomerId;
-      saveData.project_id = extractedProjectId;
-
-      if (extractedCustomerId) {
-        const company = customers.find(c => c.CustomerID.toString() === extractedCustomerId.toString());
+      if (saveData.company_name) {
+        const company = customers.find(c => c.CustomerID.toString() === saveData.company_name.toString());
         if (company) {
           saveData.company_name = `${company.Name} / ${company.CustomerID}`;
         }
       }
       
-      if (extractedProjectId) {
-        const proj = projects.find(p => p.ProjectID.toString() === extractedProjectId.toString());
+      if (saveData.project) {
+        const proj = projects.find(p => p.ProjectID.toString() === saveData.project.toString());
         if (proj) {
           saveData.project = `${proj.ProjectName} / ${proj.ProjectID}`;
         }

@@ -214,20 +214,8 @@ const VendorCommercialForm = () => {
       saveData.handling_charges_applicable = formData.handling_charges_applicable === 'Yes' ? 1 : 0;
       
       // Format Company and Project as "Name / ID" for database storage as requested
-      // Extract vendor_id for new database structure
-      let extractedVendorId = null;
-      
-      if (typeof saveData.vendor_company_name === 'string' && saveData.vendor_company_name.includes('/')) {
-        const parts = saveData.vendor_company_name.split('/');
-        extractedVendorId = parts[parts.length - 1].trim();
-      } else if (saveData.vendor_company_name) {
-        extractedVendorId = saveData.vendor_company_name;
-      }
-      
-      saveData.vendor_id = extractedVendorId;
-
-      if (extractedVendorId) {
-        const company = vendors.find(c => c.VendorID.toString() === extractedVendorId.toString());
+      if (saveData.vendor_company_name) {
+        const company = vendors.find(c => c.VendorID.toString() === saveData.vendor_company_name.toString());
         if (company) {
           saveData.vendor_company_name = `${company.CompanyName} / ${company.VendorID}`;
         }
