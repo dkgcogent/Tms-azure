@@ -758,10 +758,10 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       const TripType = transaction.TripType || 'Fixed';
 
       // Clean IDs
-      const CustomerID = transaction.CustomerID && transaction.CustomerID !== '' && !isNaN(transaction.CustomerID) ? parseInt(transaction.CustomerID) : null;
-      const ProjectID = transaction.ProjectID && transaction.ProjectID !== '' && !isNaN(transaction.ProjectID) ? parseInt(transaction.ProjectID) : null;
-      const VendorID = transaction.VendorID && transaction.VendorID !== '' && !isNaN(transaction.VendorID) ? parseInt(transaction.VendorID) : null;
-      const ReplacementDriverID = transaction.ReplacementDriverID && transaction.ReplacementDriverID !== '' && !isNaN(transaction.ReplacementDriverID) ? parseInt(transaction.ReplacementDriverID) : null;
+      let CustomerID = transaction.CustomerID && transaction.CustomerID !== '' && !isNaN(transaction.CustomerID) ? parseInt(transaction.CustomerID) : null;
+      let ProjectID = transaction.ProjectID && transaction.ProjectID !== '' && !isNaN(transaction.ProjectID) ? parseInt(transaction.ProjectID) : null;
+      let VendorID = transaction.VendorID && transaction.VendorID !== '' && !isNaN(transaction.VendorID) ? parseInt(transaction.VendorID) : null;
+      let ReplacementDriverID = transaction.ReplacementDriverID && transaction.ReplacementDriverID !== '' && !isNaN(transaction.ReplacementDriverID) ? parseInt(transaction.ReplacementDriverID) : null;
 
       // Handle JSON fields for Fixed type
       let VehicleIDs = transaction.VehicleIDs;

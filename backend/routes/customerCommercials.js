@@ -8,12 +8,26 @@ module.exports = (pool) => {
     return val;
   };
 
+  // Helper to extract ID from string like "Name / 5"
+  const extractId = (str) => {
+    if (!str || typeof str !== 'string') return null;
+    const parts = str.split('/');
+    if (parts.length > 1) {
+      const id = parseInt(parts[parts.length - 1].trim(), 10);
+      return isNaN(id) ? null : id;
+    }
+    return null;
+  };
+
   // Create a new customer commercial agreement
   router.post('/', async (req, res) => {
     const data = req.body;
     console.log('🚀 POST /api/customer-commercials - Received payload:', data);
 
     try {
+      const customer_id = extractId(data.master_customer);
+      const project_id = extractId(data.project);
+
       const query = `
         INSERT INTO customer_commercial (
           master_customer, company_name, project, state, 
@@ -27,8 +41,8 @@ module.exports = (pool) => {
           state_tax_charges, floor_delivery_charges, 
           driver_charges, over_time_charges, holiday_working_charges, 
           additional_delivery_points_charges, per_kg_cost, 
-          created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+          created_at, updated_at, customer_id, project_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)
       `;
 
       const params = [
@@ -61,7 +75,9 @@ module.exports = (pool) => {
         sanitizeValue(data.over_time_charges),
         sanitizeValue(data.holiday_working_charges),
         sanitizeValue(data.additional_delivery_points_charges),
-        sanitizeValue(data.per_kg_cost)
+        sanitizeValue(data.per_kg_cost),
+        customer_id,
+        project_id
       ];
 
       const [result] = await pool.query(query, params);
@@ -100,6 +116,9 @@ module.exports = (pool) => {
     console.log(`🚀 PUT /api/customer-commercials/${id} - Received payload:`, data);
 
     try {
+      const customer_id = extractId(data.master_customer);
+      const project_id = extractId(data.project);
+
       const query = `
         UPDATE customer_commercial SET
           master_customer = ?, company_name = ?, project = ?, state = ?, 
@@ -113,7 +132,7 @@ module.exports = (pool) => {
           state_tax_charges = ?, floor_delivery_charges = ?, 
           driver_charges = ?, over_time_charges = ?, holiday_working_charges = ?, 
           additional_delivery_points_charges = ?, per_kg_cost = ?, 
-          updated_at = NOW()
+          updated_at = NOW(), customer_id = ?, project_id = ?
         WHERE id = ?
       `;
 
@@ -148,6 +167,8 @@ module.exports = (pool) => {
         sanitizeValue(data.holiday_working_charges),
         sanitizeValue(data.additional_delivery_points_charges),
         sanitizeValue(data.per_kg_cost),
+        customer_id,
+        project_id,
         id
       ];
 

@@ -395,9 +395,9 @@ const ProjectForm = () => {
       newErrors.CustomerID = 'Customer selection is required';
     }
 
-    // if (!projectData.LocationID) {
-    //   newErrors.LocationID = 'Location is required';
-    // }
+    if (!projectData.LocationID || (Array.isArray(projectData.LocationID) && projectData.LocationID.length === 0)) {
+      newErrors.LocationID = 'Location is required';
+    }
 
     if (!projectData.ProjectValue.trim()) {
       newErrors.ProjectValue = 'Project value is required';
@@ -969,7 +969,7 @@ const ProjectForm = () => {
             <div className="form-section">
               <h4>📍 Location & Details</h4>
               <div className="form-grid">
-                {renderFormField('Location', 'LocationID', 'select', {}, false)}
+                {renderFormField('Location', 'LocationID', 'select', {}, true)}
                 {renderFormField('Project Description', 'ProjectDescription', 'textarea', { placeholder: 'Enter project description' })}
               </div>
             </div>

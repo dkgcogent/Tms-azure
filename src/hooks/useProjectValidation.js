@@ -6,6 +6,7 @@ export const useProjectValidation = () => {
 
     !projectData.ProjectName?.trim() && (newErrors.ProjectName = 'Project name is required');
     !projectData.CustomerID && (newErrors.CustomerID = 'Customer selection is required');
+    (!projectData.LocationID || (Array.isArray(projectData.LocationID) && projectData.LocationID.length === 0)) && (newErrors.LocationID = 'Location selection is required');
     !projectData.ProjectValue?.trim() ? (newErrors.ProjectValue = 'Project value is required') : (isNaN(projectData.ProjectValue) || parseFloat(projectData.ProjectValue) <= 0) && (newErrors.ProjectValue = 'Project value must be a positive number');
     !projectData.StartDate && (newErrors.StartDate = 'Project start date is required');
     !projectData.EndDate && (newErrors.EndDate = 'Project end date is required');
@@ -53,7 +54,7 @@ export const useProjectValidation = () => {
       const errorFields = [];
 
       // Define field priority order (top to bottom)
-      const fieldOrder = ['ProjectName', 'CustomerID', 'ProjectValue', 'StartDate', 'EndDate', 'Status'];
+      const fieldOrder = ['ProjectName', 'CustomerID', 'LocationID', 'ProjectValue', 'StartDate', 'EndDate', 'Status'];
 
       if (!formData.ProjectName?.trim()) {
         errors.ProjectName = 'Project name is required';
@@ -63,6 +64,11 @@ export const useProjectValidation = () => {
       if (!formData.CustomerID) {
         errors.CustomerID = 'Customer selection is required';
         errorFields.push('CustomerID');
+      }
+
+      if (!formData.LocationID || (Array.isArray(formData.LocationID) && formData.LocationID.length === 0)) {
+        errors.LocationID = 'Location selection is required';
+        errorFields.push('LocationID');
       }
 
       if (!formData.ProjectValue?.trim()) {

@@ -9,7 +9,7 @@ const ProjectDetailsSection = ({ projectData, handleInputChange, handleCustomerC
     <FormSection title="1. Project Details">
       {field('Customer', 'CustomerID', 'select', {}, true)}
       {field('Project Name', 'ProjectName', 'text', { placeholder: 'Enter project name' }, true)}
-      {field('Location', 'LocationID', 'select', {}, false)}
+      {field('Location', 'LocationID', 'select', {}, true)}
       {field('Project Code', 'ProjectCode', 'text', { placeholder: 'Auto-generated', readOnly: true })}
       {field('Project Description', 'ProjectDescription', 'textarea', { placeholder: 'Enter project description' })}
       {field('Project Value (₹)', 'ProjectValue', 'number', { placeholder: 'Enter project value' }, true)}

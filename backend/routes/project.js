@@ -221,9 +221,9 @@ module.exports = (pool) => {
     console.log('📁 PROJECT CREATE DEBUG - Body received:', req.body);
 
     // Validate required fields
-    if (!ProjectName || !CustomerID) {
+    if (!ProjectName || !CustomerID || !Location) {
       return res.status(400).json({
-        error: 'ProjectName and CustomerID are required fields'
+        error: 'ProjectName, CustomerID, and Location are required fields'
       });
     }
 
