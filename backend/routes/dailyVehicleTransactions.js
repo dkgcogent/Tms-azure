@@ -1163,7 +1163,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         // Insert into adhoc_transactions table with multiple vehicles and drivers support
         insertQuery = `
           INSERT INTO adhoc_transactions (
-            TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, CustomerID, ProjectID,
+            TripType, TransactionDate, ServiceDate, VehicleReturnDate, TripNo, CustomerID, ProjectID, VendorID, customer_commercial_id, vendor_commercial_id,
             CompanyName, GSTNo, Location, CustomerSite, ProjectName,
             VehicleNumber, VehicleNumbers, VehicleType, VehicleTypes,
             VendorName, VendorNames, VendorNumber, VendorNumbers,
@@ -1180,7 +1180,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
             BalanceToBePaid, BalancePaidAmount, Variance, BalancePaidDate, BalancePaidBy, EmployeeDetailsBalance,
             Revenue, Margin, MarginPercentage, Status, TripClose, Remarks,
             State, CustSite, VendorCode, DriverType, VehicleOwnershipType, ExtraKM, ExtraKMCost, DCMCharges, AdvanceRequisitionDate, BalanceRequisitionDate
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
         `;
 
@@ -1209,7 +1209,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         const driverNumbersJson = Array.isArray(DriverNumber) ? JSON.stringify(DriverNumber) : null;
 
         values = [
-          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', CustomerID || null, ProjectID || null,
+          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', CustomerID || null, ProjectID || null, resolvedVendorID || null, customer_commercial_id || null, vendor_commercial_id || null,
           transaction.CompanyName || null, transaction.GSTNo || null, transaction.Location || null, transaction.CustomerSite || null, transaction.ProjectName || null,
           Array.isArray(VehicleNumber) ? VehicleNumber[0] : VehicleNumber, vehicleNumbersJson,
           Array.isArray(VehicleType) ? VehicleType[0] : VehicleType, vehicleTypesJson,
@@ -1682,7 +1682,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         // Update for adhoc_transactions - use manual entry fields (no IDs)
         updateQuery = `
           UPDATE adhoc_transactions SET
-            TripType = ?, TransactionDate = ?, ServiceDate = ?, VehicleReturnDate = ?, CustomerID = ?, ProjectID = ?, TripNo = ?,
+            TripType = ?, TransactionDate = ?, ServiceDate = ?, VehicleReturnDate = ?, CustomerID = ?, ProjectID = ?, VendorID = ?, customer_commercial_id = ?, vendor_commercial_id = ?, TripNo = ?,
             CompanyName = ?, GSTNo = ?, Location = ?, CustomerSite = ?, ProjectName = ?,
             VehicleNumber = ?, VehicleType = ?, VendorName = ?, VendorNumber = ?,
             DriverName = ?, DriverNumber = ?, DriverAadharNumber = ?, DriverLicenceNumber = ?,
@@ -1718,6 +1718,9 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           VehicleReturnDate || null,
           preservedCustomerID,
           preservedProjectID,
+          preservedVendorID,
+          customer_commercial_id || null,
+          vendor_commercial_id || null,
           TripNo || '',
           transaction.CompanyName || null,
           transaction.GSTNo || null,

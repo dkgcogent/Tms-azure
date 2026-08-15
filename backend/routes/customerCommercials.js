@@ -8,13 +8,25 @@ module.exports = (pool) => {
     return val;
   };
 
-  // Helper to extract ID from string like "Name / 5"
-  const extractId = (str) => {
+  // Helper to extract ID from string like "Name / 5" or resolve by DB query
+  const extractId = async (str, table = 'customer') => {
     if (!str || typeof str !== 'string') return null;
     const parts = str.split('/');
     if (parts.length > 1) {
       const id = parseInt(parts[parts.length - 1].trim(), 10);
-      return isNaN(id) ? null : id;
+      if (!isNaN(id)) return id;
+    }
+    // Fallback lookup by name
+    try {
+      if (table === 'customer') {
+        const [rows] = await pool.query("SELECT CustomerID FROM customer WHERE MasterCustomerName = ? OR Name = ? OR Name LIKE ?", [str.trim(), str.trim(), `%${str.trim()}%`]);
+        if (rows.length > 0) return rows[0].CustomerID;
+      } else if (table === 'project') {
+        const [rows] = await pool.query("SELECT ProjectID FROM project WHERE ProjectName = ? OR ProjectName LIKE ?", [str.trim(), `%${str.trim()}%`]);
+        if (rows.length > 0) return rows[0].ProjectID;
+      }
+    } catch (e) {
+      console.error('Error in extractId DB lookup:', e);
     }
     return null;
   };
@@ -25,8 +37,8 @@ module.exports = (pool) => {
     console.log('🚀 POST /api/customer-commercials - Received payload:', data);
 
     try {
-      const customer_id = extractId(data.master_customer);
-      const project_id = extractId(data.project);
+      const customer_id = await extractId(data.master_customer, 'customer');
+      const project_id = await extractId(data.project, 'project');
 
       const query = `
         INSERT INTO customer_commercial (
@@ -116,8 +128,8 @@ module.exports = (pool) => {
     console.log(`🚀 PUT /api/customer-commercials/${id} - Received payload:`, data);
 
     try {
-      const customer_id = extractId(data.master_customer);
-      const project_id = extractId(data.project);
+      const customer_id = await extractId(data.master_customer, 'customer');
+      const project_id = await extractId(data.project, 'project');
 
       const query = `
         UPDATE customer_commercial SET
