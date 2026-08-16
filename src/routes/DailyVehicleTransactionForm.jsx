@@ -2501,7 +2501,8 @@ const DailyVehicleTransactionForm = () => {
               TransactionDate: transactionDateStr,
               ServiceDate: serviceDateStr,
               VehicleReturnDate: vehicleReturnDateStr,
-              CustomerID: null,
+              CustomerID: resolvedCustomerId || row['CustomerID'] || null,
+              CompanyName: resolvedCompanyName || row['CompanyName'] || row['Company Name'] || null,
               ProjectID: resolvedProjectId || null,
               TripNo: row['TripNo'] || row['Trip No'] || '',
               VehicleNumber: row['VehicleNumber'] || row['Vehicle Number'] || row['VehicleNo'] || 'NA',
@@ -2778,8 +2779,14 @@ const DailyVehicleTransactionForm = () => {
         console.log('🔧 FIXED TRANSACTION PAYLOAD - Full payload TripNo:', JSON.stringify({ TripNo: payload.TripNo }));
       } else if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
         // Adhoc/Replacement transactions use manual entry fields - ordered to match frontend form
+        const resolvedCustId = ids.CustomerID || (masterData.Customer && !isNaN(masterData.Customer) ? parseInt(masterData.Customer) : masterData.Customer) || null;
         payload = {
           ...payload,
+          CustomerID: resolvedCustId,
+          CompanyName: masterData.CompanyName || null,
+          GSTNo: masterData.GSTNo || null,
+          Location: masterData.Location || null,
+          CustomerSite: masterData.CustSite || null,
           // Basic Transaction Info
           TripNo: transactionData.TripNo || '',
 
