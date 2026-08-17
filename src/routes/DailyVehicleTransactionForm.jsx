@@ -2349,47 +2349,110 @@ const DailyVehicleTransactionForm = () => {
     try {
       const data = await file.arrayBuffer();
       const workbook = xlsx.read(data);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
 
-      if (jsonData.length === 0) {
+      let allRows = [];
+      for (const sheetName of workbook.SheetNames) {
+        const worksheet = workbook.Sheets[sheetName];
+        if (!worksheet) continue;
+        const sheetRows = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
+
+        const sNameLower = sheetName.toLowerCase().trim();
+        let defaultSheetTripType = null;
+        if (sNameLower.includes('adhoc')) {
+          defaultSheetTripType = 'Adhoc';
+        } else if (sNameLower.includes('replacement')) {
+          defaultSheetTripType = 'Replacement';
+        } else if (sNameLower.includes('fixed')) {
+          defaultSheetTripType = 'Fixed';
+        }
+
+        for (const row of sheetRows) {
+          const hasData = Object.values(row).some(val => val !== null && val !== undefined && String(val).trim() !== "");
+          if (hasData) {
+            allRows.push({ row, defaultSheetTripType, sheetName });
+          }
+        }
+      }
+
+      if (allRows.length === 0) {
         throw new Error('Excel file is empty.');
       }
 
-      const totalRows = jsonData.length;
+      const totalRows = allRows.length;
       let successCount = 0;
       let failedCount = 0;
 
       for (let i = 0; i < totalRows; i++) {
         setImportProgress({ current: i + 1, total: totalRows, success: successCount, failed: failedCount });
-        const row = jsonData[i];
+        const { row, defaultSheetTripType, sheetName } = allRows[i];
 
-        const tripType = row['TypeOfTransaction'] || row['Transaction Type'] || row['TripType'] || 'Fixed';
+        const rawTripType = getCellValue(row, ['TypeOfTransaction', 'Transaction Type', 'TransactionType', 'TripType', 'Trip Type', 'Type']) || defaultSheetTripType || 'Fixed';
+        const tripType = String(rawTripType).trim();
+        const normalizedTripType = tripType.toLowerCase();
 
         let payload = {};
 
         try {
-          // Excel import: CustomerID is always null — no ID resolution needed.
-          // The 'Customer' column value is sent directly as CompanyName (what the DB/UI shows).
-          // The 'Company Name' column is a separate field.
-          const customerNameRaw = row['Customer'] || row['CustomerName'] || row['Customer Name'] || '';
-          const resolvedCompanyName = row['CompanyName'] || row['Company Name'] || row['Operator Name'] || row['Operator'] || '';
-          console.log('📊 Excel Import - Customer Name:', { customerNameRaw, resolvedCompanyName });
-
-          let resolvedProjectId = row['ProjectID'];
-          const projectNameRaw = row['Project'];
-          if (!resolvedProjectId && projectNameRaw && projects.length > 0) {
-            const foundP = projects.find(p =>
-              p.ProjectID == projectNameRaw ||
-              p.project_id == projectNameRaw ||
-              (p.ProjectName && p.ProjectName.toLowerCase() === String(projectNameRaw).toLowerCase())
+          // 1. Resolve Customer ID
+          const customerNameRaw = getCellValue(row, ['Customer', 'CustomerName', 'Customer Name']) || '';
+          const resolvedCompanyName = getCellValue(row, ['CompanyName', 'Company Name', 'Operator Name', 'Operator']) || '';
+          
+          let resolvedCustomerId = getCellValue(row, ['CustomerID', 'Customer ID']);
+          if (!resolvedCustomerId && (customerNameRaw || resolvedCompanyName) && customers.length > 0) {
+            const searchCustomerName = String(customerNameRaw || resolvedCompanyName).trim().toLowerCase();
+            const foundC = customers.find(c =>
+              (c.CustomerID && String(c.CustomerID) === searchCustomerName) ||
+              (c.MasterCustomerName && String(c.MasterCustomerName).trim().toLowerCase() === searchCustomerName) ||
+              (c.Name && String(c.Name).trim().toLowerCase() === searchCustomerName) ||
+              (c.CompanyName && String(c.CompanyName).trim().toLowerCase() === searchCustomerName) ||
+              (c.CustomerCode && String(c.CustomerCode).trim().toLowerCase() === searchCustomerName)
             );
-            resolvedProjectId = foundP ? (foundP.ProjectID || foundP.project_id) : null;
+            if (foundC) {
+              resolvedCustomerId = foundC.CustomerID || foundC.id;
+            }
           }
 
+          // 2. Resolve Project ID (using CustomerID context if available, then fallback)
+          let resolvedProjectId = getCellValue(row, ['ProjectID', 'Project Id']);
+          const projectNameRaw = getCellValue(row, ['Project', 'ProjectName', 'Project Name']);
+          if (!resolvedProjectId && projectNameRaw && projects.length > 0) {
+            const searchProjName = String(projectNameRaw).trim().toLowerCase();
+            let foundP = null;
+
+            // First priority: Match ProjectName AND CustomerID
+            if (resolvedCustomerId) {
+              foundP = projects.find(p =>
+                (p.CustomerID == resolvedCustomerId || p.customer_id == resolvedCustomerId) &&
+                (p.ProjectID == projectNameRaw || p.project_id == projectNameRaw ||
+                 (p.ProjectName && String(p.ProjectName).trim().toLowerCase() === searchProjName))
+              );
+            }
+
+            // Second priority: Match ProjectName alone if customer-specific match wasn't found
+            if (!foundP) {
+              foundP = projects.find(p =>
+                p.ProjectID == projectNameRaw ||
+                p.project_id == projectNameRaw ||
+                (p.ProjectName && String(p.ProjectName).trim().toLowerCase() === searchProjName)
+              );
+            }
+
+            if (foundP) {
+              resolvedProjectId = foundP.ProjectID || foundP.project_id;
+              if (!resolvedCustomerId && (foundP.CustomerID || foundP.customer_id)) {
+                resolvedCustomerId = foundP.CustomerID || foundP.customer_id;
+              }
+            }
+          }
+
+          // 3. Resolve Location and CustomerSite from expanded column headers
+          const excelLocation = getCellValue(row, ['Location', 'CustomerSite', 'Customer Site', 'CustSite', 'Cust Site', 'Hub', 'Site', 'Loc']) || 'Default';
+          const excelCustSite = getCellValue(row, ['CustSite', 'Cust Site', 'CustomerSite', 'Customer Site', 'Location', 'Hub', 'Site']) || excelLocation;
+
+          console.log('📊 Excel Import - Resolved Info:', { sheetName, customerNameRaw, resolvedCustomerId, resolvedProjectId, excelLocation, excelCustSite, tripType });
+
           let resolvedVehicleIds = [];
-          const rawVehicle = row['VehicleID'] || row['Vehicle Number'] || row['VehicleNumber'];
+          const rawVehicle = getCellValue(row, ['VehicleID', 'Vehicle ID', 'Vehicle Number', 'VehicleNumber', 'VehicleNo', 'Vehicle No']);
           if (rawVehicle) {
             const foundV = vehicles.find(v =>
               v.VehicleID == rawVehicle ||
@@ -2404,14 +2467,14 @@ const DailyVehicleTransactionForm = () => {
             }
           }
 
-          if (tripType === 'Fixed' && resolvedVehicleIds.length === 0) {
+          if (normalizedTripType === 'fixed' && resolvedVehicleIds.length === 0) {
             throw new Error(rawVehicle 
               ? `Vehicle '${rawVehicle}' not found. Fixed transactions require a pre-registered vehicle.` 
               : 'Vehicle Number is missing. At least one valid vehicle must be provided for Fixed transactions.');
           }
 
           let resolvedDriverIds = [];
-          const rawDriver = row['DriverID'] || row['Driver Name'] || row['DriverName'];
+          const rawDriver = getCellValue(row, ['DriverID', 'Driver ID', 'Driver Name', 'DriverName', 'Driver']);
           if (rawDriver) {
             const foundD = drivers.find(d =>
               d.DriverID == rawDriver ||
@@ -2428,27 +2491,30 @@ const DailyVehicleTransactionForm = () => {
 
           // Format dates using the helper with expanded column variations
           const transactionDateStr = getCurrentDate(); // Entry data will always be the date when data is imported
-          const serviceDateStr = formatExcelDate(row['ServiceDate'] || row['Service Date'] || row['Service_Date'] || row['Date'] || row['TransactionDate'] || row['Transaction Date'] || row['Transaction_Date'] || row['Entry Date'] || row['EntryDate'] || row['Entry_Date']) || transactionDateStr;
-          const vehicleReturnDateStr = formatExcelDate(row['VehicleReturnDate'] || row['Vehicle Return Date'] || row['Vehicle_Return_Date'] || row['Date'] || row['TransactionDate']) || transactionDateStr;
+          const serviceDateRaw = getCellValue(row, ['ServiceDate', 'Service Date', 'Service_Date', 'Date', 'TransactionDate', 'Transaction Date', 'Transaction_Date', 'Entry Date', 'EntryDate', 'Entry_Date']);
+          const serviceDateStr = formatExcelDate(serviceDateRaw) || transactionDateStr;
 
-          if (tripType === 'Fixed') {
+          const returnDateRaw = getCellValue(row, ['VehicleReturnDate', 'Vehicle Return Date', 'Vehicle_Return_Date', 'Return Date', 'ReturnDate', 'Date', 'TransactionDate']);
+          const vehicleReturnDateStr = formatExcelDate(returnDateRaw) || transactionDateStr;
+
+          if (normalizedTripType === 'fixed') {
             payload = {
               TripType: 'Fixed',
               TransactionDate: transactionDateStr,
               ServiceDate: serviceDateStr,
               VehicleReturnDate: vehicleReturnDateStr,
-              CustomerID: null,
+              CustomerID: resolvedCustomerId || null,
               ProjectID: resolvedProjectId || null,
-              TripNo: row['TripNo'] || row['Trip No'] || '',
+              TripNo: getCellValue(row, ['TripNo', 'Trip No', 'Trip_No']) || '',
               VehicleIDs: JSON.stringify(resolvedVehicleIds),
               DriverIDs: JSON.stringify(resolvedDriverIds),
-              OpeningKM: row['OpeningKM'] || row['Opening KM'] ? Number(row['OpeningKM'] || row['Opening KM']) : 0,
-              ClosingKM: row['ClosingKM'] || row['Closing KM'] ? Number(row['ClosingKM'] || row['Closing KM']) : 1,
+              OpeningKM: getCellValue(row, ['OpeningKM', 'Opening KM']) ? Number(getCellValue(row, ['OpeningKM', 'Opening KM'])) : 0,
+              ClosingKM: getCellValue(row, ['ClosingKM', 'Closing KM']) ? Number(getCellValue(row, ['ClosingKM', 'Closing KM'])) : 1,
               
               // Delivery Metrics
-              TotalDeliveries: row['TotalDeliveries'] || row['Total Deliveries'] || row['TotalShipmentsForDeliveries'] || 0,
-              TotalDeliveriesAttempted: row['TotalDeliveriesAttempted'] || row['Total Deliveries Attempted'] || row['TotalShipmentDeliveriesAttempted'] || 0,
-              TotalDeliveriesDone: row['TotalDeliveriesDone'] || row['Total Deliveries Done'] || row['TotalShipmentDeliveriesDone'] || 0,
+              TotalDeliveries: getCellValue(row, ['TotalDeliveries', 'Total Deliveries', 'TotalShipmentsForDeliveries']) || 0,
+              TotalDeliveriesAttempted: getCellValue(row, ['TotalDeliveriesAttempted', 'Total Deliveries Attempted', 'TotalShipmentDeliveriesAttempted']) || 0,
+              TotalDeliveriesDone: getCellValue(row, ['TotalDeliveriesDone', 'Total Deliveries Done', 'TotalShipmentDeliveriesDone']) || 0,
 
               // Hub Timing (with robust matching and no defaults to avoid "wrong" data)
               VehicleReportingAtHub: formatExcelTime(getCellValue(row, ['VehicleReportingAtHub', 'Vehicle Reporting at Hub', 'ReportingTime', 'Vehicle Reporting'])),
@@ -2459,21 +2525,21 @@ const DailyVehicleTransactionForm = () => {
               VehicleOutFromHubFinal: formatExcelTime(getCellValue(row, ['VehicleOutFromHubFinal', 'Vehicle Out from Hub Final (Trip Close)', 'FinalOutTime', 'Final Out'])),
               
               Status: 'Pending',
-              Location: row['Location'] || row['Customer Site'] || row['Loc'] || 'Default',
-              CustomerSite: row['CustSite'] || row['Customer Site'] || 'Default',
+              Location: excelLocation,
+              CustomerSite: excelCustSite,
               CustomerName: customerNameRaw, // Send explicit Customer Name
               CompanyName: resolvedCompanyName,
-              ProjectName: row['ProjectName'] || row['Project Name'] || row['Project'] || '',
-              GSTNo: row['GSTNo'] || row['GST No'] || row['GST Number'] || '',
-              VehicleNumber: row['VehicleNumber'] || row['Vehicle Number'] || '',
-              VendorName: row['VendorName'] || row['Vendor Name'] || '',
-              VendorNumber: row['VendorNumber'] || row['Vendor Number'] || '',
-              DriverName: row['DriverName'] || row['Driver Name'] || '',
-              DriverNumber: row['DriverNumber'] || row['Driver Number'] || '',
-              ReplacementDriverName: row['ReplacementDriverName'] || row['Replacement Driver Name'] || '',
-              ReplacementDriverNo: row['ReplacementDriverNo'] || row['Replacement Driver No.'] || row['Replacement Driver No'] || '',
-              DriverAadharNumber: row['DriverAadharNumber'] || row['Driver Aadhar Number'] || row['AadharNumber'] || '',
-              DriverLicenceNumber: row['DriverLicenceNumber'] || row['Driver Licence Number'] || row['LicenceNumber'] || '',
+              ProjectName: getCellValue(row, ['ProjectName', 'Project Name', 'Project']) || '',
+              GSTNo: getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || '',
+              VehicleNumber: getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo']) || '',
+              VendorName: getCellValue(row, ['VendorName', 'Vendor Name', 'Vendor']) || '',
+              VendorNumber: getCellValue(row, ['VendorNumber', 'Vendor Number', 'VendorCode']) || '',
+              DriverName: getCellValue(row, ['DriverName', 'Driver Name', 'Driver']) || '',
+              DriverNumber: getCellValue(row, ['DriverNumber', 'Driver Number', 'DriverMobile']) || '',
+              ReplacementDriverName: getCellValue(row, ['ReplacementDriverName', 'Replacement Driver Name']) || '',
+              ReplacementDriverNo: getCellValue(row, ['ReplacementDriverNo', 'Replacement Driver No.', 'Replacement Driver No']) || '',
+              DriverAadharNumber: getCellValue(row, ['DriverAadharNumber', 'Driver Aadhar Number', 'AadharNumber']) || '',
+              DriverLicenceNumber: getCellValue(row, ['DriverLicenceNumber', 'Driver Licence Number', 'LicenceNumber']) || '',
               VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || '',
               
               // Financial and Calculated Fields
@@ -2495,33 +2561,33 @@ const DailyVehicleTransactionForm = () => {
 
             await vehicleTransactionAPI.create(payload);
             successCount++;
-          } else if (tripType === 'Adhoc' || tripType === 'Replacement') {
+          } else if (normalizedTripType === 'adhoc' || normalizedTripType === 'replacement') {
             payload = {
-              TripType: tripType,
+              TripType: normalizedTripType === 'replacement' ? 'Replacement' : 'Adhoc',
               TransactionDate: transactionDateStr,
               ServiceDate: serviceDateStr,
               VehicleReturnDate: vehicleReturnDateStr,
-              CustomerID: resolvedCustomerId || row['CustomerID'] || null,
-              CompanyName: resolvedCompanyName || row['CompanyName'] || row['Company Name'] || null,
+              CustomerID: resolvedCustomerId || null,
+              CompanyName: resolvedCompanyName || getCellValue(row, ['CompanyName', 'Company Name']) || null,
               ProjectID: resolvedProjectId || null,
-              TripNo: row['TripNo'] || row['Trip No'] || '',
-              VehicleNumber: row['VehicleNumber'] || row['Vehicle Number'] || row['VehicleNo'] || 'NA',
-              VendorName: row['VendorName'] || row['Vendor Name'] || row['Vendor'] || 'NA',
-              DriverName: row['DriverName'] || row['Driver Name'] || row['Driver'] || 'NA',
-              DriverNumber: row['DriverNumber'] || row['Driver Number'] || row['DriverMobile'] || row['Driver Mobile'] || '',
-              VendorNumber: row['VendorNumber'] || row['Vendor Number'] || row['VendorCode'] || row['Vendor Mobile'] || '',
-              ReplacementDriverName: row['ReplacementDriverName'] || row['Replacement Driver Name'] || '',
-              ReplacementDriverNo: row['ReplacementDriverNo'] || row['Replacement Driver No.'] || row['Replacement Driver No'] || '',
-              DriverAadharNumber: row['DriverAadharNumber'] || row['Driver Aadhar Number'] || row['AadharNumber'] || '',
-              DriverLicenceNumber: row['DriverLicenceNumber'] || row['Driver Licence Number'] || row['LicenceNumber'] || '',
+              TripNo: getCellValue(row, ['TripNo', 'Trip No', 'Trip_No']) || '',
+              VehicleNumber: getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo', 'Vehicle No']) || 'NA',
+              VendorName: getCellValue(row, ['VendorName', 'Vendor Name', 'Vendor']) || 'NA',
+              DriverName: getCellValue(row, ['DriverName', 'Driver Name', 'Driver']) || 'NA',
+              DriverNumber: getCellValue(row, ['DriverNumber', 'Driver Number', 'DriverMobile', 'Driver Mobile']) || '',
+              VendorNumber: getCellValue(row, ['VendorNumber', 'Vendor Number', 'VendorCode', 'Vendor Mobile']) || '',
+              ReplacementDriverName: getCellValue(row, ['ReplacementDriverName', 'Replacement Driver Name']) || '',
+              ReplacementDriverNo: getCellValue(row, ['ReplacementDriverNo', 'Replacement Driver No.', 'Replacement Driver No']) || '',
+              DriverAadharNumber: getCellValue(row, ['DriverAadharNumber', 'Driver Aadhar Number', 'AadharNumber']) || '',
+              DriverLicenceNumber: getCellValue(row, ['DriverLicenceNumber', 'Driver Licence Number', 'LicenceNumber']) || '',
               
-              OpeningKM: row['OpeningKM'] || row['Opening KM'] ? Number(row['OpeningKM'] || row['Opening KM']) : 0,
-              ClosingKM: row['ClosingKM'] || row['Closing KM'] ? Number(row['ClosingKM'] || row['Closing KM']) : 1,
+              OpeningKM: getCellValue(row, ['OpeningKM', 'Opening KM']) ? Number(getCellValue(row, ['OpeningKM', 'Opening KM'])) : 0,
+              ClosingKM: getCellValue(row, ['ClosingKM', 'Closing KM']) ? Number(getCellValue(row, ['ClosingKM', 'Closing KM'])) : 1,
 
               // Delivery Metrics for Adhoc
-              TotalShipmentsForDeliveries: row['TotalDeliveries'] || row['Total Deliveries'] || row['TotalShipmentsForDeliveries'] || 0,
-              TotalShipmentDeliveriesAttempted: row['TotalDeliveriesAttempted'] || row['Total Deliveries Attempted'] || row['TotalShipmentDeliveriesAttempted'] || 0,
-              TotalShipmentDeliveriesDone: row['TotalDeliveriesDone'] || row['Total Deliveries Done'] || row['TotalShipmentDeliveriesDone'] || 0,
+              TotalShipmentsForDeliveries: getCellValue(row, ['TotalDeliveries', 'Total Deliveries', 'TotalShipmentsForDeliveries']) || 0,
+              TotalShipmentDeliveriesAttempted: getCellValue(row, ['TotalDeliveriesAttempted', 'Total Deliveries Attempted', 'TotalShipmentDeliveriesAttempted']) || 0,
+              TotalShipmentDeliveriesDone: getCellValue(row, ['TotalDeliveriesDone', 'Total Deliveries Done', 'TotalShipmentDeliveriesDone']) || 0,
 
               // Hub Timing for Adhoc (with robust matching and no defaults)
               VehicleReportingAtHub: formatExcelTime(getCellValue(row, ['VehicleReportingAtHub', 'Vehicle Reporting at Hub', 'ReportingTime', 'Vehicle Reporting'])),
@@ -2532,26 +2598,25 @@ const DailyVehicleTransactionForm = () => {
               VehicleOutFromHubFinal: formatExcelTime(getCellValue(row, ['VehicleOutFromHubFinal', 'Vehicle Out from Hub Final (Trip Close)', 'FinalOutTime', 'Final Out'])),
               
               Status: 'Pending',
-              Location: row['Location'] || row['Customer Site'] || 'Default',
-              CustomerSite: row['CustSite'] || row['Customer Site'] || 'Default',
+              Location: excelLocation,
+              CustomerSite: excelCustSite,
               CustomerName: customerNameRaw, // Send explicit Customer Name
               CompanyName: resolvedCompanyName,
-              ProjectName: row['ProjectName'] || row['Project Name'] || row['Project'] || '',
-              GSTNo: row['GSTNo'] || row['GST No'] || row['GST Number'] || '',
+              ProjectName: getCellValue(row, ['ProjectName', 'Project Name', 'Project']) || '',
+              GSTNo: getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || '',
               VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || '',
 
-              // New 10 Fields
-              State: row['State'] || '',
-              CustSite: row['CustSite'] || row['Cust Site'] || '',
-              VendorCode: row['VendorCode'] || row['Vendor Code'] || '',
-              DriverType: row['DriverType'] || row['Driver Type'] || '',
-              VehicleOwnershipType: row['VehicleOwnershipType'] || row['Vehicle Ownership Type'] || '',
-              ExtraKM: row['ExtraKM'] || row['Extra KM'] ? Number(row['ExtraKM'] || row['Extra KM']) : null,
-              ExtraKMCost: row['ExtraKMCost'] || row['Extra KM Cost'] ? Number(row['ExtraKMCost'] || row['Extra KM Cost']) : null,
-              DCMCharges: row['DCMCharges'] || row['DCM Charges'] ? Number(row['DCMCharges'] || row['DCM Charges']) : null,
-              AdvanceRequisitionDate: formatExcelDate(row['AdvanceRequisitionDate'] || row['Advance Requisition Date']) || null,
-              BalanceRequisitionDate: formatExcelDate(row['BalanceRequisitionDate'] || row['Balance Requisition Date']) || null,
-
+              // Additional Fields
+              State: getCellValue(row, ['State']) || '',
+              CustSite: excelCustSite,
+              VendorCode: getCellValue(row, ['VendorCode', 'Vendor Code']) || '',
+              DriverType: getCellValue(row, ['DriverType', 'Driver Type']) || '',
+              VehicleOwnershipType: getCellValue(row, ['VehicleOwnershipType', 'Vehicle Ownership Type']) || '',
+              ExtraKM: getCellValue(row, ['ExtraKM', 'Extra KM']) ? Number(getCellValue(row, ['ExtraKM', 'Extra KM'])) : null,
+              ExtraKMCost: getCellValue(row, ['ExtraKMCost', 'Extra KM Cost']) ? Number(getCellValue(row, ['ExtraKMCost', 'Extra KM Cost'])) : null,
+              DCMCharges: getCellValue(row, ['DCMCharges', 'DCM Charges']) ? Number(getCellValue(row, ['DCMCharges', 'DCM Charges'])) : null,
+              AdvanceRequisitionDate: formatExcelDate(getCellValue(row, ['AdvanceRequisitionDate', 'Advance Requisition Date'])) || null,
+              BalanceRequisitionDate: formatExcelDate(getCellValue(row, ['BalanceRequisitionDate', 'Balance Requisition Date'])) || null,
 
               // Financial and Calculated Fields
               VFreightFix: getCellValue(row, ['VFreightFix', 'V. Freight (Fix)', 'V.Freight (Fix)', 'V. FREIGHT (FIX)']),
@@ -2577,9 +2642,9 @@ const DailyVehicleTransactionForm = () => {
           }
         } catch (apiError) {
           failedCount++;
-          console.error(`Row ${i + 2} failed:`, apiError);
+          console.error(`Sheet '${sheetName}' Row ${i + 2} failed:`, apiError);
           const errorMsg = apiError.response?.data?.error || apiError.message;
-          setImportErrors(prev => [...prev, `Row ${i + 2} Failed: ${errorMsg}`]);
+          setImportErrors(prev => [...prev, `[Sheet: ${sheetName}] Row ${i + 2} Failed: ${errorMsg}`]);
         }
       }
 
