@@ -1584,9 +1584,29 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       // All files go to Azure Blob Storage as HTTP URLs - local path checks are not needed here.
 
       // Preserve IDs if not provided
-      const preservedCustomerID = CustomerID !== null ? CustomerID : existingRecord.CustomerID;
-      const preservedProjectID = ProjectID !== null ? ProjectID : existingRecord.ProjectID;
-      const preservedVendorID = VendorID !== null ? VendorID : existingRecord.VendorID;
+      const preservedCustomerID = CustomerID !== null && CustomerID !== undefined ? CustomerID : existingRecord.CustomerID;
+      const preservedProjectID = ProjectID !== null && ProjectID !== undefined ? ProjectID : existingRecord.ProjectID;
+      const preservedVendorID = VendorID !== null && VendorID !== undefined ? VendorID : existingRecord.VendorID;
+
+      // Resolve/preserve customer_commercial_id & vendor_commercial_id
+      let customer_commercial_id = transaction.customer_commercial_id || req.body.customer_commercial_id || existingRecord.customer_commercial_id || null;
+      let vendor_commercial_id = transaction.vendor_commercial_id || req.body.vendor_commercial_id || existingRecord.vendor_commercial_id || null;
+
+      if (!customer_commercial_id && preservedCustomerID && preservedProjectID) {
+        const [ccMatch] = await pool.query(
+          'SELECT id FROM customer_commercial WHERE customer_id = ? AND project_id = ? ORDER BY id DESC LIMIT 1',
+          [preservedCustomerID, preservedProjectID]
+        );
+        if (ccMatch.length > 0) customer_commercial_id = ccMatch[0].id;
+      }
+
+      if (!vendor_commercial_id && preservedVendorID && preservedProjectID) {
+        const [vcMatch] = await pool.query(
+          'SELECT id FROM vendor_commercial WHERE vendor_id = ? AND project_id = ? ORDER BY id DESC LIMIT 1',
+          [preservedVendorID, preservedProjectID]
+        );
+        if (vcMatch.length > 0) vendor_commercial_id = vcMatch[0].id;
+      }
 
       // Handle JSON fields for Fixed type - must be stored as JSON strings in DB
       let VehicleIDs = transaction.VehicleIDs;
