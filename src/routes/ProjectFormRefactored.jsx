@@ -5,6 +5,8 @@ import { useProjectValidation } from '../hooks/useProjectValidation';
 import DataTable from '../components/DataTable';
 
 import ProjectDetailsSection from '../components/project/sections/ProjectDetailsSection';
+import ProjectLocationSitesSection from '../components/project/sections/ProjectLocationSitesSection';
+import ProjectCommercialsBillingSection from '../components/project/sections/ProjectCommercialsBillingSection';
 import ProjectTimelineSection from '../components/project/sections/ProjectTimelineSection';
 import RestoreDraftNotification from '../components/RestoreDraftNotification';
 import './ProjectForm.css';
@@ -13,7 +15,40 @@ const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDat
 const formatCurrency = (amount) => amount ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount) : '₹0';
 
 const ProjectFormRefactored = () => {
-  const { projectData, setProjectData, projects, customers, locations, selectedCustomer, setSelectedCustomer, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, editingProject, setEditingProject, dateFilter, setDateFilter, resetForm, handleInputChange, handleLocationChange, handleCustomerChange, fetchProjects, formatDateForInput, hasDraft, restoreDraft, clearDraft } = useProjectForm();
+  const {
+    projectData,
+    setProjectData,
+    projects,
+    customers,
+    employees,
+    selectedCustomer,
+    setSelectedCustomer,
+    errors,
+    setErrors,
+    isSubmitting,
+    setIsSubmitting,
+    isLoading,
+    editingProject,
+    setEditingProject,
+    dateFilter,
+    setDateFilter,
+    resetForm,
+    handleInputChange,
+    handleCustomerChange,
+    addLocation,
+    removeLocation,
+    handleLocationStateChange,
+    handleLocationNameChange,
+    addSiteToLocation,
+    removeSiteFromLocation,
+    handleSiteChange,
+    fetchProjects,
+    formatDateForInput,
+    hasDraft,
+    restoreDraft,
+    clearDraft
+  } = useProjectForm();
+
   const { validateForm } = useProjectValidation();
 
   const handleDateFilterApply = useCallback(async () => {
@@ -22,14 +57,16 @@ const ProjectFormRefactored = () => {
     await fetchProjects();
   }, [dateFilter, fetchProjects]);
 
-  const handleDateFilterClear = useCallback(async () => { setDateFilter({ fromDate: '', toDate: '' }); await fetchProjects(); }, [setDateFilter, fetchProjects]);
+  const handleDateFilterClear = useCallback(async () => {
+    setDateFilter({ fromDate: '', toDate: '' });
+    await fetchProjects();
+  }, [setDateFilter, fetchProjects]);
 
   // Export handler - Excel export for filtered projects
   const handleExportProjects = useCallback(async () => {
     try {
       console.log('📊 Exporting projects to Excel...');
 
-      // Build query parameters for date filtering (same as fetchProjects)
       const queryParams = new URLSearchParams();
       if (dateFilter.fromDate) {
         queryParams.append('fromDate', dateFilter.fromDate);
@@ -42,10 +79,6 @@ const ProjectFormRefactored = () => {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
       const exportUrl = `${API_BASE_URL}/api/export/projects${queryString ? `?${queryString}` : ''}`;
 
-      console.log('📊 Export URL with filters:', exportUrl);
-      console.log('🗓️ Date filter applied to export:', { fromDate: dateFilter.fromDate, toDate: dateFilter.toDate });
-
-      // Show loading message
       const loadingToast = document.createElement('div');
       loadingToast.style.cssText = `
         position: fixed; top: 20px; right: 20px; z-index: 10000;
@@ -56,7 +89,6 @@ const ProjectFormRefactored = () => {
       loadingToast.textContent = '🔄 Exporting projects... Please wait';
       document.body.appendChild(loadingToast);
 
-      // Create download link
       const link = document.createElement('a');
       link.href = exportUrl;
       link.download = `Project_Master_${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -65,10 +97,8 @@ const ProjectFormRefactored = () => {
       link.click();
       document.body.removeChild(link);
 
-      // Remove loading message
       document.body.removeChild(loadingToast);
 
-      // Show success message
       const successToast = document.createElement('div');
       successToast.style.cssText = `
         position: fixed; top: 20px; right: 20px; z-index: 10000;
@@ -83,7 +113,6 @@ const ProjectFormRefactored = () => {
           document.body.removeChild(successToast);
         }
       }, 5000);
-
     } catch (error) {
       console.error('Export error:', error);
       alert(`❌ Export failed: ${error.message}`);
@@ -97,29 +126,72 @@ const ProjectFormRefactored = () => {
 
     setIsSubmitting(true);
     try {
-      const formData = new FormData();
-      Object.entries(projectData).forEach(([key, value]) => {
-        if (key === 'LocationID') {
-          if (Array.isArray(value)) {
-            formData.append('Location', value.map(locId => locations.find(loc => loc.LocationID === locId)?.LocationName || locId).join(', '));
-          } else if (typeof value === 'string' && value.startsWith('site_')) {
-            formData.append('Location', locations.find(loc => loc.LocationID === value)?.LocationName || value);
-          } else if (value) {
-            formData.append('Location', locations.find(loc => loc.LocationID === value)?.LocationName || value);
-          }
-        } else if (value !== null && value !== undefined) {
-          formData.append(key, value);
+      // Build individual site records
+      const customerSiteList = [];
+
+      (projectData.CustomerSite || []).forEach(locationGroup => {
+        const state = locationGroup.state ? locationGroup.state.trim() : '';
+        const location = locationGroup.location ? locationGroup.location.trim() : '';
+        const validSites = (locationGroup.sites || []).filter(s =>
+          s && (typeof s === 'object' ? s.name?.trim() : s?.trim())
+        );
+
+        if (validSites.length > 0) {
+          validSites.forEach(site => {
+            const siteName = typeof site === 'object' ? site.name.trim() : site.trim();
+            const empStr = (typeof site === 'object' && site.employee_id) ? ` (Emp: ${site.employee_id})` : '';
+            customerSiteList.push({
+              State: state || null,
+              Location: location || null,
+              CustomerSite: `${siteName}${empStr}`
+            });
+          });
+        } else if (state || location) {
+          customerSiteList.push({
+            State: state || null,
+            Location: location || null,
+            CustomerSite: null
+          });
         }
       });
 
+      const primaryEntry = customerSiteList[0] || { State: null, Location: null, CustomerSite: null };
+
+      const payload = {
+        ProjectName: projectData.ProjectName,
+        CustomerID: projectData.CustomerID,
+        ProjectCode: projectData.ProjectCode,
+        ProjectDescription: projectData.ProjectDescription || '',
+        State: primaryEntry.State,
+        Location: primaryEntry.Location,
+        CustomerSite: primaryEntry.CustomerSite,
+        CustomerSiteList: customerSiteList,
+        ProjectValue: projectData.ProjectValue,
+        StartDate: projectData.StartDate,
+        EndDate: projectData.EndDate,
+        Status: projectData.Status || 'Active',
+        // Commercials & Billing
+        GSTNo: projectData.GSTNo || null,
+        TypeOfBilling: projectData.TypeOfBilling || 'RCM',
+        GSTRate: projectData.GSTRate || '0',
+        BillingTenure: projectData.BillingTenure || null,
+        BillingFromDate: projectData.BillingFromDate || null,
+        BillingToDate: projectData.BillingToDate || null
+      };
+
       if (editingProject) {
-        await projectAPI.update(editingProject.ProjectID, formData);
+        await projectAPI.update(editingProject.ProjectID, payload);
         apiHelpers.showSuccess(`Project "${projectData.ProjectName}" has been updated successfully!`);
         resetForm();
       } else {
-        const response = await projectAPI.create(formData);
+        const response = await projectAPI.create(payload);
         const generatedProjectCode = response.data?.ProjectCode;
-        generatedProjectCode ? (setProjectData(prev => ({ ...prev, ProjectCode: generatedProjectCode })), apiHelpers.showSuccess(`Project "${projectData.ProjectName}" has been added successfully! Generated Code: ${generatedProjectCode}`)) : apiHelpers.showSuccess(`Project "${projectData.ProjectName}" has been added successfully!`);
+        if (generatedProjectCode) {
+          setProjectData(prev => ({ ...prev, ProjectCode: generatedProjectCode }));
+          apiHelpers.showSuccess(`Project "${projectData.ProjectName}" has been added successfully! Generated Code: ${generatedProjectCode}`);
+        } else {
+          apiHelpers.showSuccess(`Project "${projectData.ProjectName}" has been added successfully!`);
+        }
         clearDraft();
       }
 
@@ -129,7 +201,7 @@ const ProjectFormRefactored = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [projectData, validateForm, setErrors, setIsSubmitting, locations, editingProject, setProjectData, resetForm, fetchProjects, clearDraft]);
+  }, [projectData, validateForm, setErrors, setIsSubmitting, editingProject, setProjectData, resetForm, fetchProjects, clearDraft]);
 
   const handleEdit = useCallback(async (project) => {
     try {
@@ -140,16 +212,70 @@ const ProjectFormRefactored = () => {
     const customer = customers.find(c => c.CustomerID.toString() === project.CustomerID.toString());
     setSelectedCustomer(customer);
 
-    let locationValue = project.LocationID || '';
-    if (!project.LocationID && customer?.CustomerSite) {
-      locationValue = customer.CustomerSite.split(',').length > 0 ? 'site_1' : '';
-    } else if (typeof locationValue === 'string' && locationValue.includes(',')) {
-      locationValue = locationValue.split(',').map(id => id.trim()).filter(Boolean);
-    }
+    // Find all sibling rows for this project to load all location cards
+    const siblingRows = projects.filter(p =>
+      p.ProjectName && project.ProjectName &&
+      p.ProjectName.trim().toLowerCase() === project.ProjectName.trim().toLowerCase() &&
+      p.CustomerID.toString() === project.CustomerID.toString()
+    );
 
-    setProjectData({ ProjectName: project.ProjectName || '', CustomerID: project.CustomerID || '', ProjectCode: project.ProjectCode || '', ProjectDescription: project.ProjectDescription || '', LocationID: locationValue, ProjectValue: project.ProjectValue || '', StartDate: project.StartDate ? formatDateForInput(project.StartDate) : '', EndDate: project.EndDate ? formatDateForInput(project.EndDate) : '', Status: project.Status || 'Active' });
+    const rowsToProcess = siblingRows.length > 0 ? siblingRows : [project];
+    const locationMap = new Map();
+
+    rowsToProcess.forEach(row => {
+      const locKey = (row.Location || '').trim();
+      const state = row.State || '';
+      let siteName = '';
+      let empId = '';
+
+      if (row.CustomerSite) {
+        const empMatch = row.CustomerSite.match(/\(Emp:\s*([^)]+)\)/);
+        if (empMatch) {
+          empId = empMatch[1].trim();
+          siteName = row.CustomerSite.replace(empMatch[0], '').trim();
+        } else {
+          siteName = row.CustomerSite.trim();
+        }
+      }
+
+      if (!locationMap.has(locKey)) {
+        locationMap.set(locKey, {
+          state: state,
+          location: locKey,
+          sites: siteName ? [{ name: siteName, employee_id: empId }] : [{ name: '', employee_id: '' }]
+        });
+      } else {
+        if (siteName) {
+          const group = locationMap.get(locKey);
+          group.sites.push({ name: siteName, employee_id: empId });
+        }
+      }
+    });
+
+    const parsedCustomerSite = locationMap.size > 0
+      ? Array.from(locationMap.values())
+      : [{ state: '', location: '', sites: [{ name: '', employee_id: '' }] }];
+
+    setProjectData({
+      ProjectName: project.ProjectName || '',
+      CustomerID: project.CustomerID || '',
+      ProjectCode: project.ProjectCode || '',
+      ProjectDescription: project.ProjectDescription || '',
+      CustomerSite: parsedCustomerSite,
+      ProjectValue: project.ProjectValue || '',
+      StartDate: project.StartDate ? formatDateForInput(project.StartDate) : '',
+      EndDate: project.EndDate ? formatDateForInput(project.EndDate) : '',
+      Status: project.Status || 'Active',
+      // Commercials & Billing
+      GSTNo: project.GSTNo || '',
+      TypeOfBilling: project.TypeOfBilling || 'RCM',
+      GSTRate: project.GSTRate || '0',
+      BillingTenure: project.BillingTenure || '',
+      BillingFromDate: project.BillingFromDate ? formatDateForInput(project.BillingFromDate) : '',
+      BillingToDate: project.BillingToDate ? formatDateForInput(project.BillingToDate) : ''
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [customers, setEditingProject, setSelectedCustomer, setProjectData, formatDateForInput]);
+  }, [customers, projects, setEditingProject, setSelectedCustomer, setProjectData, formatDateForInput]);
 
   const handleDelete = useCallback(async (projectOrId) => {
     const projectId = typeof projectOrId === 'object' ? projectOrId.ProjectID : projectOrId;
@@ -168,8 +294,12 @@ const ProjectFormRefactored = () => {
   }, [projects, fetchProjects]);
 
   const projectColumns = [
-    { key: 'ProjectName', label: 'Project Name', sortable: true, minWidth: '200px' },
+    { key: 'ProjectName', label: 'Project Name', sortable: true, minWidth: '180px' },
     { key: 'CustomerName', label: 'Customer', sortable: true, minWidth: '150px' },
+    { key: 'State', label: 'State', sortable: true, minWidth: '120px', render: (val) => val || '-' },
+    { key: 'Location', label: 'Location', sortable: true, minWidth: '130px', render: (val) => val || '-' },
+    { key: 'CustomerSite', label: 'Customer Site', sortable: true, minWidth: '180px', render: (val) => val || '-' },
+    { key: 'TypeOfBilling', label: 'Billing Type', sortable: true, minWidth: '120px', render: (val) => val || '-' },
     { key: 'ProjectValue', label: 'Value', sortable: true, minWidth: '120px', render: formatCurrency },
     { key: 'StartDate', label: 'Start Date', sortable: true, minWidth: '120px', render: formatDate },
     { key: 'EndDate', label: 'End Date', sortable: true, minWidth: '120px', render: formatDate },
@@ -192,8 +322,38 @@ const ProjectFormRefactored = () => {
       <div className="project-form">
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-sections">
-            <ProjectDetailsSection projectData={projectData} handleInputChange={handleInputChange} handleCustomerChange={handleCustomerChange} handleLocationChange={handleLocationChange} customers={customers} locations={locations} errors={errors} isSubmitting={isSubmitting} />
-            <ProjectTimelineSection projectData={projectData} handleInputChange={handleInputChange} errors={errors} isSubmitting={isSubmitting} />
+            <ProjectDetailsSection
+              projectData={projectData}
+              handleInputChange={handleInputChange}
+              handleCustomerChange={handleCustomerChange}
+              customers={customers}
+              errors={errors}
+              isSubmitting={isSubmitting}
+            />
+            <ProjectLocationSitesSection
+              projectData={projectData}
+              employees={employees}
+              errors={errors}
+              addLocation={addLocation}
+              removeLocation={removeLocation}
+              handleLocationStateChange={handleLocationStateChange}
+              handleLocationNameChange={handleLocationNameChange}
+              addSiteToLocation={addSiteToLocation}
+              removeSiteFromLocation={removeSiteFromLocation}
+              handleSiteChange={handleSiteChange}
+            />
+            <ProjectCommercialsBillingSection
+              projectData={projectData}
+              handleInputChange={handleInputChange}
+              errors={errors}
+              isSubmitting={isSubmitting}
+            />
+            <ProjectTimelineSection
+              projectData={projectData}
+              handleInputChange={handleInputChange}
+              errors={errors}
+              isSubmitting={isSubmitting}
+            />
           </div>
           <div className="form-actions">
             <button type="submit" disabled={isSubmitting} className="submit-btn">{isSubmitting ? 'Processing...' : editingProject ? 'Update Project' : 'Add Project'}</button>

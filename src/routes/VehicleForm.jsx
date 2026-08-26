@@ -849,9 +849,9 @@ const VehicleForm = () => {
     }).filter(e => e.location);
   };
 
-  // When CustomerCompanyName changes, load projects & parse sites
+  // When CustomerCompanyName changes, load projects
   useEffect(() => {
-    const selectedCustomer = allCustomers.find(c => c.Name === vehicleData.CustomerCompanyName);
+    const selectedCustomer = allCustomers.find(c => c.Name === vehicleData.CustomerCompanyName || c.MasterCustomerName === vehicleData.CustomerCompanyName);
     if (!selectedCustomer) {
       setFilteredProjects([]);
       setParsedSiteData([]);
@@ -860,22 +860,73 @@ const VehicleForm = () => {
       setVehicleData(prev => ({ ...prev, Project: '', Location: '', CustomerSite: '', CogentEmployee: '' }));
       return;
     }
+
     // Load projects for selected customer
     projectAPI.getByCustomer(selectedCustomer.CustomerID).then(resp => {
-      setFilteredProjects(resp.data?.data || resp.data || []);
+      const projectsList = resp.data?.data || resp.data || [];
+      setFilteredProjects(projectsList);
     }).catch(err => console.error('Error loading projects:', err));
 
-    // Parse customer sites into structured objects
-    const parsed = parseSiteString(selectedCustomer.CustomerSite);
-    setParsedSiteData(parsed);
-    // Extract unique locations
-    const uniqueLocs = [...new Set(parsed.map(e => e.location))];
-    setFilteredLocations(uniqueLocs);
+    setParsedSiteData([]);
+    setFilteredLocations([]);
     setFilteredSites([]);
-
-    // Reset dependent fields
     setVehicleData(prev => ({ ...prev, Project: '', Location: '', CustomerSite: '', CogentEmployee: '' }));
   }, [vehicleData.CustomerCompanyName, allCustomers]);
+
+  // When Project changes, fetch locations & customer sites for that project
+  useEffect(() => {
+    if (!vehicleData.Project) {
+      setParsedSiteData([]);
+      setFilteredLocations([]);
+      setFilteredSites([]);
+      setVehicleData(prev => ({ ...prev, Location: '', CustomerSite: '', CogentEmployee: '' }));
+      return;
+    }
+
+    // Find all project records matching the selected ProjectName
+    const matchingProjects = filteredProjects.filter(p => p.ProjectName === vehicleData.Project);
+
+    const parsed = [];
+    const locSet = new Set();
+
+    matchingProjects.forEach(p => {
+      const loc = (p.Location || '').trim();
+      const siteRaw = (p.CustomerSite || '').trim();
+
+      if (loc) {
+        locSet.add(loc);
+      }
+
+      if (siteRaw) {
+        const parts = siteRaw.split(',');
+        parts.forEach(part => {
+          const entry = part.trim();
+          if (!entry) return;
+          const empMatch = entry.match(/\(Emp:\s*([^)]+)\)/);
+          const employee = empMatch ? empMatch[1].trim() : '';
+          const siteOnly = entry.replace(/\(Emp:[^)]+\)/, '').trim();
+          parsed.push({
+            location: loc,
+            site: siteOnly,
+            employee,
+            raw: entry
+          });
+        });
+      } else if (loc) {
+        parsed.push({
+          location: loc,
+          site: '',
+          employee: '',
+          raw: loc
+        });
+      }
+    });
+
+    setParsedSiteData(parsed);
+    setFilteredLocations([...locSet]);
+    setFilteredSites([]);
+    setVehicleData(prev => ({ ...prev, Location: '', CustomerSite: '', CogentEmployee: '' }));
+  }, [vehicleData.Project, filteredProjects]);
 
   // When Location changes, filter sites for that location
   useEffect(() => {
@@ -884,7 +935,7 @@ const VehicleForm = () => {
       setVehicleData(prev => ({ ...prev, CustomerSite: '', CogentEmployee: '' }));
       return;
     }
-    const sitesForLocation = parsedSiteData.filter(e => e.location === vehicleData.Location);
+    const sitesForLocation = parsedSiteData.filter(e => e.location === vehicleData.Location && e.site);
     setFilteredSites(sitesForLocation);
     setVehicleData(prev => ({ ...prev, CustomerSite: '', CogentEmployee: '' }));
   }, [vehicleData.Location, parsedSiteData]);
@@ -1885,14 +1936,14 @@ const VehicleForm = () => {
                     name="Project"
                     value={vehicleData.Project}
                     onChange={handleInputChange}
-                    options={filteredProjects.map(p => ({ id: p.ProjectName, name: p.ProjectName }))}
+                    options={[...new Set(filteredProjects.map(p => p.ProjectName).filter(Boolean))].map(name => ({ id: name, name }))}
                     placeholder="Select..."
                     emptyLabel="Select..."
                     disabled={!vehicleData.CustomerCompanyName}
                   />
                 </div>
 
-                {/* Location Dropdown (unique locations from customer sites) */}
+                {/* Location Dropdown (unique locations from project) */}
                 <div className="form-field">
                   <label className="form-field-label">Location</label>
                   <SearchableDropdown
@@ -1902,10 +1953,10 @@ const VehicleForm = () => {
                     options={filteredLocations.map(loc => ({ id: loc, name: loc }))}
                     placeholder="Select..."
                     emptyLabel="Select..."
-                    disabled={!vehicleData.CustomerCompanyName || filteredLocations.length === 0}
+                    disabled={!vehicleData.Project || filteredLocations.length === 0}
                   />
-                  {vehicleData.CustomerCompanyName && filteredLocations.length === 0 && (
-                    <small style={{ color: '#888', fontSize: '11px' }}>No locations found for this customer</small>
+                  {vehicleData.Project && filteredLocations.length === 0 && (
+                    <small style={{ color: '#888', fontSize: '11px' }}>No locations found for this project</small>
                   )}
                 </div>
 

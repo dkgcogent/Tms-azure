@@ -13,6 +13,16 @@ import { uploadFilesDirectly } from '../utils/azureUpload';
 
 import './DailyVehicleTransactionForm.css';
 
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
+  "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", 
+  "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", 
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "UP",
+  "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", 
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", 
+  "Ladakh", "Lakshadweep", "Puducherry"
+];
+
 // Date utility functions
 const getCurrentDate = () => {
   const d = new Date();
@@ -293,6 +303,7 @@ const DailyVehicleTransactionForm = () => {
 
   // State for project-based location filtering
   const [availableProjects, setAvailableProjects] = useState([]);
+  const [availableLocations, setAvailableLocations] = useState([]);
   const [availableCustSites, setAvailableCustSites] = useState([]);
 
 
@@ -552,10 +563,17 @@ const DailyVehicleTransactionForm = () => {
         Customer: '',
         GSTNo: '',
         Project: '',
-        Location: ''
+        Location: '',
+        CustSite: ''
+      }));
+      setTransactionData(prev => ({
+        ...prev,
+        State: '',
+        CustSite: ''
       }));
       setIds(prev => ({ ...prev, CustomerID: null, ProjectID: null }));
       setAvailableProjects([]);
+      setAvailableLocations([]);
       setAvailableCustSites([]);
       setIsProjectDropdownVisible(false);
       return;
@@ -572,51 +590,50 @@ const DailyVehicleTransactionForm = () => {
     console.log('🏢 ADHOC/REPLACEMENT - Company selected:', selectedCompany);
 
     try {
-      // Fetch data using proper API services
-      const [customerResponse, projectsResponse] = await Promise.all([
-        // Fetch customer details for GST No
-        customerAPI.getById(selectedCompanyId),
-        // Fetch projects for this customer
-        projectAPI.getByCustomer(selectedCompanyId)
-      ]);
-
-      console.log('🏢 ADHOC/REPLACEMENT - Customer API response:', customerResponse);
-      console.log('🏢 ADHOC/REPLACEMENT - Projects API response:', projectsResponse);
-
-      // Extract customer info (GST No from Customer Master)
-      const customerInfo = customerResponse.data || selectedCompany;
-      const gstNo = customerInfo.GSTNo || '';
-      
-      // Extract customer sites
-      let sites = [];
-      if (customerInfo.CustomerSite) {
-        sites = customerInfo.CustomerSite.split(',').map(s => s.trim()).filter(Boolean);
-      } else if (customerInfo.Locations) {
-        sites = customerInfo.Locations.split(',').map(s => s.trim()).filter(Boolean);
-      }
-      setAvailableCustSites(sites);
-
-      // Extract project info and implement dynamic project field logic
+      // Fetch projects for this customer
+      const projectsResponse = await projectAPI.getByCustomer(selectedCompanyId);
       const projectsData = projectsResponse.data?.data || [];
       console.log('🏢 ADHOC/REPLACEMENT - Projects found:', projectsData.length);
 
       // Set available projects for dropdown
       setAvailableProjects(projectsData);
 
+      // Extract unique locations from all projects for this customer
+      const locSet = new Set();
+      projectsData.forEach(p => {
+        if (p.Location) locSet.add(p.Location.trim());
+      });
+      const locs = [...locSet];
+      setAvailableLocations(locs);
+
       let projectName = '';
       let location = '';
+      let gstNo = '';
+      let state = '';
+      let sites = [];
       let projectId = null;
 
       if (projectsData.length === 1) {
-        // Single project - auto-select and show as readonly
+        // Single project - auto-select and populate all fields
         const project = projectsData[0];
         projectName = project.ProjectName || '';
-        location = project.Location || '';
+        location = project.Location || (locs[0] || '');
+        gstNo = project.GSTNo || '';
+        state = project.State || '';
         projectId = project.ProjectID;
+
+        if (project.CustomerSite) {
+          project.CustomerSite.split(',').forEach(s => {
+            const clean = s.replace(/\(Emp:[^)]+\)/, '').trim();
+            if (clean && !sites.includes(clean)) sites.push(clean);
+          });
+        }
+
         setIsProjectDropdownVisible(false);
         console.log('✅ ADHOC/REPLACEMENT - Single project auto-selected:', projectName);
       } else if (projectsData.length > 1) {
-        // Multiple projects - show dropdown for selection
+        // Multiple projects - check if common GSTNo exists
+        gstNo = projectsData.find(p => p.GSTNo)?.GSTNo || '';
         setIsProjectDropdownVisible(true);
         console.log('📋 ADHOC/REPLACEMENT - Multiple projects available, showing dropdown');
       } else {
@@ -624,6 +641,8 @@ const DailyVehicleTransactionForm = () => {
         setIsProjectDropdownVisible(false);
         console.log('❌ ADHOC/REPLACEMENT - No projects found for customer');
       }
+
+      setAvailableCustSites(sites);
 
       // Update master data with fetched information
       setMasterData(prev => ({
@@ -633,7 +652,14 @@ const DailyVehicleTransactionForm = () => {
         GSTNo: gstNo,
         Project: projectName,
         Location: location,
-        CustSite: location // Use CustSite for validation
+        CustSite: location
+      }));
+
+      // Update transaction data (State & CustSite)
+      setTransactionData(prev => ({
+        ...prev,
+        State: state || prev.State || '',
+        CustSite: sites[0] || prev.CustSite || ''
       }));
 
       // Update IDs
@@ -648,6 +674,9 @@ const DailyVehicleTransactionForm = () => {
         GSTNo: gstNo,
         Project: projectName,
         Location: location,
+        State: state,
+        Locations: locs,
+        Sites: sites,
         ProjectsCount: projectsData.length,
         IsDropdownVisible: projectsData.length > 1
       });
@@ -655,15 +684,14 @@ const DailyVehicleTransactionForm = () => {
     } catch (error) {
       console.error('🏢 ADHOC/REPLACEMENT - Error fetching company data:', error);
 
-      // Fallback to basic company info from dropdown data
       setMasterData(prev => ({
         ...prev,
         CompanyName: selectedCompany.Name || selectedCompany.MasterCustomerName || '',
         Customer: selectedCompanyId,
-        GSTNo: selectedCompany.GSTNo || '',
+        GSTNo: '',
         Project: '',
         Location: '',
-        CustSite: selectedCompany.Locations || ''
+        CustSite: ''
       }));
 
       setIds(prev => ({
@@ -673,10 +701,9 @@ const DailyVehicleTransactionForm = () => {
       }));
 
       setAvailableProjects([]);
+      setAvailableLocations([]);
       setAvailableCustSites([]);
       setIsProjectDropdownVisible(false);
-
-      console.log('🏢 ADHOC/REPLACEMENT - Fallback to dropdown data');
     }
   };
 
@@ -1202,7 +1229,7 @@ const DailyVehicleTransactionForm = () => {
     }
   };
 
-  // Handler for project selection - automatically populate location
+  // Handler for project selection - automatically populate GST No, Locations, State, and Customer Sites
   const handleProjectSelection = async (e) => {
     const selectedProjectId = e.target.value;
     console.log('🏗️ PROJECT SELECTION - Selected project ID:', selectedProjectId);
@@ -1211,9 +1238,12 @@ const DailyVehicleTransactionForm = () => {
       setMasterData(prev => ({
         ...prev,
         Project: '',
-        Location: ''
+        Location: '',
+        CustSite: ''
       }));
       setIds(prev => ({ ...prev, ProjectID: '' }));
+      setAvailableLocations([]);
+      setAvailableCustSites([]);
       return;
     }
 
@@ -1224,25 +1254,105 @@ const DailyVehicleTransactionForm = () => {
       if (selectedProject) {
         console.log('🏗️ PROJECT SELECTION - Found project:', selectedProject);
 
-        // Update master data with project name and location
+        // Find all project rows matching this ProjectName to gather all locations and customer sites
+        const matchingProjects = availableProjects.filter(p => p.ProjectName === selectedProject.ProjectName);
+
+        const locSet = new Set();
+        matchingProjects.forEach(p => {
+          if (p.Location) locSet.add(p.Location.trim());
+        });
+        const locs = [...locSet];
+        setAvailableLocations(locs);
+
+        const location = locs.length > 0 ? locs[0] : (selectedProject.Location || '');
+
+        // Gather sites and state for the active location
+        const locProjects = matchingProjects.filter(p => !location || p.Location === location);
+        const sites = [];
+        locProjects.forEach(p => {
+          if (p.CustomerSite) {
+            p.CustomerSite.split(',').forEach(s => {
+              const clean = s.replace(/\(Emp:[^)]+\)/, '').trim();
+              if (clean && !sites.includes(clean)) sites.push(clean);
+            });
+          }
+        });
+
+        const gstNo = selectedProject.GSTNo || matchingProjects.find(p => p.GSTNo)?.GSTNo || '';
+        const state = locProjects[0]?.State || matchingProjects.find(p => p.State)?.State || '';
+
+        // Update master data with project name, GSTNo, and location
         setMasterData(prev => ({
           ...prev,
           Project: selectedProject.ProjectName,
-          Location: selectedProject.ProjectLocation || selectedProject.Location || '',
-          CustSite: selectedProject.ProjectLocation || selectedProject.Location || ''
+          GSTNo: gstNo || prev.GSTNo,
+          Location: location,
+          CustSite: location
         }));
+
+        // Update transaction data with State and CustSite
+        setTransactionData(prev => ({
+          ...prev,
+          State: state || prev.State || '',
+          CustSite: sites[0] || prev.CustSite || ''
+        }));
+
+        setAvailableCustSites(sites);
 
         // Update project ID for submission
         setIds(prev => ({ ...prev, ProjectID: selectedProjectId }));
 
         console.log('📋 Project Selection Updated:', { 
           ProjectName: selectedProject.ProjectName, 
-          ProjectID: selectedProjectId 
+          ProjectID: selectedProjectId,
+          GSTNo: gstNo,
+          Location: location,
+          State: state,
+          Locations: locs,
+          Sites: sites
         });
       }
     } catch (error) {
       console.error('❌ PROJECT SELECTION - Error:', error);
     }
+  };
+
+  // Handler for location selection - filters customer sites & populates state
+  const handleLocationSelect = (e) => {
+    const selectedLoc = e.target.value;
+    console.log('📍 LOCATION SELECTION - Selected location:', selectedLoc);
+
+    // Find matching project records for this location
+    const matchingProjects = availableProjects.filter(p => 
+      (!masterData.Project || p.ProjectName === masterData.Project) && 
+      (!selectedLoc || p.Location === selectedLoc)
+    );
+
+    const sites = [];
+    matchingProjects.forEach(p => {
+      if (p.CustomerSite) {
+        p.CustomerSite.split(',').forEach(s => {
+          const clean = s.replace(/\(Emp:[^)]+\)/, '').trim();
+          if (clean && !sites.includes(clean)) sites.push(clean);
+        });
+      }
+    });
+
+    const state = matchingProjects[0]?.State || '';
+
+    setMasterData(prev => ({
+      ...prev,
+      Location: selectedLoc,
+      CustSite: selectedLoc
+    }));
+
+    setTransactionData(prev => ({
+      ...prev,
+      State: state || prev.State || '',
+      CustSite: sites[0] || ''
+    }));
+
+    setAvailableCustSites(sites);
   };
 
   // Handler for driver auto-population (populates driver number)
@@ -1320,6 +1430,7 @@ const DailyVehicleTransactionForm = () => {
         VehiclePlacementType: 'Fixed', // Default for vehicle-based selection
         CompanyName: vehicleDetails.CustomerCompanyName || vehicle.CustomerCompanyName || '',
         Customer: vehicleDetails.CustomerCompanyName || vehicle.CustomerCompanyName || '',
+        GSTNo: '',
         Project: vehicleDetails.Project || vehicle.Project || '',
         Location: vehicleDetails.Location || vehicle.Location || vehicleDetails.CustomerSite || vehicle.CustomerSite || '',
         CustSite: vehicleDetails.CustomerSite || vehicle.CustomerSite || vehicleDetails.Location || vehicle.Location || ''
@@ -1333,7 +1444,7 @@ const DailyVehicleTransactionForm = () => {
 
         try {
           const vendorResponse = await vendorAPI.getAll();
-          const vendorsData = vendorResponse.data?.value || vendorResponse.data || [];
+          const vendorsData = vendorResponse.data?.value || vendorResponse.data?.data || vendorResponse.data || [];
           vendorData = vendorsData.find(v => v.VendorID == vendorId);
 
           if (vendorData) {
@@ -1346,68 +1457,77 @@ const DailyVehicleTransactionForm = () => {
         }
       }
 
-      // Step 2: Get Project information (from vehicle or vendor)
+      // Step 2: Get Project information (match by ProjectID or ProjectName)
       let projectData = null;
-      const projectId = vehicleDetails.ProjectID || vehicleDetails.project_id || vendorData?.project_id;
+      try {
+        const projectResponse = await projectAPI.getAll();
+        const projectsData = projectResponse.data?.value || projectResponse.data?.data || projectResponse.data || [];
 
-      if (projectId) {
-        console.log('🚗 Fetching project data for ID:', projectId);
+        const targetProjId = vehicleDetails.ProjectID || vehicleDetails.project_id || vendorData?.project_id;
+        const targetProjName = vehicleDetails.Project || vehicle.Project;
 
-        try {
-          const projectResponse = await projectAPI.getAll();
-          const projectsData = projectResponse.data?.value || projectResponse.data || [];
-          projectData = projectsData.find(p => p.ProjectID == projectId);
-
-          if (projectData) {
-            autoPopulatedData.Project = projectData.ProjectName; // Use project name for display
-            idsData.ProjectID = projectData.ProjectID;
-            console.log('📋 Vehicle Auto-populate - Selected project:', projectData.ProjectName, 'ID:', projectData.ProjectID);
-
-            // Get exact location from project (try multiple possible field names)
-            const projectLocation = projectData.Location || projectData.LocationName || projectData.LocationID || projectData.ProjectLocation || projectData.SiteLocation;
-            if (projectLocation) {
-              autoPopulatedData.CustSite = projectLocation;
-              autoPopulatedData.Location = projectLocation; // Also set Location field
-              console.log('✅ Project location found:', projectLocation);
-              console.log('🔍 Project data fields:', Object.keys(projectData));
-            } else {
-              console.log('⚠️ No location found in project data');
-              console.log('🔍 Available project fields:', Object.keys(projectData));
-              console.log('🔍 Full project data:', projectData);
-            }
-          }
-        } catch (error) {
-          console.error('❌ Error fetching project data:', error);
+        if (targetProjId) {
+          projectData = projectsData.find(p => p.ProjectID == targetProjId);
         }
+        if (!projectData && targetProjName) {
+          projectData = projectsData.find(p => p.ProjectName && (p.ProjectName.trim().toLowerCase() === targetProjName.trim().toLowerCase()));
+        }
+
+        if (projectData) {
+          autoPopulatedData.Project = projectData.ProjectName;
+          autoPopulatedData.GSTNo = projectData.GSTNo || '';
+          console.log('📋 Vehicle Auto-populate - Selected project:', projectData.ProjectName, 'GSTNo:', projectData.GSTNo);
+
+          // Find all sibling rows for this project name to collect all locations
+          const matchingProjects = projectsData.filter(p => p.ProjectName && (p.ProjectName.trim().toLowerCase() === projectData.ProjectName.trim().toLowerCase()));
+          const locSet = new Set();
+          matchingProjects.forEach(p => {
+            if (p.Location) locSet.add(p.Location.trim());
+          });
+          if (vehicleDetails.Location) locSet.add(vehicleDetails.Location.trim());
+          const locs = [...locSet];
+          setAvailableLocations(locs);
+
+          const chosenLocation = vehicleDetails.Location || projectData.Location || projectData.ProjectLocation || (locs.length > 0 ? locs[0] : '');
+          autoPopulatedData.Location = chosenLocation;
+          autoPopulatedData.CustSite = chosenLocation;
+        }
+      } catch (error) {
+        console.error('❌ Error fetching project data:', error);
       }
 
-      // Step 3: Get Customer information (from project)
+      // Step 3: Get Customer information (from project or vehicle)
       let customerData = null;
       const customerId = projectData?.CustomerID || vehicleDetails.CustomerID || vehicleDetails.customer_id;
+      const targetCustomerName = vehicleDetails.CustomerCompanyName || vehicle.CustomerCompanyName;
 
-      if (customerId) {
-        console.log('🚗 Fetching customer data for ID:', customerId);
+      try {
+        const customerResponse = await customerAPI.getAll();
+        const customersData = customerResponse.data?.value || customerResponse.data?.data || customerResponse.data || [];
 
-        try {
-          const customerResponse = await customerAPI.getAll();
-          const customersData = customerResponse.data?.value || customerResponse.data || [];
+        if (customerId) {
           customerData = customersData.find(c => c.CustomerID == customerId);
-
-          if (customerData) {
-            autoPopulatedData.Customer = customerData.Name || ''; // Use name for readonly field
-            autoPopulatedData.CompanyName = customerData.Name || '';
-            autoPopulatedData.GSTNo = customerData.GSTNo || '';
-            if (!autoPopulatedData.Location || autoPopulatedData.Location === 'N/A') {
-              autoPopulatedData.Location = customerData.Locations || customerData.Location || customerData.CustomerSite || '';
-            }
-            if (!autoPopulatedData.CustSite || autoPopulatedData.CustSite === 'N/A') {
-              autoPopulatedData.CustSite = customerData.CustomerSite || customerData.Locations || customerData.Location || '';
-            }
-            console.log('✅ Customer data found:', customerData.Name);
-          }
-        } catch (error) {
-          console.error('❌ Error fetching customer data:', error);
         }
+        if (!customerData && targetCustomerName) {
+          customerData = customersData.find(c => c.Name && (c.Name.trim().toLowerCase() === targetCustomerName.trim().toLowerCase() || (c.MasterCustomerName && c.MasterCustomerName.trim().toLowerCase() === targetCustomerName.trim().toLowerCase())));
+        }
+
+        if (customerData) {
+          autoPopulatedData.Customer = customerData.Name || targetCustomerName || '';
+          autoPopulatedData.CompanyName = customerData.Name || targetCustomerName || '';
+          if (!autoPopulatedData.GSTNo && customerData.GSTNo) {
+            autoPopulatedData.GSTNo = customerData.GSTNo;
+          }
+          if (!autoPopulatedData.Location || autoPopulatedData.Location === 'N/A') {
+            autoPopulatedData.Location = customerData.Locations || customerData.Location || customerData.CustomerSite || '';
+          }
+          if (!autoPopulatedData.CustSite || autoPopulatedData.CustSite === 'N/A') {
+            autoPopulatedData.CustSite = customerData.CustomerSite || customerData.Locations || customerData.Location || '';
+          }
+          console.log('✅ Customer data found:', customerData.Name);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching customer data:', error);
       }
 
       console.log('🚗 Vehicle Auto-Populate - Final auto-populated data:', autoPopulatedData);
@@ -4033,6 +4153,7 @@ const DailyVehicleTransactionForm = () => {
                     options={availableProjects}
                     valueKey="ProjectID"
                     labelKey="ProjectName"
+                    formatLabel={(p) => typeof p === 'object' && p ? `${p.ProjectName || ''}${p.Location ? ` - ${p.Location}` : ''}` : String(p || '')}
                     placeholder="Select a project"
                     className={errors.Project ? 'error' : ''}
                   />
@@ -4052,15 +4173,21 @@ const DailyVehicleTransactionForm = () => {
 
               <div className="form-group">
                 <label>Location *</label>
-                <input
-                  type="text"
+                <select
                   name="Location"
-                  value={masterData.Location}
-                  onChange={handleMasterDataChange}
-                  className="readonly-field"
-                  readOnly
-                  placeholder={masterData.TypeOfTransaction === 'Fixed' ? 'Auto-populated from selected vehicle' : 'Auto-populated from selected project'}
-                />
+                  value={masterData.Location || ''}
+                  onChange={handleLocationSelect}
+                  className="form-control"
+                  required
+                >
+                  <option value="">Select Location</option>
+                  {availableLocations.map((loc, index) => (
+                    <option key={index} value={loc}>{loc}</option>
+                  ))}
+                  {masterData.Location && !availableLocations.includes(masterData.Location) && (
+                    <option value={masterData.Location}>{masterData.Location}</option>
+                  )}
+                </select>
                 {errors.CustSite && <span className="error-message">{errors.CustSite}</span>}
               </div>
 
@@ -4098,6 +4225,41 @@ const DailyVehicleTransactionForm = () => {
                   </select>
                 )}
               </div>
+
+              {/* State & Cust Site - For Adhoc/Replacement transactions */}
+              {(masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') && (
+                <>
+                  <div className="form-group">
+                    <label>State</label>
+                    <select
+                      name="State"
+                      value={transactionData.State || ''}
+                      onChange={handleTransactionDataChange}
+                      className="form-control"
+                    >
+                      <option value="">Select State</option>
+                      {INDIAN_STATES.map((stateName, index) => (
+                        <option key={index} value={stateName}>{stateName}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Cust Site</label>
+                    <select
+                      name="CustSite"
+                      value={transactionData.CustSite || ''}
+                      onChange={handleTransactionDataChange}
+                      className="form-control"
+                    >
+                      <option value="">Select Site</option>
+                      {availableCustSites.map((site, index) => (
+                        <option key={index} value={site}>{site}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
 
               {/* Vendor Name - Show only for Fixed transactions */}
               {masterData.TypeOfTransaction === 'Fixed' && (
@@ -4523,46 +4685,6 @@ const DailyVehicleTransactionForm = () => {
                     className={errors.ServiceDate ? 'error' : ''}
                   />
                   {errors.ServiceDate && <span className="error-message">{errors.ServiceDate}</span>}
-                </div>
-
-                {/* State */}
-                <div className="form-group">
-                  <label>State</label>
-                  <select
-                    name="State"
-                    value={transactionData.State || 'UP'}
-                    onChange={handleTransactionDataChange}
-                    className="form-control"
-                  >
-                    <option value="UP">UP</option>
-                    <option value="Delhi">Delhi</option>
-                    <option value="Haryana">Haryana</option>
-                  </select>
-                </div>
-
-                {/* Cust Site */}
-                <div className="form-group">
-                  <label>Cust Site</label>
-                  <select
-                    name="CustSite"
-                    value={transactionData.CustSite || ''}
-                    onChange={handleTransactionDataChange}
-                    className="form-control"
-                  >
-                    <option value="">Select Site</option>
-                    {availableCustSites.length > 0 ? (
-                      availableCustSites.map((site, index) => (
-                        <option key={index} value={site}>{site}</option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="Rajaji Puram">Rajaji Puram</option>
-                        <option value="Sarojni Nagar">Sarojni Nagar</option>
-                        <option value="Faribadabad">Faribadabad</option>
-                        <option value="Ballabghar">Ballabghar</option>
-                      </>
-                    )}
-                  </select>
                 </div>
 
 

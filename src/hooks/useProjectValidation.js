@@ -14,6 +14,17 @@ export const useProjectValidation = () => {
 
     projectData.StartDate && projectData.EndDate && new Date(projectData.EndDate) <= new Date(projectData.StartDate) && (newErrors.EndDate = 'End date must be after start date');
 
+    if (projectData.BillingTenure === 'Specific Dates') {
+      if (!projectData.BillingFromDate) {
+        newErrors.BillingFromDate = 'Billing From Date is required';
+      }
+      if (!projectData.BillingToDate) {
+        newErrors.BillingToDate = 'Billing To Date is required';
+      } else if (projectData.BillingFromDate && new Date(projectData.BillingToDate) <= new Date(projectData.BillingFromDate)) {
+        newErrors.BillingToDate = 'Billing To Date must be after Billing From Date';
+      }
+    }
+
     return { isValid: Object.keys(newErrors).length === 0, errors: newErrors };
   }, []);
 

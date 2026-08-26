@@ -1,8 +1,17 @@
 import React from 'react';
 import Dropdown from '../Dropdown';
-import MultiSelectDropdown from '../MultiSelectDropdown';
 
-const FormField = ({ label, name, type = 'text', value, onChange, options = {}, required = false, error = null, customers = [], locations = [], isSubmitting = false, projectData = {}, handleCustomerChange, handleLocationChange }) => {
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
+  "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", 
+  "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", 
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", 
+  "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", 
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", 
+  "Ladakh", "Lakshadweep", "Puducherry"
+];
+
+const FormField = ({ label, name, type = 'text', value, onChange, options = {}, required = false, error = null, customers = [], employees = [], isSubmitting = false, projectData = {}, handleCustomerChange }) => {
   const { placeholder, readOnly } = options;
   const id = `project-${name}`;
   const commonProps = { id, name, value: value || '', onChange, required, className: error ? 'error' : '', disabled: isSubmitting };
@@ -12,12 +21,29 @@ const FormField = ({ label, name, type = 'text', value, onChange, options = {}, 
       case 'CustomerID':
         return <Dropdown name={name} value={value} onChange={handleCustomerChange} options={customers} valueKey="CustomerID" labelKey="Name" formatLabel={(customer) => `${customer.Name} (${customer.CustomerCode})`} placeholder="Select a customer" required={required} error={error} disabled={isSubmitting} />;
 
-      case 'LocationID':
-        return locations.length === 0
-          ? <input type="text" id={id} name={name} value="No locations available" disabled className="disabled-input" placeholder="Select a customer first" />
-          : locations.length === 1
-            ? <input type="text" id={id} name={name} value={locations[0].LocationName} disabled className="readonly-input" title="Only one location available for this customer" />
-            : <MultiSelectDropdown name={name} value={Array.isArray(value) ? value : (value ? [value] : [])} onChange={handleLocationChange} options={locations} valueKey="LocationID" labelKey="LocationName" formatLabel={(location) => location.isCustomerSite ? location.displayName : `${location.LocationName} (${location.Address || 'No address'})`} placeholder="Select locations..." searchPlaceholder="Search locations..." required={required} error={error} disabled={isSubmitting || !projectData.CustomerID} showSearch allowSelectAll maxHeight="250px" />;
+      case 'State':
+        return (
+          <select {...commonProps}>
+            <option value="">-- Select State --</option>
+            {INDIAN_STATES.map(stateName => (
+              <option key={stateName} value={stateName}>
+                {stateName}
+              </option>
+            ))}
+          </select>
+        );
+
+      case 'AssignedEmployee':
+        return (
+          <select {...commonProps}>
+            <option value="">-- Assign Employee --</option>
+            {employees.map(emp => (
+              <option key={emp.id || emp.employee_id || emp.employee_code} value={emp.employee_code ? `${emp.employee_code}/${emp.employee_name}` : emp.employee_name}>
+                {emp.employee_code ? `${emp.employee_code}/` : ''}{emp.employee_name}
+              </option>
+            ))}
+          </select>
+        );
 
       case 'Status':
         return (

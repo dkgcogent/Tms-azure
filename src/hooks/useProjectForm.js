@@ -1,17 +1,37 @@
 import { useState, useEffect, useCallback } from 'react';
-import { customerAPI, projectAPI, locationAPI, apiHelpers } from '../services/api';
+import { customerAPI, projectAPI, employeeAPI, apiHelpers } from '../services/api';
 import useFormDraft from './useFormDraft';
 import authService from '../services/authService';
 
-const INITIAL_STATE = { ProjectName: '', CustomerID: '', ProjectCode: '', ProjectDescription: '', LocationID: '', ProjectValue: '', StartDate: '', EndDate: '', Status: 'Active' };
+const INITIAL_STATE = {
+  ProjectName: '',
+  CustomerID: '',
+  ProjectCode: '',
+  ProjectDescription: '',
+  CustomerSite: [{ state: '', location: '', sites: [{ name: '', employee_id: '' }] }],
+  ProjectValue: '',
+  StartDate: '',
+  EndDate: '',
+  Status: 'Active',
+  // Commercials & Billing
+  Rates: '',
+  RatesAnnexureFile: null,
+  YearlyEscalationClause: 'No',
+  GSTNo: '',
+  GSTRate: '0',
+  TypeOfBilling: 'RCM',
+  BillingTenure: '',
+  BillingFromDate: '',
+  BillingToDate: ''
+};
+
 const formatDateForInput = (dateString) => dateString ? new Date(new Date(dateString).getTime() + new Date(dateString).getTimezoneOffset() * 60000).toISOString().split('T')[0] : '';
 
 export const useProjectForm = () => {
   const [projectData, setProjectData] = useState(INITIAL_STATE);
   const [projects, setProjects] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [locations, setLocations] = useState([]);
-  const [customerSites, setCustomerSites] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,15 +63,21 @@ export const useProjectForm = () => {
     setProjectData(INITIAL_STATE);
     setErrors({});
     setEditingProject(null);
-    setLocations([]);
     setSelectedCustomer(null);
-    setCustomerSites([]);
   }, []);
 
-  const generateProjectCode = useCallback(async (projectName, customerId, locationIds = []) => {
+  const generateProjectCode = useCallback(async (projectName, customerId, customerSitesList = []) => {
     if (!projectName || !customerId) return '';
     try {
-      const response = await projectAPI.previewCode({ ProjectName: projectName, CustomerID: customerId, LocationID: locationIds });
+      const locationNames = (customerSitesList || [])
+        .map(item => item.location)
+        .filter(Boolean);
+
+      const response = await projectAPI.previewCode({
+        ProjectName: projectName,
+        CustomerID: customerId,
+        LocationID: locationNames
+      });
       return response.data.success ? response.data.projectCode : '';
     } catch { return ''; }
   }, []);
@@ -63,10 +89,18 @@ export const useProjectForm = () => {
       const newData = { ...prev, [name]: value };
 
       if (name === 'ProjectName' && selectedCustomer && value.trim()) {
-        const selectedLocationIds = Array.isArray(prev.LocationID) ? prev.LocationID : (prev.LocationID ? [prev.LocationID] : []);
-        selectedLocationIds.length > 0 && generateProjectCode(value, selectedCustomer.CustomerID, selectedLocationIds).then(generatedCode => {
+        generateProjectCode(value, selectedCustomer.CustomerID, prev.CustomerSite).then(generatedCode => {
           generatedCode && setProjectData(current => ({ ...current, ProjectCode: generatedCode }));
         });
+      }
+
+      // Auto-set GSTRate to 0 when RCM or Exempt is selected
+      if (name === 'TypeOfBilling') {
+        if (value === 'RCM' || value === 'Exempt') {
+          newData.GSTRate = '0';
+        } else if (value === 'GST' && (!prev.GSTRate || prev.GSTRate === '0')) {
+          newData.GSTRate = '18';
+        }
       }
 
       return newData;
@@ -75,24 +109,86 @@ export const useProjectForm = () => {
     errors[name] && setErrors(prev => ({ ...prev, [name]: '' }));
   }, [errors, selectedCustomer, generateProjectCode]);
 
-  const handleLocationChange = useCallback(async (e) => {
-    const { name, value } = e.target;
+  // Location Group Handlers
+  const addLocation = useCallback(() => {
+    setProjectData(prev => ({
+      ...prev,
+      CustomerSite: [
+        ...(prev.CustomerSite || []),
+        { state: '', location: '', sites: [{ name: '', employee_id: '' }] }
+      ]
+    }));
+  }, []);
 
+  const removeLocation = useCallback((locationIndex) => {
+    setProjectData(prev => ({
+      ...prev,
+      CustomerSite: (prev.CustomerSite || []).filter((_, i) => i !== locationIndex)
+    }));
+  }, []);
+
+  const handleLocationStateChange = useCallback((locationIndex, stateValue) => {
+    setProjectData(prev => ({
+      ...prev,
+      CustomerSite: (prev.CustomerSite || []).map((item, i) =>
+        i === locationIndex ? { ...item, state: stateValue } : item
+      )
+    }));
+  }, []);
+
+  const handleLocationNameChange = useCallback((locationIndex, value) => {
     setProjectData(prev => {
-      const newData = { ...prev, [name]: value };
+      const updatedSites = (prev.CustomerSite || []).map((item, i) =>
+        i === locationIndex ? { ...item, location: value } : item
+      );
 
-      if (selectedCustomer && prev.ProjectName) {
-        const selectedLocationIds = Array.isArray(value) ? value : (value ? [value] : []);
-        generateProjectCode(prev.ProjectName, selectedCustomer.CustomerID, selectedLocationIds).then(generatedCode => {
+      if (selectedCustomer && prev.ProjectName && prev.ProjectName.trim()) {
+        generateProjectCode(prev.ProjectName, selectedCustomer.CustomerID, updatedSites).then(generatedCode => {
           generatedCode && setProjectData(current => ({ ...current, ProjectCode: generatedCode }));
         });
       }
 
-      return newData;
+      return { ...prev, CustomerSite: updatedSites };
     });
+  }, [selectedCustomer, generateProjectCode]);
 
-    errors[name] && setErrors(prev => ({ ...prev, [name]: '' }));
-  }, [errors, selectedCustomer, generateProjectCode]);
+  const addSiteToLocation = useCallback((locationIndex) => {
+    setProjectData(prev => ({
+      ...prev,
+      CustomerSite: (prev.CustomerSite || []).map((item, i) =>
+        i === locationIndex
+          ? { ...item, sites: [...(item.sites || []), { name: '', employee_id: '' }] }
+          : item
+      )
+    }));
+  }, []);
+
+  const removeSiteFromLocation = useCallback((locationIndex, siteIndex) => {
+    setProjectData(prev => ({
+      ...prev,
+      CustomerSite: (prev.CustomerSite || []).map((item, i) =>
+        i === locationIndex
+          ? { ...item, sites: (item.sites || []).filter((_, si) => si !== siteIndex) }
+          : item
+      )
+    }));
+  }, []);
+
+  const handleSiteChange = useCallback((locationIndex, siteIndex, field, value) => {
+    setProjectData(prev => ({
+      ...prev,
+      CustomerSite: (prev.CustomerSite || []).map((item, i) =>
+        i === locationIndex
+          ? {
+              ...item,
+              sites: (item.sites || []).map((site, si) =>
+                si === siteIndex ? { ...site, [field]: value } : site
+              )
+            }
+          : item
+      )
+    }));
+  }, []);
 
   const fetchProjects = useCallback(async () => {
     setIsLoading(true);
@@ -119,29 +215,12 @@ export const useProjectForm = () => {
     }
   }, []);
 
-  const loadLocations = useCallback(async (customerId) => {
+  const loadEmployees = useCallback(async () => {
     try {
-      const locationsData = customerSites.length > 0
-        ? customerSites.map((site, index) => ({ LocationID: `site_${index + 1}`, LocationName: site.fullName, Address: site.fullName, CustomerID: customerId, isCustomerSite: true, displayName: `📍 ${site.fullName}`, siteData: site }))
-        : (await locationAPI.getByCustomer(customerId)).data.data || [];
-
-      setLocations(locationsData);
-      locationsData.length === 1 && setProjectData(prev => ({ ...prev, LocationID: locationsData[0].LocationID.toString() }));
+      const response = await employeeAPI.getAll();
+      setEmployees(response.data.data || response.data || []);
     } catch (error) {
-      apiHelpers.showError(error, 'Failed to load locations');
-    }
-  }, [customerSites]);
-
-  const loadCustomerSites = useCallback(async (customerId) => {
-    try {
-      const response = await customerAPI.getById(customerId);
-      const sites = (response.data.CustomerSite || '').split(',').map(siteStr => {
-        const parts = siteStr.trim().split(' - ');
-        return { location: parts[0]?.trim() || '', site: parts[1]?.trim() || parts[0]?.trim() || '', fullName: siteStr.trim() };
-      }).filter(site => site.location || site.site);
-      setCustomerSites(sites);
-    } catch (error) {
-      apiHelpers.showError(error, 'Failed to load customer sites');
+      console.error('Error loading employees:', error);
     }
   }, []);
 
@@ -149,23 +228,56 @@ export const useProjectForm = () => {
     const { value } = e.target;
     const customer = customers.find(c => c.CustomerID.toString() === value);
     setSelectedCustomer(customer);
-    setProjectData(prev => ({ ...prev, CustomerID: value, LocationID: '', ProjectCode: '' }));
+    setProjectData(prev => ({ ...prev, CustomerID: value, ProjectCode: '' }));
 
-    if (value) {
-      await loadCustomerSites(value);
-      if (projectData.ProjectName?.trim()) {
-        const generatedCode = await generateProjectCode(projectData.ProjectName, value, []);
-        generatedCode && setProjectData(current => ({ ...current, ProjectCode: generatedCode }));
-      }
-    } else {
-      setLocations([]);
-      setCustomerSites([]);
-      setSelectedCustomer(null);
+    if (value && projectData.ProjectName?.trim()) {
+      const generatedCode = await generateProjectCode(projectData.ProjectName, value, projectData.CustomerSite);
+      generatedCode && setProjectData(current => ({ ...current, ProjectCode: generatedCode }));
     }
-  }, [customers, projectData.ProjectName, loadCustomerSites, generateProjectCode]);
+  }, [customers, projectData.ProjectName, projectData.CustomerSite, generateProjectCode]);
 
-  useEffect(() => { fetchProjects(); loadCustomers(); }, [fetchProjects, loadCustomers]);
-  useEffect(() => { selectedCustomer && customerSites.length > 0 && loadLocations(selectedCustomer.CustomerID); }, [customerSites, selectedCustomer, loadLocations]);
+  useEffect(() => {
+    fetchProjects();
+    loadCustomers();
+    loadEmployees();
+  }, [fetchProjects, loadCustomers, loadEmployees]);
 
-  return { projectData, setProjectData, projects, setProjects, customers, locations, customerSites, selectedCustomer, setSelectedCustomer, errors, setErrors, isSubmitting, setIsSubmitting, isLoading, setIsLoading, editingProject, setEditingProject, dateFilter, setDateFilter, resetForm, handleInputChange, handleLocationChange, handleCustomerChange, fetchProjects, loadCustomers, loadLocations, loadCustomerSites, generateProjectCode, formatDateForInput, hasDraft, restoreDraft, clearDraft };
+  return {
+    projectData,
+    setProjectData,
+    projects,
+    setProjects,
+    customers,
+    employees,
+    selectedCustomer,
+    setSelectedCustomer,
+    errors,
+    setErrors,
+    isSubmitting,
+    setIsSubmitting,
+    isLoading,
+    setIsLoading,
+    editingProject,
+    setEditingProject,
+    dateFilter,
+    setDateFilter,
+    resetForm,
+    handleInputChange,
+    handleCustomerChange,
+    addLocation,
+    removeLocation,
+    handleLocationStateChange,
+    handleLocationNameChange,
+    addSiteToLocation,
+    removeSiteFromLocation,
+    handleSiteChange,
+    fetchProjects,
+    loadCustomers,
+    loadEmployees,
+    generateProjectCode,
+    formatDateForInput,
+    hasDraft,
+    restoreDraft,
+    clearDraft
+  };
 };

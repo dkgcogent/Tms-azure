@@ -507,8 +507,8 @@ module.exports = (pool) => {
       console.log('📝 Preparing main Customer insert with code:', customerCode);
 
       const insertQuery = `INSERT INTO Customer (
-        \`MasterCustomerName\`, \`Name\`, \`CustomerCode\`, \`CustomerMobileNo\`, \`CustomerEmail\`, \`CustomerContactPerson\`, \`AlternateMobileNo\`, \`CustomerGroup\`, \`ServiceCode\`, \`TypeOfServices\`, \`CityName\`, \`HouseFlatNo\`, \`StreetLocality\`, \`CustomerCity\`, \`CustomerState\`, \`CustomerPinCode\`, \`CustomerCountry\`, \`TypeOfBilling\`, \`CreatedAt\`, \`UpdatedAt\`, \`Locations\`, \`CustomerSite\`, \`Agreement\`, \`AgreementFile\`, \`AgreementDate\`, \`AgreementTenure\`, \`AgreementExpiryDate\`, \`CustomerNoticePeriod\`, \`CogentNoticePeriod\`, \`CreditPeriod\`, \`Insurance\`, \`MinimumInsuranceValue\`, \`CogentDebitClause\`, \`CogentDebitLimit\`, \`BG\`, \`BGFile\`, \`BGAmount\`, \`BGDate\`, \`BGExpiryDate\`, \`BGBank\`, \`BGReceivingByCustomer\`, \`BGReceivingFile\`, \`PO\`, \`POFile\`, \`PODate\`, \`POValue\`, \`POTenure\`, \`POExpiryDate\`, \`Rates\`, \`RatesAnnexureFile\`, \`YearlyEscalationClause\`, \`GSTNo\`, \`GSTRate\`, \`BillingTenure\`, \`MISFormatFile\`, \`KPISLAFile\`, \`PerformanceReportFile\`, \`CustomerRegisteredOfficeAddress\`, \`CustomerCorporateOfficeAddress\`, \`CogentProjectHead\`, \`CogentProjectOpsManager\`, \`CustomerImportantPersonAddress1\`, \`CustomerImportantPersonAddress2\`
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        \`MasterCustomerName\`, \`Name\`, \`CustomerCode\`, \`CustomerMobileNo\`, \`CustomerEmail\`, \`CustomerContactPerson\`, \`AlternateMobileNo\`, \`CustomerGroup\`, \`ServiceCode\`, \`TypeOfServices\`, \`CityName\`, \`HouseFlatNo\`, \`StreetLocality\`, \`CustomerCity\`, \`CustomerState\`, \`CustomerPinCode\`, \`CustomerCountry\`, \`TypeOfBilling\`, \`CreatedAt\`, \`UpdatedAt\`, \`Agreement\`, \`AgreementFile\`, \`AgreementDate\`, \`AgreementTenure\`, \`AgreementExpiryDate\`, \`CustomerNoticePeriod\`, \`CogentNoticePeriod\`, \`CreditPeriod\`, \`Insurance\`, \`MinimumInsuranceValue\`, \`CogentDebitClause\`, \`CogentDebitLimit\`, \`BG\`, \`BGFile\`, \`BGAmount\`, \`BGDate\`, \`BGExpiryDate\`, \`BGBank\`, \`BGReceivingByCustomer\`, \`BGReceivingFile\`, \`PO\`, \`POFile\`, \`PODate\`, \`POValue\`, \`POTenure\`, \`POExpiryDate\`, \`Rates\`, \`RatesAnnexureFile\`, \`YearlyEscalationClause\`, \`GSTNo\`, \`GSTRate\`, \`BillingTenure\`, \`MISFormatFile\`, \`KPISLAFile\`, \`PerformanceReportFile\`, \`CustomerRegisteredOfficeAddress\`, \`CustomerCorporateOfficeAddress\`, \`CogentProjectHead\`, \`CogentProjectOpsManager\`, \`CustomerImportantPersonAddress1\`, \`CustomerImportantPersonAddress2\`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const now = new Date();
@@ -538,8 +538,6 @@ module.exports = (pool) => {
         customer.TypeOfBilling || null,
         now,
         now,
-        customer.Locations || null,
-        customer.CustomerSite || null,
         customer.Agreement || null,
         filePaths.AgreementFile || null,
         sanitizeDate(customer.AgreementDate),
@@ -1131,7 +1129,7 @@ module.exports = (pool) => {
 
       await pool.query(`
         UPDATE Customer SET
-          MasterCustomerName = ?, Name = ?, CustomerCode = ?, ServiceCode = ?, TypeOfServices = ?, Locations = ?, CustomerSite = ?,
+          MasterCustomerName = ?, Name = ?, CustomerCode = ?, ServiceCode = ?, TypeOfServices = ?,
           CustomerMobileNo = ?, AlternateMobileNo = ?, CustomerEmail = ?, CustomerContactPerson = ?, CustomerGroup = ?, CityName = ?,
           HouseFlatNo = ?, StreetLocality = ?, CustomerCity = ?, CustomerState = ?, CustomerPinCode = ?, CustomerCountry = ?,
           Agreement = ?, AgreementFile = ?, AgreementDate = ?, AgreementTenure = ?, AgreementExpiryDate = ?,
@@ -1146,7 +1144,7 @@ module.exports = (pool) => {
         WHERE CustomerID = ?
       `, [
         masterNameValue, companyNameValue, processedCustomer.CustomerCode, processedCustomer.ServiceCode,
-        processedCustomer.TypeOfServices, processedCustomer.Locations, processedCustomer.CustomerSite,
+        processedCustomer.TypeOfServices,
         processedCustomer.CustomerMobileNo, processedCustomer.AlternateMobileNo, processedCustomer.CustomerEmail, processedCustomer.CustomerContactPerson, processedCustomer.CustomerGroup, processedCustomer.CityName,
         processedCustomer.house_flat_no || null, processedCustomer.street_locality || null, processedCustomer.city || null, processedCustomer.state || null, processedCustomer.pin_code || null, processedCustomer.country || 'India',
         processedCustomer.Agreement, filePaths.AgreementFile, sanitizeDate(processedCustomer.AgreementDate),

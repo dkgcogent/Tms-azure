@@ -82,7 +82,6 @@ const CustomerForm = () => {
     CustomerCode: '', // Auto-generated, read-only
     TypeOfServices: '',
     ServiceCode: '', // Auto-selected based on TypeOfServices
-    CustomerSite: [{ location: '', sites: [{ name: '', employee_id: '' }] }], // Grouped: one location with multiple sites
 
     // Agreement & Terms Section
     Agreement: 'No',
@@ -289,68 +288,6 @@ const CustomerForm = () => {
 
 
 
-  // Handle adding new location group
-  const addLocation = () => {
-    setCustomerData(prev => ({
-      ...prev,
-      CustomerSite: [...prev.CustomerSite, { location: '', sites: [''] }]
-    }));
-  };
-
-  // Handle removing location group
-  const removeLocation = (locationIndex) => {
-    setCustomerData(prev => ({
-      ...prev,
-      CustomerSite: prev.CustomerSite.filter((_, i) => i !== locationIndex)
-    }));
-  };
-
-  // Handle location name change
-  const handleLocationChange = (locationIndex, value) => {
-    setCustomerData(prev => ({
-      ...prev,
-      CustomerSite: prev.CustomerSite.map((item, i) =>
-        i === locationIndex ? { ...item, location: value } : item
-      )
-    }));
-  };
-
-  // Handle adding site to a specific location
-  const addSiteToLocation = (locationIndex) => {
-    setCustomerData(prev => ({
-      ...prev,
-      CustomerSite: prev.CustomerSite.map((item, i) =>
-        i === locationIndex ? { ...item, sites: [...item.sites, { name: '', employee_id: '' }] } : item
-      )
-    }));
-  };
-
-  // Handle removing site from a specific location
-  const removeSiteFromLocation = (locationIndex, siteIndex) => {
-    setCustomerData(prev => ({
-      ...prev,
-      CustomerSite: prev.CustomerSite.map((item, i) =>
-        i === locationIndex
-          ? { ...item, sites: item.sites.filter((_, si) => si !== siteIndex) }
-          : item
-      )
-    }));
-  };
-
-  // Handle site value change
-  const handleSiteChange = (locationIndex, siteIndex, field, value) => {
-    setCustomerData(prev => ({
-      ...prev,
-      CustomerSite: prev.CustomerSite.map((item, i) =>
-        i === locationIndex
-          ? {
-            ...item,
-            sites: item.sites.map((site, si) => (si === siteIndex ? { ...site, [field]: value } : site))
-          }
-          : item
-      )
-    }));
-  };
 
   const addArrayItem = (arrayName) => {
     const newItem = arrayName === 'AdditionalContacts'
@@ -1320,28 +1257,7 @@ const CustomerForm = () => {
       }
     });
 
-    // 5. Location & Customer Sites Validation
-    const hasValidLocation = customerData.CustomerSite.some(locationGroup =>
-      locationGroup.location && locationGroup.location.trim() !== ''
-    );
-
-    if (!hasValidLocation) {
-      newErrors.CustomerSite = 'At least one location is required';
-    }
-
-    // 6. Billing Tenure Validation
-    if (customerData.BillingTenure === 'Specific Dates') {
-      if (!customerData.BillingFromDate) {
-        newErrors.BillingFromDate = 'Billing From Date is required when Specific Dates is selected';
-      }
-      if (!customerData.BillingToDate) {
-        newErrors.BillingToDate = 'Billing To Date is required when Specific Dates is selected';
-      } else if (customerData.BillingFromDate && new Date(customerData.BillingToDate) <= new Date(customerData.BillingFromDate)) {
-        newErrors.BillingToDate = 'Billing To Date must be after Billing From Date';
-      }
-    }
-
-    // 7. Cognizant Contact Validation
+    // 5. Cognizant Contact Validation
     if (customerData.CustomerCogentContact.EmailID &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerData.CustomerCogentContact.EmailID)) {
       newErrors['CustomerCogentContact[EmailID]'] = 'Please enter a valid email address';
@@ -1366,7 +1282,7 @@ const CustomerForm = () => {
     // Define the field order as they appear in the form (top to bottom)
     const fieldOrder = [
       // 1. Name & Code Section
-      'MasterCustomerName', 'Name', 'CustomerCode', 'TypeOfServices', 'ServiceCode', 'CustomerSite',
+      'MasterCustomerName', 'Name', 'CustomerCode', 'TypeOfServices', 'ServiceCode',
       // 2. Agreement & Terms Section
       'Agreement', 'AgreementFile', 'AgreementDate', 'AgreementTenure', 'AgreementExpiryDate',
       'CustomerNoticePeriod', 'CogentNoticePeriod', 'CreditPeriod', 'Insurance', 'MinimumInsuranceValue',
@@ -1374,9 +1290,7 @@ const CustomerForm = () => {
       'BG', 'BGFile', 'BGDate', 'BGExpiryDate', 'BGAmount',
       // 4. PO Section
       'PO', 'POFile', 'POValue', 'PODate', 'POTenure', 'POExpiryDate',
-      // 5. Commercials & Billing Section
-      'Rates', 'RatesAnnexureFile', 'YearlyEscalationClause', 'GSTNo', 'GSTRate', 'TypeOfBilling', 'BillingTenure', 'BillingFromDate', 'BillingToDate',
-      // 6. MIS Section
+      // 5. MIS Section
       'MISFormatFile', 'KPISLAFile', 'PerformanceReportFile',
       // 7. Primary Contact
       'PrimaryContact.CustomerName', 'PrimaryContact.CustomerMobileNo', 'PrimaryContact.CustomerEmailID',
@@ -1654,30 +1568,6 @@ const CustomerForm = () => {
         payload[field] = azureUrls[field];
       });
 
-      // Format Locations as string for the backend (if needed, or backend can handle it)
-      if (payload.Locations) {
-        payload.Locations = payload.Locations
-          .map(loc => loc.location)
-          .filter(loc => loc.trim() !== '')
-          .join(', ');
-      }
-
-      // Format CustomerSite as string
-      if (payload.CustomerSite) {
-        payload.CustomerSite = payload.CustomerSite
-          .filter(locationGroup => locationGroup.location?.trim())
-          .flatMap(locationGroup =>
-            locationGroup.sites
-              .filter(site => site && (typeof site === 'object' ? site.name?.trim() : site?.trim()))
-              .map(site => {
-                const siteName = typeof site === 'object' ? site.name.trim() : site.trim();
-                const empStr = (typeof site === 'object' && site.employee_id) ? ` (Emp: ${site.employee_id})` : '';
-                return `${locationGroup.location.trim()} - ${siteName}${empStr}`;
-              })
-          )
-          .join(', ');
-      }
-
       // Also remove any remaining File objects that weren't uploaded (e.g. if they were null or already strings)
       fileFields.forEach(field => {
         if (payload[field] instanceof File && !azureUrls[field]) {
@@ -1773,55 +1663,6 @@ const CustomerForm = () => {
         // Handle date fields specifically
         if (key.includes('Date') || key.includes('date')) {
           editableCustomerData[key] = formatDateForInput(customer[key]);
-        } else if (key === 'Locations') {
-          // Convert comma-separated string back to array
-          const locationsString = customer[key] || '';
-          editableCustomerData[key] = locationsString
-            .split(',')
-            .map(loc => ({ location: loc.trim() }))
-            .filter(loc => loc.location !== '');
-          if (editableCustomerData[key].length === 0) {
-            editableCustomerData[key] = [{ location: '' }];
-          }
-        } else if (key === 'CustomerSite') {
-          // Convert comma-separated string back to nested structure
-          // Input: "Delhi - Dwarka Sec 21, Delhi - Dwarka Sec 20, Mumbai - Andheri"
-          // Output: [{ location: 'Delhi', sites: ['Dwarka Sec 21', 'Dwarka Sec 20'] }, { location: 'Mumbai', sites: ['Andheri'] }]
-          const sitesString = customer[key] || '';
-          const locationMap = new Map();
-
-          sitesString.split(',').forEach(siteStr => {
-            const parts = siteStr.trim().split(' - ');
-            const location = parts[0]?.trim() || '';
-            const site = parts[1]?.trim() || '';
-
-            if (location) {
-              if (!locationMap.has(location)) {
-                locationMap.set(location, []);
-              }
-              if (site) {
-                locationMap.get(location).push(site);
-              }
-            }
-          });
-
-          editableCustomerData[key] = Array.from(locationMap.entries()).map(([location, sites]) => ({
-            location,
-            sites: sites.length > 0 ? sites.map(siteName => {
-              let name = siteName;
-              let employee_id = '';
-              const empMatch = siteName.match(/\(Emp: ([^)]+)\)/);
-              if (empMatch) {
-                employee_id = empMatch[1];
-                name = siteName.replace(empMatch[0], '').trim();
-              }
-              return { name, employee_id };
-            }) : [{ name: '', employee_id: '' }]
-          }));
-
-          if (editableCustomerData[key].length === 0) {
-            editableCustomerData[key] = [{ location: '', sites: [{ name: '', employee_id: '' }] }];
-          }
         } else {
           editableCustomerData[key] = customer[key] || '';
         }
@@ -2267,239 +2108,6 @@ const CustomerForm = () => {
     }
   };
 
-  // Render multiple locations input
-  const renderMultipleLocations = () => {
-    return (
-      <div className="form-group">
-        <label>
-          Locations <span className="required-indicator">*</span>
-        </label>
-        <div className="multiple-inputs-container">
-          {customerData.Locations.map((location, index) => (
-            <div key={index} className="multiple-input-row">
-              <input
-                type="text"
-                value={location.location}
-                onChange={(e) => handleLocationChange(index, e.target.value)}
-                placeholder={`Enter location`}
-                className="multiple-input"
-              />
-              {customerData.Locations.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeLocation(index)}
-                  className="remove-input-btn"
-                  title="Remove location"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addLocation}
-            className="add-input-btn"
-          >
-            + Add Location
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // Render multiple customer sites input with grouped locations
-  const renderMultipleCustomerSites = () => {
-    return (
-      <div
-        id="customer-CustomerSite"
-        className={errors.CustomerSite ? 'has-error' : ''}
-        style={{
-          width: '100%',
-          marginBottom: '20px',
-          gridColumn: '1 / -1'  // Span all grid columns
-        }}
-      >
-        <label style={{
-          fontWeight: '600',
-          color: errors.CustomerSite ? '#dc3545' : '#495057',
-          marginBottom: '8px',
-          fontSize: '14px',
-          display: 'block'
-        }}>
-          Location & Customer Sites <span className="required-indicator">*</span>
-        </label>
-        {errors.CustomerSite && (
-          <div className="error-message" style={{ marginBottom: '8px' }}>
-            {errors.CustomerSite}
-          </div>
-        )}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          gap: '20px',
-          alignItems: 'flex-start',
-          width: '100%'
-        }}>
-          {customerData.CustomerSite.map((locationGroup, locationIndex) => (
-            <div key={locationIndex} style={{
-              width: '280px',
-              minWidth: '280px',
-              maxWidth: '280px',
-              padding: '15px',
-              border: '1px solid #d0d0d0',
-              borderRadius: '8px',
-              backgroundColor: '#f9f9f9',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-              flexShrink: 0
-            }}>
-              {/* Location Input */}
-              <div className="multiple-input-row" style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
-                <input
-                  type="text"
-                  name={locationIndex === 0 ? "CustomerSite" : undefined}
-                  value={locationGroup.location}
-                  onChange={(e) => handleLocationChange(locationIndex, e.target.value)}
-                  placeholder="Enter location (e.g., Delhi)"
-                  className="multiple-input"
-                  style={{
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    flex: 1,
-                    width: '100%',
-                    padding: '8px 10px',
-                    border: '1px solid #ccc',
-                    borderRadius: '4px'
-                  }}
-                  required={locationIndex === 0}
-                />
-                {customerData.CustomerSite.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeLocation(locationIndex)}
-                    className="remove-input-btn"
-                    title="Remove location and all its sites"
-                    style={{
-                      marginLeft: '8px',
-                      minWidth: '28px',
-                      height: '28px',
-                      padding: '0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-
-              {/* Sites for this location */}
-              <div>
-                <label style={{
-                  fontSize: '12px',
-                  color: '#666',
-                  marginBottom: '8px',
-                  display: 'block',
-                  fontWeight: '500',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Customer Sites for {locationGroup.location || 'this location'}:
-                </label>
-                {locationGroup.sites.map((site, siteIndex) => (
-                  <div key={siteIndex} className="multiple-input-row" style={{
-                    marginBottom: '8px',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '4px' }}>
-                      <input
-                        type="text"
-                        value={typeof site === 'object' ? site.name : site}
-                        onChange={(e) => handleSiteChange(locationIndex, siteIndex, 'name', e.target.value)}
-                        placeholder="Enter customer site (e.g., Dwarka Sec 21)"
-                        className="multiple-input"
-                        style={{
-                          width: '100%',
-                          padding: '8px 10px',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          fontSize: '13px'
-                        }}
-                      />
-                      <select
-                        value={typeof site === 'object' ? (site.employee_id || '') : ''}
-                        onChange={(e) => handleSiteChange(locationIndex, siteIndex, 'employee_id', e.target.value)}
-                        className="multiple-input"
-                        style={{
-                          width: '100%',
-                          padding: '8px 10px',
-                          border: '1px solid #ccc',
-                          borderRadius: '4px',
-                          fontSize: '13px',
-                          backgroundColor: '#fff'
-                        }}
-                      >
-                        <option value="">-- Assign Employee --</option>
-                        {employees.map(emp => (
-                          <option key={emp.id || emp.employee_id || emp.employee_code} value={emp.employee_code ? `${emp.employee_code}/${emp.employee_name}` : emp.employee_name}>
-                            {emp.employee_code ? `${emp.employee_code}/` : ''}{emp.employee_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {locationGroup.sites.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeSiteFromLocation(locationIndex, siteIndex)}
-                        className="remove-input-btn"
-                        title="Remove this site"
-                        style={{
-                          marginLeft: '8px',
-                          minWidth: '28px',
-                          height: '28px',
-                          padding: '0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => addSiteToLocation(locationIndex)}
-                  className="add-input-btn"
-                  style={{
-                    fontSize: '12px',
-                    padding: '6px 12px',
-                    marginTop: '8px',
-                    width: '100%'
-                  }}
-                >
-                  + Add Site to {locationGroup.location || 'this location'}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={addLocation}
-          className="add-input-btn"
-          style={{ marginTop: '15px' }}
-        >
-          + Add New Location
-        </button>
-      </div>
-    );
-  };
-
   // Helper function to get expiry status for date fields
   const getExpiryStatus = (fieldName, dateValue) => {
     if (!dateValue) return null;
@@ -2693,7 +2301,6 @@ const CustomerForm = () => {
                 {renderFormField('Customer Code', 'CustomerCode', 'text', { placeholder: 'Auto-generated', readOnly: true })}
                 {renderFormField('Type of Services', 'TypeOfServices', 'select', { values: ['Transportation', 'Warehousing', 'Both', 'Logistics', 'Industrial Transport', 'Retail Distribution', 'Other'] }, true)}
                 {renderFormField('Service Code', 'ServiceCode', 'text', { placeholder: 'Auto-selected', readOnly: true })}
-                {renderMultipleCustomerSites()}
               </div>
             </div>
 
@@ -2818,64 +2425,7 @@ const CustomerForm = () => {
               </div>
             </div>
 
-            {/* Section 4: Commercials & Billing */}
-            <div className="form-section">
-              <h4>💰 Commercials & Billing</h4>
-              <div className="form-grid">
-                <div className="form-group">
-                  <DocumentUpload
-                    label="Rates Annexure"
-                    name="RatesAnnexureFile"
-                    value={customerData.RatesAnnexureFile}
-                    onChange={(file) => {
-
-                      setCustomerData(prev => ({ ...prev, RatesAnnexureFile: file }));
-                    }}
-                    onDelete={handleFileDelete}
-                    existingFileUrl={editingCustomer?.RatesAnnexureFileUrl}
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                    entityType="customers"
-                    entityId={editingCustomer?.CustomerID}
-                    isEditing={!!editingCustomer}
-                  />
-                </div>
-                {renderFormField('Rates', 'Rates', 'text', { placeholder: 'e.g., As per annexure' })}
-                {renderFormField('Yearly Escalation Clause', 'YearlyEscalationClause', 'radio', { values: ['Yes', 'No'] })}
-                <ValidatedInput
-                  name="GSTNo"
-                  value={customerData.GSTNo}
-                  onChange={handleInputChange}
-                  validationRule="GST"
-                  required={false}
-                  label="GST No."
-                  placeholder="Enter GST number (optional)"
-                  showFormatHint={true}
-                  autoFormat={true}
-                />
-                {renderFormField('Type of Billing', 'TypeOfBilling', 'select', { values: ['RCM', 'GST', 'Exempt'] }, true)}
-                {/* Conditional GST Rate field based on Type of Billing */}
-                {customerData.TypeOfBilling === 'RCM' || customerData.TypeOfBilling === 'Exempt' ? (
-                  // Read-only field with value 0 for RCM and Exempt
-                  renderFormField('GST Rate (%)', 'GSTRate', 'number', { readOnly: true, placeholder: '0' })
-                ) : customerData.TypeOfBilling === 'GST' ? (
-                  // Dropdown with GST rate options for GST billing type
-                  renderFormField('GST Rate (%)', 'GSTRate', 'select', { values: ['0', '5', '12', '18', '28'] }, true)
-                ) : (
-                  // Default number input when no billing type is selected
-                  renderFormField('GST Rate (%)', 'GSTRate', 'number', { placeholder: 'e.g., 18' })
-                )}
-                {renderFormField('Billing Tenure', 'BillingTenure', 'select', { values: ['Monthly', 'Specific Dates'] }, false)}
-                {/* Conditional date fields for Specific Dates billing tenure */}
-                {customerData.BillingTenure === 'Specific Dates' && (
-                  <>
-                    {renderFormField('Billing From Date', 'BillingFromDate', 'date', { placeholder: 'Select from date' }, true)}
-                    {renderFormField('Billing To Date', 'BillingToDate', 'date', { placeholder: 'Select to date' }, true)}
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Section 5: MIS & Reports */}
+            {/* Section 4: MIS & Reports */}
             <div className="form-section">
               <h4>📊 MIS & Reports</h4>
               <div className="form-grid">

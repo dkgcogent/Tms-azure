@@ -1505,6 +1505,7 @@ SyntaxError: Unexpected token ')'
     at require (node:internal/modules/helpers:147:16)
     at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:80:23)
 
+<<<<<<< HEAD
 [2026-08-14T06:24:21.801Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
 Stack: Error: listen EADDRINUSE: address already in use :::3004
     at Server.setupListenHandle [as _listen2] (node:net:1940:16)
@@ -1655,6 +1656,14 @@ Stack: C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\backend\routes\dailyVehic
            ^
 
 SyntaxError: Unexpected token '?'
+=======
+[2026-08-26T07:12:12.321Z] UNCAUGHT EXCEPTION: await is only valid in async functions and the top level bodies of modules
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\project.js:508
+      const [updatedProject] = await pool.query(`
+                               ^^^^^
+
+SyntaxError: await is only valid in async functions and the top level bodies of modules
+>>>>>>> 145517ee (projetc)
     at wrapSafe (node:internal/modules/cjs/loader:1638:18)
     at Module._compile (node:internal/modules/cjs/loader:1680:20)
     at Object..js (node:internal/modules/cjs/loader:1839:10)
@@ -1664,6 +1673,7 @@ SyntaxError: Unexpected token '?'
     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
     at Module.require (node:internal/modules/cjs/loader:1463:12)
     at require (node:internal/modules/helpers:147:16)
+<<<<<<< HEAD
     at Object.<anonymous> (C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\server.js:87:39)
 
 [2026-08-14T20:00:57.768Z] UNCAUGHT EXCEPTION: Unexpected token 'catch'
@@ -1672,6 +1682,16 @@ Stack: C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\backend\routes\dailyVehic
       ^^^^^
 
 SyntaxError: Unexpected token 'catch'
+=======
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:82:23)
+
+[2026-08-26T07:43:06.658Z] UNCAUGHT EXCEPTION: await is only valid in async functions and the top level bodies of modules
+Stack: D:\DKG MAIN\tms 1\Tms-azure\backend\routes\project.js:435
+      const [updatedProject] = await pool.query(`
+                               ^^^^^
+
+SyntaxError: await is only valid in async functions and the top level bodies of modules
+>>>>>>> 145517ee (projetc)
     at wrapSafe (node:internal/modules/cjs/loader:1638:18)
     at Module._compile (node:internal/modules/cjs/loader:1680:20)
     at Object..js (node:internal/modules/cjs/loader:1839:10)
@@ -1681,6 +1701,7 @@ SyntaxError: Unexpected token 'catch'
     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
     at Module.require (node:internal/modules/cjs/loader:1463:12)
     at require (node:internal/modules/helpers:147:16)
+<<<<<<< HEAD
     at Object.<anonymous> (C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\server.js:87:39)
 
 [2026-08-14T20:01:24.405Z] UNCAUGHT EXCEPTION: Unexpected token 'catch'
@@ -1699,4 +1720,29 @@ SyntaxError: Unexpected token 'catch'
     at Module.require (node:internal/modules/cjs/loader:1463:12)
     at require (node:internal/modules/helpers:147:16)
     at Object.<anonymous> (C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\server.js:87:39)
+=======
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:82:23)
+
+[2026-08-26T07:55:12.759Z] CUSTOMER_CREATE_ERROR: Unknown column 'Locations' in 'field list'
+Code: ER_BAD_FIELD_ERROR
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES ('Ujjawal Kumar verma', 'Test Company Ltd.', 'UKV001', '7667629374', 'vermaujjawalkumar@gmail.com', 'suman', NULL, NULL, 'TRANS', 'Transportation', NULL, 'd73', 'delhi', 'South West Delhi', 'Delhi', '110046', 'India', 'RCM', '2026-08-26 13:25:12.494', '2026-08-26 13:25:12.494', NULL, NULL, 'No', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'No', NULL, 'No', NULL, 'No', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'No', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Unknown column 'Locations' in 'field list'
+    at PromisePool.query (D:\DKG MAIN\tms 1\Tms-azure\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at D:\DKG MAIN\tms 1\Tms-azure\backend\routes\customer.js:589:36
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+[2026-08-26T07:55:51.741Z] CUSTOMER_CREATE_ERROR: Unknown column 'Locations' in 'field list'
+Code: ER_BAD_FIELD_ERROR
+SQL: INSERT INTO Customer (
+        `MasterCustomerName`, `Name`, `CustomerCode`, `CustomerMobileNo`, `CustomerEmail`, `CustomerContactPerson`, `AlternateMobileNo`, `CustomerGroup`, `ServiceCode`, `TypeOfServices`, `CityName`, `HouseFlatNo`, `StreetLocality`, `CustomerCity`, `CustomerState`, `CustomerPinCode`, `CustomerCountry`, `TypeOfBilling`, `CreatedAt`, `UpdatedAt`, `Locations`, `CustomerSite`, `Agreement`, `AgreementFile`, `AgreementDate`, `AgreementTenure`, `AgreementExpiryDate`, `CustomerNoticePeriod`, `CogentNoticePeriod`, `CreditPeriod`, `Insurance`, `MinimumInsuranceValue`, `CogentDebitClause`, `CogentDebitLimit`, `BG`, `BGFile`, `BGAmount`, `BGDate`, `BGExpiryDate`, `BGBank`, `BGReceivingByCustomer`, `BGReceivingFile`, `PO`, `POFile`, `PODate`, `POValue`, `POTenure`, `POExpiryDate`, `Rates`, `RatesAnnexureFile`, `YearlyEscalationClause`, `GSTNo`, `GSTRate`, `BillingTenure`, `MISFormatFile`, `KPISLAFile`, `PerformanceReportFile`, `CustomerRegisteredOfficeAddress`, `CustomerCorporateOfficeAddress`, `CogentProjectHead`, `CogentProjectOpsManager`, `CustomerImportantPersonAddress1`, `CustomerImportantPersonAddress2`
+      ) VALUES ('Ujjawal Kumar verma', 'Test Company Ltd.', 'UKV001', '7667629374', 'vermaujjawalkumar@gmail.com', 'suman', NULL, NULL, 'TRANS', 'Transportation', NULL, 'd73', 'delhi', 'South West Delhi', 'Delhi', '110046', 'India', 'RCM', '2026-08-26 13:25:51.473', '2026-08-26 13:25:51.473', NULL, NULL, 'No', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'No', NULL, 'No', NULL, 'No', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'No', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+      
+Stack: Error: Unknown column 'Locations' in 'field list'
+    at PromisePool.query (D:\DKG MAIN\tms 1\Tms-azure\node_modules\mysql2\lib\promise\pool.js:36:22)
+    at D:\DKG MAIN\tms 1\Tms-azure\backend\routes\customer.js:589:36
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+>>>>>>> 145517ee (projetc)
 
