@@ -1746,3 +1746,139 @@ Stack: Error: Unknown column 'Locations' in 'field list'
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
 >>>>>>> 145517ee (projetc)
 
+[2026-08-26T10:08:39.811Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\DKG MAIN\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\DKG MAIN\tms 1\Tms-azure\server.js:202:11)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:220:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+[2026-08-26T10:11:15.307Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\DKG MAIN\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\DKG MAIN\tms 1\Tms-azure\server.js:202:11)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:220:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+[2026-08-26T10:11:17.643Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\DKG MAIN\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\DKG MAIN\tms 1\Tms-azure\server.js:202:11)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:220:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+[2026-08-26T10:11:31.368Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\DKG MAIN\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\DKG MAIN\tms 1\Tms-azure\server.js:202:11)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:220:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+[2026-08-26T10:11:35.694Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\DKG MAIN\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\DKG MAIN\tms 1\Tms-azure\server.js:202:11)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:220:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+[2026-08-26T10:12:03.839Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\DKG MAIN\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\DKG MAIN\tms 1\Tms-azure\server.js:202:11)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:220:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+[2026-08-26T10:12:08.783Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\DKG MAIN\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\DKG MAIN\tms 1\Tms-azure\server.js:202:11)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:220:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+[2026-08-26T10:12:35.277Z] UNCAUGHT EXCEPTION: listen EADDRINUSE: address already in use :::3004
+Stack: Error: listen EADDRINUSE: address already in use :::3004
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at Function.listen (D:\DKG MAIN\tms 1\Tms-azure\node_modules\express\lib\application.js:635:24)
+    at startServer (D:\DKG MAIN\tms 1\Tms-azure\server.js:202:11)
+    at Object.<anonymous> (D:\DKG MAIN\tms 1\Tms-azure\server.js:220:3)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+

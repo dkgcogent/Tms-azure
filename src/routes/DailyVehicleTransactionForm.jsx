@@ -2721,7 +2721,6 @@ const DailyVehicleTransactionForm = () => {
               Location: excelLocation,
               CustomerSite: excelCustSite,
               CustomerName: customerNameRaw, // Send explicit Customer Name
-              CompanyName: resolvedCompanyName,
               ProjectName: getCellValue(row, ['ProjectName', 'Project Name', 'Project']) || '',
               GSTNo: getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || '',
               VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || '',

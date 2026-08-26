@@ -4,15 +4,36 @@ export const useProjectValidation = () => {
   const validateForm = useCallback((projectData) => {
     const newErrors = {};
 
-    !projectData.ProjectName?.trim() && (newErrors.ProjectName = 'Project name is required');
-    !projectData.CustomerID && (newErrors.CustomerID = 'Customer selection is required');
-    (!projectData.LocationID || (Array.isArray(projectData.LocationID) && projectData.LocationID.length === 0)) && (newErrors.LocationID = 'Location selection is required');
-    !projectData.ProjectValue?.trim() ? (newErrors.ProjectValue = 'Project value is required') : (isNaN(projectData.ProjectValue) || parseFloat(projectData.ProjectValue) <= 0) && (newErrors.ProjectValue = 'Project value must be a positive number');
-    !projectData.StartDate && (newErrors.StartDate = 'Project start date is required');
-    !projectData.EndDate && (newErrors.EndDate = 'Project end date is required');
-    !projectData.Status && (newErrors.Status = 'Project status is required');
+    if (!projectData.ProjectName?.trim()) {
+      newErrors.ProjectName = 'Project name is required';
+    }
 
-    projectData.StartDate && projectData.EndDate && new Date(projectData.EndDate) <= new Date(projectData.StartDate) && (newErrors.EndDate = 'End date must be after start date');
+    if (!projectData.CustomerID) {
+      newErrors.CustomerID = 'Customer selection is required';
+    }
+
+    const pValStr = projectData.ProjectValue !== undefined && projectData.ProjectValue !== null ? String(projectData.ProjectValue).trim() : '';
+    if (!pValStr) {
+      newErrors.ProjectValue = 'Project value is required';
+    } else if (isNaN(pValStr) || parseFloat(pValStr) < 0) {
+      newErrors.ProjectValue = 'Project value must be a valid positive number';
+    }
+
+    if (!projectData.StartDate) {
+      newErrors.StartDate = 'Project start date is required';
+    }
+
+    if (!projectData.EndDate) {
+      newErrors.EndDate = 'Project end date is required';
+    }
+
+    if (!projectData.Status) {
+      newErrors.Status = 'Project status is required';
+    }
+
+    if (projectData.StartDate && projectData.EndDate && new Date(projectData.EndDate) <= new Date(projectData.StartDate)) {
+      newErrors.EndDate = 'End date must be after start date';
+    }
 
     if (projectData.BillingTenure === 'Specific Dates') {
       if (!projectData.BillingFromDate) {
@@ -65,7 +86,7 @@ export const useProjectValidation = () => {
       const errorFields = [];
 
       // Define field priority order (top to bottom)
-      const fieldOrder = ['ProjectName', 'CustomerID', 'LocationID', 'ProjectValue', 'StartDate', 'EndDate', 'Status'];
+      const fieldOrder = ['ProjectName', 'CustomerID', 'ProjectValue', 'StartDate', 'EndDate', 'Status'];
 
       if (!formData.ProjectName?.trim()) {
         errors.ProjectName = 'Project name is required';
@@ -77,16 +98,12 @@ export const useProjectValidation = () => {
         errorFields.push('CustomerID');
       }
 
-      if (!formData.LocationID || (Array.isArray(formData.LocationID) && formData.LocationID.length === 0)) {
-        errors.LocationID = 'Location selection is required';
-        errorFields.push('LocationID');
-      }
-
-      if (!formData.ProjectValue?.trim()) {
+      const pValStr = formData.ProjectValue !== undefined && formData.ProjectValue !== null ? String(formData.ProjectValue).trim() : '';
+      if (!pValStr) {
         errors.ProjectValue = 'Project value is required';
         errorFields.push('ProjectValue');
-      } else if (isNaN(formData.ProjectValue) || parseFloat(formData.ProjectValue) <= 0) {
-        errors.ProjectValue = 'Project value must be a positive number';
+      } else if (isNaN(pValStr) || parseFloat(pValStr) < 0) {
+        errors.ProjectValue = 'Project value must be a valid positive number';
         errorFields.push('ProjectValue');
       }
 
@@ -119,7 +136,6 @@ export const useProjectValidation = () => {
       }
 
       if (Object.keys(errors).length > 0) {
-        // Focus on the first error field based on field order
         const firstErrorField = fieldOrder.find(field => errorFields.includes(field));
         if (firstErrorField) {
           focusField(firstErrorField);

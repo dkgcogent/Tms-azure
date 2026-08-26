@@ -265,9 +265,25 @@ router.post('/', async (req, res) => {
     }
 
 
+// Helper function to ensure valid JSON string for MySQL JSON columns
+const ensureValidJsonString = (val) => {
+  if (val === null || val === undefined || val === '' || val === 'N/A' || val === '"N/A"') return JSON.stringify([]);
+  if (Array.isArray(val)) return JSON.stringify(val);
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return JSON.stringify(parsed);
+      return JSON.stringify([parsed]);
+    } catch {
+      return JSON.stringify([val]);
+    }
+  }
+  return JSON.stringify([val]);
+};
+
     // Convert single VehicleID/DriverID to JSON arrays for database
-    const VehicleIDs = VehicleID ? JSON.stringify([VehicleID]) : null;
-    const DriverIDs = DriverID ? JSON.stringify([DriverID]) : null;
+    const VehicleIDs = ensureValidJsonString(req.body.VehicleIDs || req.body.VehicleID || vehicleIds);
+    const DriverIDs = ensureValidJsonString(req.body.DriverIDs || req.body.DriverID || driverIds);
 
     const query = `
       INSERT INTO fixed_transactions (
@@ -383,12 +399,18 @@ router.put('/:id', async (req, res) => {
 
     // Handle VehicleID/DriverID conversion to JSON arrays
     if (updateFields.VehicleID && !updateFields.VehicleIDs) {
-      updateFields.VehicleIDs = JSON.stringify([updateFields.VehicleID]);
+      updateFields.VehicleIDs = [updateFields.VehicleID];
       delete updateFields.VehicleID;
     }
     if (updateFields.DriverID && !updateFields.DriverIDs) {
-      updateFields.DriverIDs = JSON.stringify([updateFields.DriverID]);
+      updateFields.DriverIDs = [updateFields.DriverID];
       delete updateFields.DriverID;
+    }
+    if (updateFields.VehicleIDs !== undefined) {
+      updateFields.VehicleIDs = ensureValidJsonString(updateFields.VehicleIDs);
+    }
+    if (updateFields.DriverIDs !== undefined) {
+      updateFields.DriverIDs = ensureValidJsonString(updateFields.DriverIDs);
     }
 
     // Build dynamic update query

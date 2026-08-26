@@ -16,6 +16,22 @@ const convertToBoolean = (value) => {
   return false;
 };
 
+// Helper function to ensure valid JSON string for MySQL JSON columns
+const ensureValidJsonString = (val) => {
+  if (val === null || val === undefined || val === '' || val === 'N/A' || val === '"N/A"') return JSON.stringify([]);
+  if (Array.isArray(val)) return JSON.stringify(val);
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return JSON.stringify(parsed);
+      return JSON.stringify([parsed]);
+    } catch {
+      return JSON.stringify([val]);
+    }
+  }
+  return JSON.stringify([val]);
+};
+
 // Configure multer for file uploads using share middleware
 const { createUploadMiddleware } = require('../utils/uploadMiddleware');
 const upload = createUploadMiddleware('transactions');
@@ -1141,7 +1157,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         const totalFreight = vFreightFix + vFreightVariable;
 
         values = [
-          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', Shift || null, JSON.stringify(vehicleIds), JSON.stringify(driverIds), resolvedVendorID,
+          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', Shift || null, ensureValidJsonString(vehicleIds), ensureValidJsonString(driverIds), resolvedVendorID,
           CustomerID, CustomerName || null, ProjectID || null, ProjectName || null, null,
           customer_commercial_id, vendor_commercial_id,
           ReplacementDriverID || null, ReplacementDriverName || null,
@@ -1608,23 +1624,12 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         if (vcMatch.length > 0) vendor_commercial_id = vcMatch[0].id;
       }
 
-      // Handle JSON fields for Fixed type - must be stored as JSON strings in DB
+      // Handle JSON fields for Fixed type - must be stored as valid JSON strings in DB
       let VehicleIDs = transaction.VehicleIDs;
       let DriverIDs = transaction.DriverIDs;
       if (transactionTable === 'fixed_transactions') {
-        // Parse incoming string to array first
-        if (typeof VehicleIDs === 'string') {
-          try { VehicleIDs = JSON.parse(VehicleIDs); } catch (e) { VehicleIDs = existingRecord.VehicleIDs; }
-        }
-        if (typeof DriverIDs === 'string') {
-          try { DriverIDs = JSON.parse(DriverIDs); } catch (e) { DriverIDs = existingRecord.DriverIDs; }
-        }
-        // Re-stringify arrays for MySQL JSON column storage
-        if (Array.isArray(VehicleIDs)) VehicleIDs = JSON.stringify(VehicleIDs);
-        if (Array.isArray(DriverIDs)) DriverIDs = JSON.stringify(DriverIDs);
-        // Fall back to existing DB values if missing
-        if (!VehicleIDs) VehicleIDs = existingRecord.VehicleIDs;
-        if (!DriverIDs) DriverIDs = existingRecord.DriverIDs;
+        VehicleIDs = ensureValidJsonString(VehicleIDs || existingRecord.VehicleIDs);
+        DriverIDs = ensureValidJsonString(DriverIDs || existingRecord.DriverIDs);
       }
 
       // Build update query based on table type
