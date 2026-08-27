@@ -1473,14 +1473,14 @@ const DailyVehicleTransactionForm = () => {
         const projectResponse = await projectAPI.getAll();
         const projectsData = projectResponse.data?.value || projectResponse.data?.data || projectResponse.data || [];
 
-        const targetProjId = vehicleDetails.ProjectID || vehicleDetails.project_id || vendorData?.project_id;
         const targetProjName = vehicleDetails.Project || vehicle.Project;
+        const targetProjId = vehicleDetails.ProjectID || vehicleDetails.project_id || vendorData?.project_id;
 
-        if (targetProjId) {
-          projectData = projectsData.find(p => p.ProjectID == targetProjId);
-        }
-        if (!projectData && targetProjName) {
+        if (targetProjName) {
           projectData = projectsData.find(p => p.ProjectName && (p.ProjectName.trim().toLowerCase() === targetProjName.trim().toLowerCase()));
+        }
+        if (!projectData && targetProjId) {
+          projectData = projectsData.find(p => p.ProjectID == targetProjId);
         }
 
         if (projectData) {
@@ -1508,7 +1508,7 @@ const DailyVehicleTransactionForm = () => {
           const locs = [...locSet];
           setAvailableLocations(locs);
 
-          const chosenLocation = vehicleDetails.Location || projectData.Location || projectData.ProjectLocation || (locs.length > 0 ? locs[0] : '');
+          const chosenLocation = vehicleDetails.Location || (locs.length > 0 ? locs[0] : '');
           autoPopulatedData.Location = chosenLocation;
           autoPopulatedData.CustSite = chosenLocation;
         }
@@ -1546,10 +1546,14 @@ const DailyVehicleTransactionForm = () => {
             autoPopulatedData.GSTNo = customerData.GSTNo;
           }
           if (!autoPopulatedData.Location || autoPopulatedData.Location === 'N/A') {
-            autoPopulatedData.Location = customerData.Locations || customerData.Location || customerData.CustomerSite || '';
+            const rawLoc = customerData.Locations || customerData.Location || '';
+            const cleanLoc = rawLoc.split(',')[0]?.trim() || '';
+            autoPopulatedData.Location = cleanLoc;
           }
           if (!autoPopulatedData.CustSite || autoPopulatedData.CustSite === 'N/A') {
-            autoPopulatedData.CustSite = customerData.CustomerSite || customerData.Locations || customerData.Location || '';
+            const rawSite = customerData.CustomerSite || customerData.Locations || '';
+            const cleanSite = rawSite.split(',')[0]?.trim() || '';
+            autoPopulatedData.CustSite = cleanSite;
           }
           console.log('✅ Customer data found:', customerData.Name);
         }
