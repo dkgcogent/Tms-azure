@@ -212,7 +212,7 @@ const ProjectFormRefactored = () => {
     const customer = customers.find(c => c.CustomerID.toString() === project.CustomerID.toString());
     setSelectedCustomer(customer);
 
-    // Find all sibling rows for this project to load all location cards
+    // Find all sibling rows or parse comma-separated locations for this project to load all location cards
     const siblingRows = projects.filter(p =>
       p.ProjectName && project.ProjectName &&
       p.ProjectName.trim().toLowerCase() === project.ProjectName.trim().toLowerCase() &&
@@ -223,32 +223,35 @@ const ProjectFormRefactored = () => {
     const locationMap = new Map();
 
     rowsToProcess.forEach(row => {
-      const locKey = (row.Location || '').trim();
-      const state = row.State || '';
-      let siteName = '';
-      let empId = '';
+      const locList = (row.Location || '').split(',').map(l => l.trim()).filter(Boolean);
+      const stateList = (row.State || '').split(',').map(s => s.trim());
+      const siteList = (row.CustomerSite || '').split(',').map(cs => cs.trim()).filter(Boolean);
 
-      if (row.CustomerSite) {
-        const empMatch = row.CustomerSite.match(/\(Emp:\s*([^)]+)\)/);
-        if (empMatch) {
-          empId = empMatch[1].trim();
-          siteName = row.CustomerSite.replace(empMatch[0], '').trim();
-        } else {
-          siteName = row.CustomerSite.trim();
-        }
-      }
+      if (locList.length > 0) {
+        locList.forEach((locKey, idx) => {
+          const state = stateList[idx] || stateList[0] || '';
+          const siteStr = siteList[idx] || '';
+          let siteName = '';
+          let empId = '';
 
-      if (!locationMap.has(locKey)) {
-        locationMap.set(locKey, {
-          state: state,
-          location: locKey,
-          sites: siteName ? [{ name: siteName, employee_id: empId }] : [{ name: '', employee_id: '' }]
+          if (siteStr) {
+            const empMatch = siteStr.match(/\(Emp:\s*([^)]+)\)/);
+            if (empMatch) {
+              empId = empMatch[1].trim();
+              siteName = siteStr.replace(empMatch[0], '').trim();
+            } else {
+              siteName = siteStr.trim();
+            }
+          }
+
+          if (!locationMap.has(locKey)) {
+            locationMap.set(locKey, {
+              state: state,
+              location: locKey,
+              sites: siteName ? [{ name: siteName, employee_id: empId }] : [{ name: '', employee_id: '' }]
+            });
+          }
         });
-      } else {
-        if (siteName) {
-          const group = locationMap.get(locKey);
-          group.sites.push({ name: siteName, employee_id: empId });
-        }
       }
     });
 

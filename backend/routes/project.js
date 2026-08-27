@@ -290,40 +290,42 @@ module.exports = (pool) => {
         locationIdValue = LocationID;
       }
 
-      // Check if multiple individual site records should be created
-      const entriesToInsert = (Array.isArray(CustomerSiteList) && CustomerSiteList.length > 0)
-        ? CustomerSiteList
-        : [{ State: State || null, Location: Location || null, CustomerSite: CustomerSite || null }];
+      // Combine locations, states, and customer sites into single comma-separated strings
+      let finalLocation = Location || null;
+      let finalState = State || null;
+      let finalCustomerSite = CustomerSite || null;
 
-      console.log(`📁 Inserting ${entriesToInsert.length} project location/site records for project: "${ProjectName}"`);
+      if (Array.isArray(CustomerSiteList) && CustomerSiteList.length > 0) {
+        const locs = Array.from(new Set(CustomerSiteList.map(e => e.Location).filter(Boolean)));
+        const states = Array.from(new Set(CustomerSiteList.map(e => e.State).filter(Boolean)));
+        const sites = CustomerSiteList.map(e => e.CustomerSite).filter(Boolean);
 
-      let firstInsertId = null;
-      let lastGeneratedCode = null;
-
-      for (let i = 0; i < entriesToInsert.length; i++) {
-        const entry = entriesToInsert[i];
-        let pCode = await getNextProjectCodeForIndex(ProjectCode, i);
-        lastGeneratedCode = pCode;
-
-        console.log(`📁 [Insert ${i + 1}/${entriesToInsert.length}] Code: ${pCode}, State: ${entry.State}, Location: ${entry.Location}, Site: ${entry.CustomerSite}`);
-
-        const [insertResult] = await pool.query(
-          `INSERT INTO Project (
-            ProjectName, CustomerID, ProjectCode, ProjectDescription, LocationID, Location, State, CustomerSite,
-            ProjectValue, StartDate, EndDate, Status,
-            Rates, RatesAnnexureFile, YearlyEscalationClause, GSTNo, TypeOfBilling, GSTRate, BillingTenure, BillingFromDate, BillingToDate
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            ProjectName, CustomerID, pCode, ProjectDescription || '', locationIdValue, entry.Location || null, entry.State || null, entry.CustomerSite || null,
-            ProjectValue || null, StartDate || null, EndDate || null, Status || 'Active',
-            Rates || null, RatesAnnexureFile || null, YearlyEscalationClause || 'No', GSTNo || null, TypeOfBilling || 'RCM', GSTRate || '0', BillingTenure || null, BillingFromDate || null, BillingToDate || null
-          ]
-        );
-
-        if (!firstInsertId) {
-          firstInsertId = insertResult.insertId;
-        }
+        if (locs.length > 0) finalLocation = locs.join(', ');
+        if (states.length > 0) finalState = states.join(', ');
+        if (sites.length > 0) finalCustomerSite = sites.join(', ');
       }
+
+      let pCode = ProjectCode;
+      if (!pCode || !pCode.trim()) {
+        pCode = await getNextProjectCodeForIndex(ProjectCode, 0);
+      }
+
+      console.log(`📁 Inserting single project record for: "${ProjectName}", Code: ${pCode}, Location: ${finalLocation}, State: ${finalState}`);
+
+      const [insertResult] = await pool.query(
+        `INSERT INTO Project (
+          ProjectName, CustomerID, ProjectCode, ProjectDescription, LocationID, Location, State, CustomerSite,
+          ProjectValue, StartDate, EndDate, Status,
+          Rates, RatesAnnexureFile, YearlyEscalationClause, GSTNo, TypeOfBilling, GSTRate, BillingTenure, BillingFromDate, BillingToDate
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          ProjectName, CustomerID, pCode, ProjectDescription || '', locationIdValue, finalLocation, finalState, finalCustomerSite,
+          ProjectValue || null, StartDate || null, EndDate || null, Status || 'Active',
+          Rates || null, RatesAnnexureFile || null, YearlyEscalationClause || 'No', GSTNo || null, TypeOfBilling || 'RCM', GSTRate || '0', BillingTenure || null, BillingFromDate || null, BillingToDate || null
+        ]
+      );
+
+      const firstInsertId = insertResult.insertId;
 
       // Fetch the created project with customer information
       const [newProject] = await pool.query(`
@@ -336,7 +338,7 @@ module.exports = (pool) => {
         WHERE p.ProjectID = ?
       `, [firstInsertId]);
 
-      res.status(201).json({ ...newProject[0], ProjectCode: lastGeneratedCode || newProject[0].ProjectCode });
+      res.status(201).json({ ...newProject[0], ProjectCode: pCode });
     } catch (error) {
       console.error('Error creating project:', error);
       if (error.code === 'ER_DUP_ENTRY') {
@@ -385,48 +387,21 @@ module.exports = (pool) => {
         locationIdValue = LocationID;
       }
 
-      const entriesToUpdate = (Array.isArray(CustomerSiteList) && CustomerSiteList.length > 0)
-        ? CustomerSiteList
-        : [{ State: State || null, Location: Location || null, CustomerSite: CustomerSite || null }];
+      // Combine locations, states, and customer sites into single comma-separated strings
+      let finalLocation = Location || null;
+      let finalState = State || null;
+      let finalCustomerSite = CustomerSite || null;
 
-      // Helper function for unique code during multi-location updates
-      const getNextProjectCodeForIndex = async (baseProjectCode, index) => {
-        if (baseProjectCode && baseProjectCode.trim()) {
-          const trimmed = baseProjectCode.trim();
-          const match = trimmed.match(/^(.*?)(\d+)$/);
-          if (match) {
-            const prefix = match[1];
-            const startNum = parseInt(match[2], 10);
-            const numDigits = match[2].length;
-            let targetNum = startNum + index;
-            let candidate = `${prefix}${String(targetNum).padStart(numDigits, '0')}`;
+      if (Array.isArray(CustomerSiteList) && CustomerSiteList.length > 0) {
+        const locs = Array.from(new Set(CustomerSiteList.map(e => e.Location).filter(Boolean)));
+        const states = Array.from(new Set(CustomerSiteList.map(e => e.State).filter(Boolean)));
+        const sites = CustomerSiteList.map(e => e.CustomerSite).filter(Boolean);
 
-            while (true) {
-              const [exists] = await pool.query('SELECT ProjectID FROM Project WHERE ProjectCode = ? AND ProjectID != ?', [candidate, id]);
-              if (exists.length === 0) break;
-              targetNum++;
-              candidate = `${prefix}${String(targetNum).padStart(numDigits, '0')}`;
-            }
-            return candidate;
-          }
-        }
-        const customerCode = customerCheck[0].CustomerCode || 'CUST';
-        const projectNamePrefix = (ProjectName || 'PRJ').substring(0, 3).toUpperCase();
-        const basePrefix = `${customerCode}-${projectNamePrefix}`;
+        if (locs.length > 0) finalLocation = locs.join(', ');
+        if (states.length > 0) finalState = states.join(', ');
+        if (sites.length > 0) finalCustomerSite = sites.join(', ');
+      }
 
-        let nextNum = 1 + index;
-        let candidate = `${basePrefix}${String(nextNum).padStart(3, '0')}`;
-        while (true) {
-          const [exists] = await pool.query('SELECT ProjectID FROM Project WHERE ProjectCode = ? AND ProjectID != ?', [candidate, id]);
-          if (exists.length === 0) break;
-          nextNum++;
-          candidate = `${basePrefix}${String(nextNum).padStart(3, '0')}`;
-        }
-        return candidate;
-      };
-
-      // 1. Update the primary record (identified by ID)
-      const primaryEntry = entriesToUpdate[0];
       const primaryCode = ProjectCode || await getNextProjectCodeForIndex(ProjectCode, 0);
 
       let updateFields = `
@@ -435,60 +410,13 @@ module.exports = (pool) => {
         Rates = ?, RatesAnnexureFile = ?, YearlyEscalationClause = ?, GSTNo = ?, TypeOfBilling = ?, GSTRate = ?, BillingTenure = ?, BillingFromDate = ?, BillingToDate = ?
       `;
       let updateValues = [
-        ProjectName, CustomerID, primaryCode, ProjectDescription || '', locationIdValue, primaryEntry.Location || null, primaryEntry.State || null, primaryEntry.CustomerSite || null,
+        ProjectName, CustomerID, primaryCode, ProjectDescription || '', locationIdValue, finalLocation, finalState, finalCustomerSite,
         ProjectValue || null, StartDate || null, EndDate || null, Status || 'Active',
         Rates || null, RatesAnnexureFile || null, YearlyEscalationClause || 'No', GSTNo || null, TypeOfBilling || 'RCM', GSTRate || '0', BillingTenure || null, BillingFromDate || null, BillingToDate || null,
         id
       ];
 
       await pool.query(`UPDATE Project SET ${updateFields} WHERE ProjectID = ?`, updateValues);
-
-      // 2. Handle additional location/site entries if more than 1
-      if (entriesToUpdate.length > 1) {
-        // Find existing sibling records with same ProjectName and CustomerID
-        const [siblings] = await pool.query(
-          'SELECT ProjectID, ProjectCode FROM Project WHERE ProjectName = ? AND CustomerID = ? AND ProjectID != ? ORDER BY ProjectID ASC',
-          [ProjectName, CustomerID, id]
-        );
-
-        for (let i = 1; i < entriesToUpdate.length; i++) {
-          const entry = entriesToUpdate[i];
-          const siblingIndex = i - 1;
-
-          if (siblingIndex < siblings.length) {
-            // Update existing sibling
-            const sib = siblings[siblingIndex];
-            await pool.query(
-              `UPDATE Project SET
-                ProjectName = ?, CustomerID = ?, ProjectDescription = ?, Location = ?, State = ?, CustomerSite = ?,
-                ProjectValue = ?, StartDate = ?, EndDate = ?, Status = ?,
-                GSTNo = ?, TypeOfBilling = ?, GSTRate = ?, BillingTenure = ?, BillingFromDate = ?, BillingToDate = ?
-              WHERE ProjectID = ?`,
-              [
-                ProjectName, CustomerID, ProjectDescription || '', entry.Location || null, entry.State || null, entry.CustomerSite || null,
-                ProjectValue || null, StartDate || null, EndDate || null, Status || 'Active',
-                GSTNo || null, TypeOfBilling || 'RCM', GSTRate || '0', BillingTenure || null, BillingFromDate || null, BillingToDate || null,
-                sib.ProjectID
-              ]
-            );
-          } else {
-            // Insert new sibling
-            const pCode = await getNextProjectCodeForIndex(primaryCode, i);
-            await pool.query(
-              `INSERT INTO Project (
-                ProjectName, CustomerID, ProjectCode, ProjectDescription, LocationID, Location, State, CustomerSite,
-                ProjectValue, StartDate, EndDate, Status,
-                Rates, RatesAnnexureFile, YearlyEscalationClause, GSTNo, TypeOfBilling, GSTRate, BillingTenure, BillingFromDate, BillingToDate
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [
-                ProjectName, CustomerID, pCode, ProjectDescription || '', locationIdValue, entry.Location || null, entry.State || null, entry.CustomerSite || null,
-                ProjectValue || null, StartDate || null, EndDate || null, Status || 'Active',
-                Rates || null, RatesAnnexureFile || null, YearlyEscalationClause || 'No', GSTNo || null, TypeOfBilling || 'RCM', GSTRate || '0', BillingTenure || null, BillingFromDate || null, BillingToDate || null
-              ]
-            );
-          }
-        }
-      }
 
       // Fetch the updated project with customer information
       const [updatedProject] = await pool.query(`

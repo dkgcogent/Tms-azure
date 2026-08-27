@@ -890,34 +890,44 @@ const VehicleForm = () => {
     const locSet = new Set();
 
     matchingProjects.forEach(p => {
-      const loc = (p.Location || '').trim();
-      const siteRaw = (p.CustomerSite || '').trim();
+      const locations = (p.Location || '').split(',').map(l => l.trim()).filter(Boolean);
+      const sitesRaw = (p.CustomerSite || '').split(',').map(s => s.trim());
 
-      if (loc) {
-        locSet.add(loc);
-      }
-
-      if (siteRaw) {
-        const parts = siteRaw.split(',');
-        parts.forEach(part => {
-          const entry = part.trim();
+      if (locations.length > 0) {
+        locations.forEach((loc, idx) => {
+          locSet.add(loc);
+          const entry = sitesRaw[idx] || sitesRaw[0] || '';
+          if (entry) {
+            const empMatch = entry.match(/\(Emp:\s*([^)]+)\)/);
+            const employee = empMatch ? empMatch[1].trim() : '';
+            const siteOnly = entry.replace(/\(Emp:[^)]+\)/, '').trim();
+            parsed.push({
+              location: loc,
+              site: siteOnly,
+              employee,
+              raw: entry
+            });
+          } else {
+            parsed.push({
+              location: loc,
+              site: '',
+              employee: '',
+              raw: loc
+            });
+          }
+        });
+      } else if (sitesRaw.length > 0) {
+        sitesRaw.forEach(entry => {
           if (!entry) return;
           const empMatch = entry.match(/\(Emp:\s*([^)]+)\)/);
           const employee = empMatch ? empMatch[1].trim() : '';
           const siteOnly = entry.replace(/\(Emp:[^)]+\)/, '').trim();
           parsed.push({
-            location: loc,
+            location: '',
             site: siteOnly,
             employee,
             raw: entry
           });
-        });
-      } else if (loc) {
-        parsed.push({
-          location: loc,
-          site: '',
-          employee: '',
-          raw: loc
         });
       }
     });

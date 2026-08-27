@@ -601,7 +601,12 @@ const DailyVehicleTransactionForm = () => {
       // Extract unique locations from all projects for this customer
       const locSet = new Set();
       projectsData.forEach(p => {
-        if (p.Location) locSet.add(p.Location.trim());
+        if (p.Location) {
+          p.Location.split(',').forEach(loc => {
+            const clean = loc.trim();
+            if (clean) locSet.add(clean);
+          });
+        }
       });
       const locs = [...locSet];
       setAvailableLocations(locs);
@@ -1259,7 +1264,12 @@ const DailyVehicleTransactionForm = () => {
 
         const locSet = new Set();
         matchingProjects.forEach(p => {
-          if (p.Location) locSet.add(p.Location.trim());
+          if (p.Location) {
+            p.Location.split(',').forEach(loc => {
+              const clean = loc.trim();
+              if (clean) locSet.add(clean);
+            });
+          }
         });
         const locs = [...locSet];
         setAvailableLocations(locs);
@@ -1267,7 +1277,7 @@ const DailyVehicleTransactionForm = () => {
         const location = locs.length > 0 ? locs[0] : (selectedProject.Location || '');
 
         // Gather sites and state for the active location
-        const locProjects = matchingProjects.filter(p => !location || p.Location === location);
+        const locProjects = matchingProjects.filter(p => !location || (p.Location && p.Location.includes(location)));
         const sites = [];
         locProjects.forEach(p => {
           if (p.CustomerSite) {
@@ -1482,9 +1492,19 @@ const DailyVehicleTransactionForm = () => {
           const matchingProjects = projectsData.filter(p => p.ProjectName && (p.ProjectName.trim().toLowerCase() === projectData.ProjectName.trim().toLowerCase()));
           const locSet = new Set();
           matchingProjects.forEach(p => {
-            if (p.Location) locSet.add(p.Location.trim());
+            if (p.Location) {
+              p.Location.split(',').forEach(loc => {
+                const clean = loc.trim();
+                if (clean) locSet.add(clean);
+              });
+            }
           });
-          if (vehicleDetails.Location) locSet.add(vehicleDetails.Location.trim());
+          if (vehicleDetails.Location) {
+            vehicleDetails.Location.split(',').forEach(loc => {
+              const clean = loc.trim();
+              if (clean) locSet.add(clean);
+            });
+          }
           const locs = [...locSet];
           setAvailableLocations(locs);
 
@@ -1496,20 +1516,27 @@ const DailyVehicleTransactionForm = () => {
         console.error('❌ Error fetching project data:', error);
       }
 
-      // Step 3: Get Customer information (from project or vehicle)
+      // Step 3: Get Customer information (from vehicle or project)
       let customerData = null;
-      const customerId = projectData?.CustomerID || vehicleDetails.CustomerID || vehicleDetails.customer_id;
+      const vehicleCustomerId = vehicleDetails.CustomerID || vehicleDetails.customer_id;
       const targetCustomerName = vehicleDetails.CustomerCompanyName || vehicle.CustomerCompanyName;
+      const projectCustomerId = projectData?.CustomerID;
 
       try {
         const customerResponse = await customerAPI.getAll();
         const customersData = customerResponse.data?.value || customerResponse.data?.data || customerResponse.data || [];
 
-        if (customerId) {
-          customerData = customersData.find(c => c.CustomerID == customerId);
-        }
-        if (!customerData && targetCustomerName) {
+        // 1. Try to match by explicit vehicle CustomerCompanyName first
+        if (targetCustomerName) {
           customerData = customersData.find(c => c.Name && (c.Name.trim().toLowerCase() === targetCustomerName.trim().toLowerCase() || (c.MasterCustomerName && c.MasterCustomerName.trim().toLowerCase() === targetCustomerName.trim().toLowerCase())));
+        }
+        // 2. If not found, try vehicle's direct CustomerID
+        if (!customerData && vehicleCustomerId) {
+          customerData = customersData.find(c => c.CustomerID == vehicleCustomerId);
+        }
+        // 3. Fallback to project's CustomerID
+        if (!customerData && projectCustomerId) {
+          customerData = customersData.find(c => c.CustomerID == projectCustomerId);
         }
 
         if (customerData) {
