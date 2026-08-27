@@ -126,15 +126,15 @@ module.exports = () => {
                 // Ignore if it already exists or we lack list-containers permission.
             });
 
-            // ── Generate SAS token (create + write, 1 hour) ──────────────────────
-            const startsOn = new Date();
-            const expiresOn = new Date(startsOn.getTime() + 60 * 60 * 1000); // +1 h
+            // ── Generate SAS token (create + write + read, 15 min clock skew buffer) ─────
+            const startsOn = new Date(Date.now() - 15 * 60 * 1000); // -15m buffer for clock skew tolerance
+            const expiresOn = new Date(Date.now() + 2 * 60 * 60 * 1000); // +2h expiry
 
             const sasQueryParams = generateBlobSASQueryParameters(
                 {
                     containerName,
                     blobName,
-                    permissions: BlobSASPermissions.from({ create: true, write: true }),
+                    permissions: BlobSASPermissions.from({ read: true, create: true, write: true, add: true }),
                     startsOn,
                     expiresOn,
                     contentType: fileType,

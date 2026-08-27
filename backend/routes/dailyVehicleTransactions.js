@@ -1070,10 +1070,10 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       let vendor_commercial_id = req.body.vendor_commercial_id || null;
 
       if (!customer_commercial_id) {
-        const targetCustId = CustomerID || (vendorData?.CustomerID);
-        const targetProjId = ProjectID;
-        const targetProjName = projectData?.ProjectName || req.body.Project;
-        const targetCompName = CompanyName || (vehicleDetails?.CustomerCompanyName);
+        const targetCustId = CustomerID || null;
+        const targetProjId = ProjectID || null;
+        const targetProjName = req.body.Project || req.body.ProjectName || null;
+        const targetCompName = CompanyName || req.body.CompanyName || req.body.Customer || null;
 
         const cleanComp = (targetCompName || '').replace(/Pvt\.?\s*Ltd\.?/i, '').replace(/Private\s*Limited/i, '').trim();
 
@@ -1636,9 +1636,10 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       let vendor_commercial_id = transaction.vendor_commercial_id || req.body.vendor_commercial_id || existingRecord.vendor_commercial_id || null;
 
       if (!customer_commercial_id) {
-        const targetCustId = preservedCustomerID;
-        const targetProjId = preservedProjectID;
-        const targetCompName = CompanyName || existingRecord.CompanyName;
+        const targetCustId = preservedCustomerID || null;
+        const targetProjId = preservedProjectID || null;
+        const targetProjName = transaction.Project || transaction.ProjectName || req.body.Project || req.body.ProjectName || existingRecord?.Project || null;
+        const targetCompName = CompanyName || existingRecord?.CompanyName || req.body.CompanyName || null;
 
         const cleanComp = (targetCompName || '').replace(/Pvt\.?\s*Ltd\.?/i, '').replace(/Private\s*Limited/i, '').trim();
 
