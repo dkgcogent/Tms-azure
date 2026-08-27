@@ -1069,12 +1069,39 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       let customer_commercial_id = req.body.customer_commercial_id || null;
       let vendor_commercial_id = req.body.vendor_commercial_id || null;
 
-      if (!customer_commercial_id && CustomerID && ProjectID) {
+      if (!customer_commercial_id) {
+        const targetCustId = CustomerID || (vendorData?.CustomerID);
+        const targetProjId = ProjectID;
+        const targetProjName = projectData?.ProjectName || req.body.Project;
+        const targetCompName = CompanyName || (vehicleDetails?.CustomerCompanyName);
+
+        const cleanComp = (targetCompName || '').replace(/Pvt\.?\s*Ltd\.?/i, '').replace(/Private\s*Limited/i, '').trim();
+
         const [ccMatch] = await pool.query(
-          'SELECT id FROM customer_commercial WHERE customer_id = ? AND project_id = ? ORDER BY id DESC LIMIT 1',
-          [CustomerID, ProjectID]
+          `SELECT id FROM customer_commercial 
+           WHERE (
+             (? IS NOT NULL AND customer_id = ?) 
+             OR (? IS NOT NULL AND company_name LIKE CONCAT('% / ', ?))
+             OR (? IS NOT NULL AND (master_customer IN (SELECT Name FROM customer WHERE CustomerID = ? UNION SELECT MasterCustomerName FROM customer WHERE CustomerID = ?) OR company_name LIKE CONCAT('%', ?, '%')))
+           ) 
+           AND (
+             (? IS NOT NULL AND project_id = ?) 
+             OR (? IS NOT NULL AND project LIKE CONCAT('% / ', ?))
+             OR (? IS NOT NULL AND project LIKE CONCAT(?, ' / %'))
+           ) 
+           ORDER BY id DESC LIMIT 1`,
+          [
+            targetCustId, targetCustId,
+            targetCustId, targetCustId,
+            targetCustId, targetCustId, targetCustId, cleanComp,
+            targetProjId, targetProjId,
+            targetProjId, targetProjId,
+            targetProjName, targetProjName
+          ]
         );
-        if (ccMatch.length > 0) customer_commercial_id = ccMatch[0].id;
+        if (ccMatch && ccMatch.length > 0) {
+          customer_commercial_id = ccMatch[0].id;
+        }
       }
 
       if (!vendor_commercial_id && resolvedVendorID && ProjectID) {
@@ -1608,12 +1635,36 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       let customer_commercial_id = transaction.customer_commercial_id || req.body.customer_commercial_id || existingRecord.customer_commercial_id || null;
       let vendor_commercial_id = transaction.vendor_commercial_id || req.body.vendor_commercial_id || existingRecord.vendor_commercial_id || null;
 
-      if (!customer_commercial_id && preservedCustomerID && preservedProjectID) {
+      if (!customer_commercial_id) {
+        const targetCustId = preservedCustomerID;
+        const targetProjId = preservedProjectID;
+        const targetCompName = CompanyName || existingRecord.CompanyName;
+
+        const cleanComp = (targetCompName || '').replace(/Pvt\.?\s*Ltd\.?/i, '').replace(/Private\s*Limited/i, '').trim();
+
         const [ccMatch] = await pool.query(
-          'SELECT id FROM customer_commercial WHERE customer_id = ? AND project_id = ? ORDER BY id DESC LIMIT 1',
-          [preservedCustomerID, preservedProjectID]
+          `SELECT id FROM customer_commercial 
+           WHERE (
+             (? IS NOT NULL AND customer_id = ?) 
+             OR (? IS NOT NULL AND company_name LIKE CONCAT('% / ', ?))
+             OR (? IS NOT NULL AND (master_customer IN (SELECT Name FROM customer WHERE CustomerID = ? UNION SELECT MasterCustomerName FROM customer WHERE CustomerID = ?) OR company_name LIKE CONCAT('%', ?, '%')))
+           ) 
+           AND (
+             (? IS NOT NULL AND project_id = ?) 
+             OR (? IS NOT NULL AND project LIKE CONCAT('% / ', ?))
+           ) 
+           ORDER BY id DESC LIMIT 1`,
+          [
+            targetCustId, targetCustId,
+            targetCustId, targetCustId,
+            targetCustId, targetCustId, targetCustId, cleanComp,
+            targetProjId, targetProjId,
+            targetProjId, targetProjId
+          ]
         );
-        if (ccMatch.length > 0) customer_commercial_id = ccMatch[0].id;
+        if (ccMatch && ccMatch.length > 0) {
+          customer_commercial_id = ccMatch[0].id;
+        }
       }
 
       if (!vendor_commercial_id && preservedVendorID && preservedProjectID) {
