@@ -622,9 +622,9 @@ const DailyVehicleTransactionForm = () => {
         // Single project - auto-select and populate all fields
         const project = projectsData[0];
         projectName = project.ProjectName || '';
-        location = project.Location || (locs[0] || '');
+        location = locs && locs.length > 0 ? locs[0] : (project.Location ? project.Location.split(',')[0].trim() : '');
         gstNo = project.GSTNo || '';
-        state = project.State || '';
+        state = project.State ? project.State.split(',')[0].trim() : '';
         projectId = project.ProjectID;
 
         if (project.CustomerSite) {
@@ -1289,7 +1289,8 @@ const DailyVehicleTransactionForm = () => {
         });
 
         const gstNo = selectedProject.GSTNo || matchingProjects.find(p => p.GSTNo)?.GSTNo || '';
-        const state = locProjects[0]?.State || matchingProjects.find(p => p.State)?.State || '';
+        const rawState = locProjects[0]?.State || matchingProjects.find(p => p.State)?.State || '';
+        const state = rawState ? rawState.split(',')[0].trim() : '';
 
         // Update master data with project name, GSTNo, and location
         setMasterData(prev => ({
@@ -1335,7 +1336,7 @@ const DailyVehicleTransactionForm = () => {
     // Find matching project records for this location
     const matchingProjects = availableProjects.filter(p => 
       (!masterData.Project || p.ProjectName === masterData.Project) && 
-      (!selectedLoc || p.Location === selectedLoc)
+      (!selectedLoc || (p.Location && p.Location.split(',').map(l => l.trim()).includes(selectedLoc)))
     );
 
     const sites = [];
@@ -4183,7 +4184,7 @@ const DailyVehicleTransactionForm = () => {
                     options={availableProjects}
                     valueKey="ProjectID"
                     labelKey="ProjectName"
-                    formatLabel={(p) => typeof p === 'object' && p ? `${p.ProjectName || ''}${p.Location ? ` - ${p.Location}` : ''}` : String(p || '')}
+                    formatLabel={(p) => typeof p === 'object' && p ? ((masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfVehiclePlacement === 'Adhoc') ? (p.ProjectName || '') : `${p.ProjectName || ''}${p.Location ? ` - ${p.Location}` : ''}`) : String(p || '')}
                     placeholder="Select a project"
                     className={errors.Project ? 'error' : ''}
                   />
