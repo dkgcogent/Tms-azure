@@ -1328,42 +1328,53 @@ const DailyVehicleTransactionForm = () => {
     }
   };
 
-  // Handler for location selection - filters customer sites & populates state
+  // Handler for location selection - filters customer sites & populates state for Adhoc mode
   const handleLocationSelect = (e) => {
     const selectedLoc = e.target.value;
     console.log('📍 LOCATION SELECTION - Selected location:', selectedLoc);
 
-    // Find matching project records for this location
-    const matchingProjects = availableProjects.filter(p => 
-      (!masterData.Project || p.ProjectName === masterData.Project) && 
-      (!selectedLoc || (p.Location && p.Location.split(',').map(l => l.trim()).includes(selectedLoc)))
-    );
+    const isAdhoc = masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfVehiclePlacement === 'Adhoc';
 
-    const sites = [];
-    matchingProjects.forEach(p => {
-      if (p.CustomerSite) {
-        p.CustomerSite.split(',').forEach(s => {
-          const clean = s.replace(/\(Emp:[^)]+\)/, '').trim();
-          if (clean && !sites.includes(clean)) sites.push(clean);
-        });
-      }
-    });
+    if (isAdhoc) {
+      // Find matching project records for this location in Adhoc mode
+      const matchingProjects = availableProjects.filter(p => 
+        (!masterData.Project || p.ProjectName === masterData.Project) && 
+        (!selectedLoc || (p.Location && p.Location.split(',').map(l => l.trim()).includes(selectedLoc)))
+      );
 
-    const state = matchingProjects[0]?.State || '';
+      const sites = [];
+      matchingProjects.forEach(p => {
+        if (p.CustomerSite) {
+          p.CustomerSite.split(',').forEach(s => {
+            const clean = s.replace(/\(Emp:[^)]+\)/, '').trim();
+            if (clean && !sites.includes(clean)) sites.push(clean);
+          });
+        }
+      });
 
-    setMasterData(prev => ({
-      ...prev,
-      Location: selectedLoc,
-      CustSite: selectedLoc
-    }));
+      const rawState = matchingProjects[0]?.State || '';
+      const state = rawState ? rawState.split(',')[0].trim() : '';
 
-    setTransactionData(prev => ({
-      ...prev,
-      State: state || prev.State || '',
-      CustSite: sites[0] || ''
-    }));
+      setMasterData(prev => ({
+        ...prev,
+        Location: selectedLoc,
+        CustSite: selectedLoc
+      }));
 
-    setAvailableCustSites(sites);
+      setTransactionData(prev => ({
+        ...prev,
+        State: state || prev.State || '',
+        CustSite: sites[0] || ''
+      }));
+
+      setAvailableCustSites(sites);
+    } else {
+      // Standard Fixed mode location selection
+      setMasterData(prev => ({
+        ...prev,
+        Location: selectedLoc
+      }));
+    }
   };
 
   // Handler for driver auto-population (populates driver number)
