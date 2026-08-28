@@ -2354,10 +2354,9 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           at.TripType,
           COALESCE(c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
           COALESCE(c.GSTNo, 'N/A') as GSTNo,
-          COALESCE(p.ProjectName, 'N/A') as ProjectName,
-          COALESCE(c.Locations, 'N/A') as Location,
-          COALESCE(c.CustomerSite, 'N/A') as CustomerSite,
-          COALESCE(c.Name, 'N/A') as CompanyName,
+          COALESCE(NULLIF(at.Location, ''), c.Locations, p.Location, 'N/A') as Location,
+          COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), c.CustomerSite, p.CustomerSite, 'N/A') as CustomerSite,
+          COALESCE(NULLIF(at.CompanyName, ''), c.Name, 'N/A') as CompanyName,
           'N/A' as VendorCode
         FROM adhoc_transactions at
         LEFT JOIN customer c ON at.CustomerID = c.CustomerID
@@ -2572,7 +2571,9 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           at.*,
           COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(NULLIF(at.CompanyName, ''), c.Name) as CompanyName,
-          COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName
+          COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName,
+          COALESCE(NULLIF(at.Location, ''), c.Locations, p.Location, 'N/A') as Location,
+          COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), c.CustomerSite, p.CustomerSite, 'N/A') as CustomerSite
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
         LEFT JOIN Project p ON at.ProjectID = p.ProjectID
@@ -2586,7 +2587,9 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           at.*,
           COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(NULLIF(at.CompanyName, ''), c.Name) as CompanyName,
-          COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName
+          COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName,
+          COALESCE(NULLIF(at.Location, ''), c.Locations, p.Location, 'N/A') as Location,
+          COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), c.CustomerSite, p.CustomerSite, 'N/A') as CustomerSite
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
         LEFT JOIN Project p ON at.ProjectID = p.ProjectID
@@ -2855,8 +2858,12 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           { header: 'Trip Close', key: 'TripClose', width: 12 },
 
           // Company/Customer Details (from form)
-          { header: 'Company Name', key: 'CustomerName', width: 25 },
+          { header: 'Company Name', key: 'CompanyName', width: 25 },
+          { header: 'GST No', key: 'GSTNo', width: 18 },
+          { header: 'Customer Name', key: 'CustomerName', width: 25 },
           { header: 'Project Name', key: 'ProjectName', width: 25 },
+          { header: 'Location', key: 'Location', width: 20 },
+          { header: 'Customer Site', key: 'CustomerSite', width: 25 },
 
           // Vehicle Details
           { header: 'Vehicle Number', key: 'VehicleNumber', width: 15 },
@@ -2953,9 +2960,13 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
             Status: row.Status || '',
             TripClose: row.TripClose ? 'Yes' : 'No',
 
-            // Company/Customer Details (from form - labeled as "Company Name" in UI)
+            // Company/Customer Details
+            CompanyName: row.CompanyName || '',
+            GSTNo: row.GSTNo || '',
             CustomerName: row.CustomerName || '',
             ProjectName: row.ProjectName || '',
+            Location: row.Location || '',
+            CustomerSite: row.CustomerSite || row.CustSite || '',
 
             // Vehicle Details
             VehicleNumber: row.VehicleNumber || '',

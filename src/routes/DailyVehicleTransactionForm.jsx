@@ -2615,9 +2615,15 @@ const DailyVehicleTransactionForm = () => {
             }
           }
 
-          // 3. Resolve Location and CustomerSite from expanded column headers
-          const excelLocation = getCellValue(row, ['Location', 'CustomerSite', 'Customer Site', 'CustSite', 'Cust Site', 'Hub', 'Site', 'Loc']) || 'Default';
-          const excelCustSite = getCellValue(row, ['CustSite', 'Cust Site', 'CustomerSite', 'Customer Site', 'Location', 'Hub', 'Site']) || excelLocation;
+          // 3. Resolve Location and CustomerSite from expanded column headers (fallback to found project/customer location)
+          const rawExcelLocation = getCellValue(row, ['Location', 'CustomerSite', 'Customer Site', 'CustSite', 'Cust Site', 'Hub', 'Site', 'Loc']);
+          const rawExcelCustSite = getCellValue(row, ['CustSite', 'Cust Site', 'CustomerSite', 'Customer Site', 'Location', 'Hub', 'Site']);
+
+          const fallbackLoc = foundP?.Location ? foundP.Location.split(',')[0].trim() : (foundC?.Locations ? foundC.Locations.split(',')[0].trim() : '');
+          const fallbackSite = foundP?.CustomerSite ? foundP.CustomerSite.split(',')[0].trim() : (foundC?.CustomerSite ? foundC.CustomerSite.split(',')[0].trim() : fallbackLoc);
+
+          const excelLocation = (rawExcelLocation && rawExcelLocation !== 'Default') ? rawExcelLocation : (fallbackLoc || 'Default');
+          const excelCustSite = (rawExcelCustSite && rawExcelCustSite !== 'Default') ? rawExcelCustSite : (fallbackSite || excelLocation);
 
           console.log('📊 Excel Import - Resolved Info:', { sheetName, customerNameRaw, resolvedCustomerId, resolvedProjectId, excelLocation, excelCustSite, tripType });
 
