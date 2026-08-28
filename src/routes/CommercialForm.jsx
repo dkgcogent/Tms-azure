@@ -713,14 +713,7 @@ const CommercialForm = () => {
               <label>Additional Rate per KM</label>
               <input type="number" step="0.01" name="additional_rate_per_km" value={formData.additional_rate_per_km} onChange={handleChange} className="form-input" />
             </div>
-            <div className="form-group">
-              <label>Toll</label>
-              <input type="number" step="0.01" name="toll" value={formData.toll} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label>Parking</label>
-              <input type="number" step="0.01" name="parking" value={formData.parking} onChange={handleChange} className="form-input" />
-            </div>
+
             <div className="form-group">
               <label>Fixed Charges for Loading / Unloading</label>
               <input type="number" step="0.01" name="fixed_charges_loading_unloading" value={formData.fixed_charges_loading_unloading} onChange={handleChange} className="form-input" />

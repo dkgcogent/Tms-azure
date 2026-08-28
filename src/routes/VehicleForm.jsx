@@ -2405,14 +2405,7 @@ const VehicleForm = () => {
                 />
               </div>
             </div>
-            <div className="form-section">
-              <h4>💰 Vehicle Freight</h4>
-              <div className="form-grid">
-                {renderFormField('Fix Rate', 'FixRate', 'number', { placeholder: 'Enter fix rate' })}
-                {renderFormField('Fuel Rate', 'FuelRate', 'number', { placeholder: 'Enter fuel rate' })}
-                {renderFormField('Handling Charges', 'HandlingCharges', 'number', { placeholder: 'Enter handling charges' })}
-              </div>
-            </div>
+
           </div>
 
           {/* Form Actions */}

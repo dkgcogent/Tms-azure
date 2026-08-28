@@ -437,13 +437,14 @@ const DailyVehicleTransactionForm = () => {
       const loadingCharges = parseFloat(transactionData.LoadingCharges) || 0;
       const unloadingCharges = parseFloat(transactionData.UnloadingCharges) || 0;
       const otherCharges = parseFloat(transactionData.OtherCharges) || 0;
+      const dcmCharges = parseFloat(transactionData.DCMCharges) || 0;
 
       // Calculate freight components
       const variableKM = Math.max(0, totalKM - fixKm);
       const variableFreight = variableKM * vFreightVariable; // Variable KM × V.Freight (Variable)
       
-      // Total Freight = Fixed Freight + Variable Freight + Toll + Parking + Loading + Unloading + Other
-      const totalFreight = vFreightFix + variableFreight + tollExpenses + parkingCharges + loadingCharges + unloadingCharges + otherCharges;
+      // Total Freight = Fixed Freight + Variable Freight + Toll + Parking + Loading + Unloading + Other + DCM
+      const totalFreight = vFreightFix + variableFreight + tollExpenses + parkingCharges + loadingCharges + unloadingCharges + otherCharges + dcmCharges;
 
       console.log('🧮 ADHOC/REPLACEMENT Total Freight Calculation:', {
         totalKM,
@@ -457,7 +458,8 @@ const DailyVehicleTransactionForm = () => {
         loadingCharges,
         unloadingCharges,
         otherCharges,
-        totalFreight: `₹${vFreightFix} + ₹${variableFreight} + ₹${tollExpenses} + ₹${parkingCharges} + ₹${loadingCharges} + ₹${unloadingCharges} + ₹${otherCharges} = ₹${totalFreight}`
+        dcmCharges,
+        totalFreight: `₹${vFreightFix} + ₹${variableFreight} + ₹${tollExpenses} + ₹${parkingCharges} + ₹${loadingCharges} + ₹${unloadingCharges} + ₹${otherCharges} + ₹${dcmCharges} = ₹${totalFreight}`
       });
 
       setTransactionData(prev => ({
@@ -476,6 +478,7 @@ const DailyVehicleTransactionForm = () => {
     transactionData.LoadingCharges,
     transactionData.UnloadingCharges,
     transactionData.OtherCharges,
+    transactionData.DCMCharges,
     calculatedData.TotalKM,
     masterData.TypeOfTransaction
   ]);
@@ -782,6 +785,7 @@ const DailyVehicleTransactionForm = () => {
       const parkingCharges = parseFloat(calculatedData.ParkingCharges) || 0;
       const handlingCharges = parseFloat(calculatedData.HandlingCharges) || 0;
       const totalKM = parseFloat(calculatedData.TotalKM) || 0;
+      const dcmCharges = parseFloat(transactionData.DCMCharges) || 0;
 
       // Use V. FREIGHT (FIX) value for KM rate calculation
       const vFreightFix = parseFloat(calculatedData.VFreightFix) || 0;
@@ -790,22 +794,25 @@ const DailyVehicleTransactionForm = () => {
       const kmCharges = totalKM * vFreightFix;
 
       // Total Expenses for Fixed transactions = All charges + KM charges
-      const totalExpenses = tollExpenses + parkingCharges + handlingCharges + kmCharges;
+      const totalExpenses = tollExpenses + parkingCharges + handlingCharges + kmCharges + dcmCharges;
+      const totalFreight = totalExpenses; // Total freight mirrors total expenses for fixed transactions
 
       console.log('🧮 Fixed Auto-calculation:', {
         tollExpenses,
         parkingCharges,
         handlingCharges,
+        dcmCharges,
         totalKM,
         vFreightFix: `₹${vFreightFix}/KM`,
         kmCharges,
         totalExpenses,
-        breakdown: `₹${tollExpenses} + ₹${parkingCharges} + ₹${handlingCharges} + ₹${kmCharges} = ₹${totalExpenses}`
+        breakdown: `₹${tollExpenses} + ₹${parkingCharges} + ₹${handlingCharges} + ₹${dcmCharges} + ₹${kmCharges} = ₹${totalExpenses}`
       });
 
       setTransactionData(prev => ({
         ...prev,
-        TotalExpenses: totalExpenses.toFixed(2)
+        TotalExpenses: totalExpenses.toFixed(2),
+        TotalFreight: totalFreight.toFixed(2)
       }));
 
       // Store KM charges in calculated data for reference
@@ -820,6 +827,7 @@ const DailyVehicleTransactionForm = () => {
     calculatedData.HandlingCharges,
     calculatedData.TotalKM,
     calculatedData.VFreightFix,
+    transactionData.DCMCharges,
     masterData.TypeOfTransaction
   ]);
 
