@@ -1512,13 +1512,12 @@ const DailyVehicleTransactionForm = () => {
             }
           });
           if (vehicleDetails.Location) {
-            vehicleDetails.Location.split(',').forEach(loc => {
-              const clean = loc.trim();
-              if (clean) locSet.add(clean);
-            });
+            const cleanVehicleLocs = vehicleDetails.Location.split(',').map(loc => loc.trim()).filter(Boolean);
+            setAvailableLocations(cleanVehicleLocs);
+          } else {
+            const locs = [...locSet];
+            setAvailableLocations(locs);
           }
-          const locs = [...locSet];
-          setAvailableLocations(locs);
 
           const chosenLocation = vehicleDetails.Location || (locs.length > 0 ? locs[0] : '');
           autoPopulatedData.Location = chosenLocation;
