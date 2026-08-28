@@ -2563,6 +2563,9 @@ const DailyVehicleTransactionForm = () => {
         let payload = {};
 
         try {
+          let foundC = null;
+          let foundP = null;
+
           // 1. Resolve Customer ID
           const customerNameRaw = getCellValue(row, ['Customer', 'CustomerName', 'Customer Name']) || '';
           const resolvedCompanyName = getCellValue(row, ['CompanyName', 'Company Name', 'Operator Name', 'Operator']) || '';
@@ -2570,7 +2573,7 @@ const DailyVehicleTransactionForm = () => {
           let resolvedCustomerId = getCellValue(row, ['CustomerID', 'Customer ID']);
           if (!resolvedCustomerId && (customerNameRaw || resolvedCompanyName) && customers.length > 0) {
             const searchCustomerName = String(customerNameRaw || resolvedCompanyName).trim().toLowerCase();
-            const foundC = customers.find(c =>
+            foundC = customers.find(c =>
               (c.CustomerID && String(c.CustomerID) === searchCustomerName) ||
               (c.MasterCustomerName && String(c.MasterCustomerName).trim().toLowerCase() === searchCustomerName) ||
               (c.Name && String(c.Name).trim().toLowerCase() === searchCustomerName) ||
@@ -2585,9 +2588,8 @@ const DailyVehicleTransactionForm = () => {
           // 2. Resolve Project ID (using CustomerID context if available, then fallback)
           let resolvedProjectId = getCellValue(row, ['ProjectID', 'Project Id']);
           const projectNameRaw = getCellValue(row, ['Project', 'ProjectName', 'Project Name']);
-          if (!resolvedProjectId && projectNameRaw && projects.length > 0) {
+          if (projectNameRaw && projects.length > 0) {
             const searchProjName = String(projectNameRaw).trim().toLowerCase();
-            let foundP = null;
 
             // First priority: Match ProjectName AND CustomerID
             if (resolvedCustomerId) {
@@ -3964,7 +3966,6 @@ const DailyVehicleTransactionForm = () => {
     }
   };
 
-  // Export handler - Unified Excel export for all transactions
   const handleExportAllTransactions = async () => {
     try {
       console.log('📊 Exporting all transactions to Excel...');
@@ -3984,21 +3985,27 @@ const DailyVehicleTransactionForm = () => {
       loadingToast.textContent = '🔄 Exporting transactions... Please wait';
       document.body.appendChild(loadingToast);
 
+      const response = await fetch(exportUrl, { method: 'GET' });
+      if (!response.ok) {
+        throw new Error(`Export failed with status ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
       // Create download link
       const link = document.createElement('a');
-      link.href = exportUrl;
+      link.href = blobUrl;
       link.download = `Daily_Vehicle_Transactions_${new Date().toISOString().slice(0, 10)}.xlsx`;
-      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
 
       // Remove loading message
-      setTimeout(() => {
-        if (document.body.contains(loadingToast)) {
-          document.body.removeChild(loadingToast);
-        }
-      }, 1000);
+      if (document.body.contains(loadingToast)) {
+        document.body.removeChild(loadingToast);
+      }
 
       // Show success message
       const successToast = document.createElement('div');
@@ -4008,7 +4015,7 @@ const DailyVehicleTransactionForm = () => {
         border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         font-family: Arial, sans-serif; font-size: 14px;
       `;
-      successToast.innerHTML = `✅ Export Started!<br><small>Downloading all transactions (Fixed + Adhoc)</small>`;
+      successToast.innerHTML = `✅ Export Complete!<br><small>Downloaded all transactions (Fixed + Adhoc)</small>`;
       document.body.appendChild(successToast);
       setTimeout(() => {
         if (document.body.contains(successToast)) {

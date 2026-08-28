@@ -2354,8 +2354,8 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           at.TripType,
           COALESCE(c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
           COALESCE(c.GSTNo, 'N/A') as GSTNo,
-          COALESCE(NULLIF(at.Location, ''), c.Locations, p.Location, 'N/A') as Location,
-          COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), c.CustomerSite, p.CustomerSite, 'N/A') as CustomerSite,
+          COALESCE(NULLIF(at.Location, ''), p.Location, 'N/A') as Location,
+          COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), p.CustomerSite, 'N/A') as CustomerSite,
           COALESCE(NULLIF(at.CompanyName, ''), c.Name, 'N/A') as CompanyName,
           'N/A' as VendorCode
         FROM adhoc_transactions at
@@ -2572,8 +2572,8 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(NULLIF(at.CompanyName, ''), c.Name) as CompanyName,
           COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName,
-          COALESCE(NULLIF(at.Location, ''), c.Locations, p.Location, 'N/A') as Location,
-          COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), c.CustomerSite, p.CustomerSite, 'N/A') as CustomerSite
+          COALESCE(NULLIF(at.Location, ''), p.Location, 'N/A') as Location,
+          COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), p.CustomerSite, 'N/A') as CustomerSite
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
         LEFT JOIN Project p ON at.ProjectID = p.ProjectID
@@ -2588,8 +2588,8 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(NULLIF(at.CompanyName, ''), c.Name) as CompanyName,
           COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName,
-          COALESCE(NULLIF(at.Location, ''), c.Locations, p.Location, 'N/A') as Location,
-          COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), c.CustomerSite, p.CustomerSite, 'N/A') as CustomerSite
+          COALESCE(NULLIF(at.Location, ''), p.Location, 'N/A') as Location,
+          COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), p.CustomerSite, 'N/A') as CustomerSite
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
         LEFT JOIN Project p ON at.ProjectID = p.ProjectID
