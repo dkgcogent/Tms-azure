@@ -1049,6 +1049,51 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         }
       }
 
+      // Auto-resolve ProjectID if missing
+      let resolvedProjectID = ProjectID || req.body.ProjectID || null;
+      const targetProjName = req.body.Project || req.body.ProjectName || ProjectName || null;
+      if (!resolvedProjectID && targetProjName) {
+        const cleanProj = String(targetProjName).trim();
+        const cleanProjNoHyphen = cleanProj.replace(/-/g, ' ').replace(/\s+/g, ' ');
+        const [pMatch] = await pool.query(
+          `SELECT ProjectID FROM project 
+           WHERE (CustomerID = ? OR ? IS NULL) 
+             AND (
+               LOWER(ProjectName) = LOWER(?) 
+               OR LOWER(REPLACE(ProjectName, '-', ' ')) = LOWER(?) 
+               OR ProjectName LIKE CONCAT('%', ?, '%')
+             ) 
+           LIMIT 1`,
+          [CustomerID || null, CustomerID || null, cleanProj, cleanProjNoHyphen, cleanProj]
+        );
+        if (pMatch && pMatch.length > 0) {
+          resolvedProjectID = pMatch[0].ProjectID;
+        }
+      }
+
+      // Auto-resolve State, Location, CustSite
+      let resolvedState = State || req.body.State || null;
+      let resolvedLocation = Location || req.body.Location || null;
+      let resolvedCustSite = CustSite || CustomerSite || req.body.CustomerSite || req.body.CustSite || null;
+
+      if (!resolvedState && resolvedLocation) {
+        resolvedState = resolvedLocation;
+      }
+      if (!resolvedLocation && resolvedState) {
+        resolvedLocation = resolvedState;
+      }
+
+      if ((!resolvedState || !resolvedLocation || !resolvedCustSite) && CustomerID) {
+        const [custInfo] = await pool.query(
+          'SELECT CustomerState, CustomerCity FROM customer WHERE CustomerID = ?',
+          [CustomerID]
+        );
+        if (custInfo && custInfo.length > 0) {
+          if (!resolvedState) resolvedState = custInfo[0].CustomerState || custInfo[0].CustomerCity || null;
+          if (!resolvedLocation) resolvedLocation = custInfo[0].CustomerState || custInfo[0].CustomerCity || null;
+        }
+      }
+
       // Auto-resolve VendorID if missing
       let resolvedVendorID = VendorID || null;
       if (!resolvedVendorID) {
@@ -1071,11 +1116,8 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
 
       if (!customer_commercial_id) {
         const targetCustId = CustomerID || null;
-        const targetProjId = ProjectID || null;
-        const targetProjName = req.body.Project || req.body.ProjectName || null;
-        const targetCompName = CompanyName || req.body.CompanyName || req.body.Customer || null;
-
-        const cleanComp = (targetCompName || '').replace(/Pvt\.?\s*Ltd\.?/i, '').replace(/Private\s*Limited/i, '').trim();
+        const targetProjId = resolvedProjectID || null;
+        const cleanComp = (CompanyName || req.body.CompanyName || req.body.Customer || '').replace(/Pvt\.?\s*Ltd\.?/i, '').replace(/Private\s*Limited/i, '').trim();
 
         const [ccMatch] = await pool.query(
           `SELECT id FROM customer_commercial 
@@ -1104,10 +1146,10 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         }
       }
 
-      if (!vendor_commercial_id && resolvedVendorID && ProjectID) {
+      if (!vendor_commercial_id && resolvedVendorID && resolvedProjectID) {
         const [vcMatch] = await pool.query(
           'SELECT id FROM vendor_commercial WHERE vendor_id = ? AND project_id = ? ORDER BY id DESC LIMIT 1',
-          [resolvedVendorID, ProjectID]
+          [resolvedVendorID, resolvedProjectID]
         );
         if (vcMatch.length > 0) vendor_commercial_id = vcMatch[0].id;
       }
@@ -1185,7 +1227,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
 
         values = [
           TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', Shift || null, ensureValidJsonString(vehicleIds), ensureValidJsonString(driverIds), resolvedVendorID,
-          CustomerID, CustomerName || null, ProjectID || null, ProjectName || null, null,
+          CustomerID, CustomerName || null, resolvedProjectID || null, ProjectName || targetProjName || null, null,
           customer_commercial_id, vendor_commercial_id,
           ReplacementDriverID || null, ReplacementDriverName || null,
           ReplacementDriverNo || null, ArrivalTimeAtHub || null, InTimeByCust || null, OutTimeFromHub || null,
@@ -1197,7 +1239,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           Remarks || null, Status, convertToBoolean(TripClose),
           vFreightFix || null, FixKm || null, vFreightVariable || null, totalFreight || null, TollExpenses || null, ParkingCharges || null, LoadingCharges || null, UnloadingCharges || null, OtherCharges || null, OtherChargesRemarks || null, HandlingCharges || null,
           VehicleNumber || null, VehicleType || null, VendorName || null, VendorNumber || null, DriverName || null, DriverNumber || null, DriverAadharNumber || null, DriverLicenceNumber || null,
-          CompanyName || null, GSTNo || null, Location || null, CustomerSite || null,
+          CompanyName || null, GSTNo || null, resolvedLocation || resolvedState || null, resolvedCustSite || null,
           DriverAadharDoc, DriverLicenceDoc, TollExpensesDoc, ParkingChargesDoc,
           OpeningKMImage, ClosingKMImage
         ];
@@ -1224,7 +1266,6 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
             Revenue, Margin, MarginPercentage, Status, TripClose, Remarks,
             State, CustSite, VendorCode, DriverType, VehicleOwnershipType, ExtraKM, ExtraKMCost, DCMCharges, AdvanceRequisitionDate, BalanceRequisitionDate
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-
         `;
 
         // Calculate TotalFreight if freight values are provided
@@ -1242,7 +1283,6 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
 
         const totalFreight = vFreightFix + (variableKmVal * vFreightVariable) + tollExp + parkingChg + loadingChg + unloadingChg + otherChg;
 
-
         // For adhoc, we'll store multiple vehicle/driver info in JSON fields if arrays are provided
         const vehicleNumbersJson = Array.isArray(VehicleNumber) ? JSON.stringify(VehicleNumber) : null;
         const vehicleTypesJson = Array.isArray(VehicleType) ? JSON.stringify(VehicleType) : null;
@@ -1252,8 +1292,8 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         const driverNumbersJson = Array.isArray(DriverNumber) ? JSON.stringify(DriverNumber) : null;
 
         values = [
-          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', CustomerID || null, ProjectID || null, resolvedVendorID || null, customer_commercial_id || null, vendor_commercial_id || null,
-          transaction.CompanyName || null, transaction.GSTNo || null, transaction.Location || null, transaction.CustomerSite || null, transaction.ProjectName || null,
+          TripType, TransactionDate, ServiceDate || null, VehicleReturnDate || null, TripNo || '', CustomerID || null, resolvedProjectID || null, resolvedVendorID || null, customer_commercial_id || null, vendor_commercial_id || null,
+          transaction.CompanyName || CompanyName || null, transaction.GSTNo || GSTNo || null, resolvedLocation || resolvedState || null, resolvedCustSite || null, transaction.ProjectName || targetProjName || null,
           Array.isArray(VehicleNumber) ? VehicleNumber[0] : VehicleNumber, vehicleNumbersJson,
           Array.isArray(VehicleType) ? VehicleType[0] : VehicleType, vehicleTypesJson,
           Array.isArray(VendorName) ? VendorName[0] : VendorName, vendorNamesJson,
@@ -1273,8 +1313,7 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           AdvancePaidAmount || null, AdvancePaidMode || null, AdvancePaidDate || null, AdvancePaidBy || null, EmployeeDetailsAdvance || null,
           BalanceToBePaid || null, BalancePaidAmount || null, Variance || null, BalancePaidDate || null, BalancePaidBy || null, EmployeeDetailsBalance || null,
           Revenue || null, Margin || null, MarginPercentage || null, Status, convertToBoolean(TripClose), Remarks || null,
-          State || null, CustSite || null, VendorCode || null, DriverType || null, VehicleOwnershipType || null, ExtraKM || null, ExtraKMCost || null, DCMCharges || null, AdvanceRequisitionDate || null, BalanceRequisitionDate || null
-
+          resolvedState || resolvedLocation || null, resolvedCustSite || null, VendorCode || null, DriverType || null, VehicleOwnershipType || null, ExtraKM || null, ExtraKMCost || null, DCMCharges || null, AdvanceRequisitionDate || null, BalanceRequisitionDate || null
         ];
 
       } else {
@@ -2125,11 +2164,12 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           'Fixed' as TripType,
           COALESCE(c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
           COALESCE(ft.GSTNo, c.GSTNo, 'N/A') as GSTNo,
-          COALESCE(p.ProjectName, 'N/A') as ProjectName,
+          COALESCE(p.ProjectName, ft.ProjectName, 'N/A') as ProjectName,
           COALESCE(v.VendorName, ft.VendorName, 'N/A') as VendorName,
           COALESCE(v.VendorCode, 'N/A') as VendorCode,
-          COALESCE(ft.Location, c.Locations, 'N/A') as Location,
-          COALESCE(ft.CustomerSite, c.CustomerSite, 'N/A') as CustomerSite,
+          COALESCE(NULLIF(ft.Location, ''), p.State, c.CustomerState, 'N/A') as State,
+          COALESCE(NULLIF(ft.Location, ''), p.State, c.CustomerState, 'N/A') as Location,
+          COALESCE(NULLIF(ft.CustomerSite, ''), p.CustomerSite, 'N/A') as CustomerSite,
           COALESCE(ft.CompanyName, c.Name, 'N/A') as CompanyName
         FROM fixed_transactions ft
         LEFT JOIN customer c ON ft.CustomerID = c.CustomerID
@@ -2149,11 +2189,14 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Fixed Transactions');
 
-      // Define columns for Fixed transactions (exact template order - 33 columns)
+      // Define columns for Fixed transactions
       worksheet.columns = [
+        { header: 'Customer ID', key: 'CustomerID', width: 15 },
         { header: 'Customer', key: 'CustomerName', width: 20 },
         { header: 'GST No', key: 'GSTNo', width: 18 },
+        { header: 'Project ID', key: 'ProjectID', width: 15 },
         { header: 'Project', key: 'ProjectName', width: 20 },
+        { header: 'State', key: 'State', width: 15 },
         { header: 'Location', key: 'Location', width: 15 },
         { header: 'Cust Site', key: 'CustomerSite', width: 15 },
         { header: 'Type of Vehicle Placement', key: 'TripType', width: 25 },
@@ -2285,9 +2328,12 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         const totalKM = (row.ClosingKM && row.OpeningKM) ? (row.ClosingKM - row.OpeningKM) : null;
 
         processedRows.push({
+          CustomerID: row.CustomerID || '',
           CustomerName: row.CustomerName || 'None',
           GSTNo: row.GSTNo || 'None',
+          ProjectID: row.ProjectID || '',
           ProjectName: row.ProjectName || 'None',
+          State: row.State || 'None',
           Location: row.Location || 'None',
           CustomerSite: row.CustomerSite || 'None',
           TripType: 'Fix', // Fixed transactions show as "Fix"
@@ -2354,7 +2400,9 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           at.TripType,
           COALESCE(c.Name, c.MasterCustomerName, 'Unknown Customer') as CustomerName,
           COALESCE(c.GSTNo, 'N/A') as GSTNo,
-          COALESCE(NULLIF(at.Location, ''), p.Location, 'N/A') as Location,
+          COALESCE(p.ProjectName, at.ProjectName, 'N/A') as ProjectName,
+          COALESCE(NULLIF(at.State, ''), NULLIF(at.Location, ''), p.State, c.CustomerState, 'N/A') as State,
+          COALESCE(NULLIF(at.Location, ''), p.State, c.CustomerState, 'N/A') as Location,
           COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), p.CustomerSite, 'N/A') as CustomerSite,
           COALESCE(NULLIF(at.CompanyName, ''), c.Name, 'N/A') as CompanyName,
           'N/A' as VendorCode
@@ -2378,10 +2426,13 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
 
       // Define columns in exact order from your Excel template
       worksheet.columns = [
+        { header: 'Customer ID', key: 'CustomerID', width: 15 },
         { header: 'Customer', key: 'CustomerName', width: 20 },
         { header: 'Company Name', key: 'CompanyName', width: 20 },
         { header: 'GST No', key: 'GSTNo', width: 18 },
+        { header: 'Project ID', key: 'ProjectID', width: 15 },
         { header: 'Project', key: 'ProjectName', width: 20 },
+        { header: 'State', key: 'State', width: 15 },
         { header: 'Location', key: 'Location', width: 15 },
         { header: 'Cust Site', key: 'CustomerSite', width: 15 },
         { header: 'Type of Vehicle Placement', key: 'TripType', width: 20 },
@@ -2455,10 +2506,13 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         const marginPercentage = revenue > 0 ? (margin / revenue) : 0;
 
         worksheet.addRow({
+          CustomerID: row.CustomerID || '',
           CustomerName: row.CustomerName || 'None',
           CompanyName: row.CompanyName || 'None',
           GSTNo: row.GSTNo || 'None',
+          ProjectID: row.ProjectID || '',
           ProjectName: row.ProjectName || 'None',
+          State: row.State || 'None',
           Location: row.Location || 'None',
           CustomerSite: row.CustomerSite || 'None',
           TripType: row.TripType || 'Adhoc',
@@ -2548,6 +2602,9 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           COALESCE(NULLIF(ft.CompanyName, ''), c.Name) as CompanyName,
           COALESCE(NULLIF(ft.GSTNo, ''), c.GSTNo) as GSTNo,
           COALESCE(NULLIF(ft.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName,
+          COALESCE(NULLIF(ft.Location, ''), p.State, c.CustomerState, 'N/A') as State,
+          COALESCE(NULLIF(ft.Location, ''), p.State, c.CustomerState, 'N/A') as Location,
+          COALESCE(NULLIF(ft.CustomerSite, ''), p.CustomerSite, 'N/A') as CustomerSite,
           COALESCE(NULLIF(ft.VehicleNumber, ''), v.VehicleRegistrationNo) as VehicleNumber,
           COALESCE(NULLIF(ft.VehicleType, ''), v.VehicleType) as VehicleType,
           COALESCE(NULLIF(ft.VendorName, ''), vend.VendorName) as VendorName,
@@ -2572,7 +2629,8 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(NULLIF(at.CompanyName, ''), c.Name) as CompanyName,
           COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName,
-          COALESCE(NULLIF(at.Location, ''), p.Location, 'N/A') as Location,
+          COALESCE(NULLIF(at.State, ''), NULLIF(at.Location, ''), p.State, c.CustomerState, 'N/A') as State,
+          COALESCE(NULLIF(at.Location, ''), p.State, c.CustomerState, 'N/A') as Location,
           COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), p.CustomerSite, 'N/A') as CustomerSite
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
@@ -2588,7 +2646,8 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           COALESCE(c.MasterCustomerName, c.Name, 'Unknown Customer') as CustomerName,
           COALESCE(NULLIF(at.CompanyName, ''), c.Name) as CompanyName,
           COALESCE(NULLIF(at.ProjectName, ''), p.ProjectName, 'N/A') as ProjectName,
-          COALESCE(NULLIF(at.Location, ''), p.Location, 'N/A') as Location,
+          COALESCE(NULLIF(at.State, ''), NULLIF(at.Location, ''), p.State, c.CustomerState, 'N/A') as State,
+          COALESCE(NULLIF(at.Location, ''), p.State, c.CustomerState, 'N/A') as Location,
           COALESCE(NULLIF(at.CustSite, ''), NULLIF(at.CustomerSite, ''), p.CustomerSite, 'N/A') as CustomerSite
         FROM adhoc_transactions at
         LEFT JOIN Customer c ON at.CustomerID = c.CustomerID
@@ -2627,10 +2686,13 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           { header: 'Trip Close', key: 'TripClose', width: 12 },
 
           // Company/Customer Details (Master Data Section)
+          { header: 'Customer ID', key: 'CustomerID', width: 15 },
           { header: 'Company Name', key: 'CompanyName', width: 25 },
           { header: 'GST No', key: 'GSTNo', width: 18 },
           { header: 'Customer Name', key: 'CustomerName', width: 25 },
+          { header: 'Project ID', key: 'ProjectID', width: 15 },
           { header: 'Project Name', key: 'ProjectName', width: 25 },
+          { header: 'State', key: 'State', width: 18 },
           { header: 'Location', key: 'Location', width: 25 },
           { header: 'Customer Site', key: 'CustomerSite', width: 25 },
 
@@ -2736,10 +2798,13 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
             TripClose: row.TripClose ? 'Yes' : 'No',
 
             // Company/Customer Details
+            CustomerID: row.CustomerID || '',
             CompanyName: row.CompanyName || '',
             GSTNo: row.GSTNo || '',
             CustomerName: row.CustomerName || '',
+            ProjectID: row.ProjectID || '',
             ProjectName: row.ProjectName || '',
+            State: row.State || '',
             Location: row.Location || '',
             CustomerSite: row.CustomerSite || '',
 
@@ -2858,10 +2923,13 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           { header: 'Trip Close', key: 'TripClose', width: 12 },
 
           // Company/Customer Details (from form)
+          { header: 'Customer ID', key: 'CustomerID', width: 15 },
           { header: 'Company Name', key: 'CompanyName', width: 25 },
           { header: 'GST No', key: 'GSTNo', width: 18 },
           { header: 'Customer Name', key: 'CustomerName', width: 25 },
+          { header: 'Project ID', key: 'ProjectID', width: 15 },
           { header: 'Project Name', key: 'ProjectName', width: 25 },
+          { header: 'State', key: 'State', width: 18 },
           { header: 'Location', key: 'Location', width: 20 },
           { header: 'Customer Site', key: 'CustomerSite', width: 25 },
 
@@ -2961,10 +3029,13 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
             TripClose: row.TripClose ? 'Yes' : 'No',
 
             // Company/Customer Details
+            CustomerID: row.CustomerID || '',
             CompanyName: row.CompanyName || '',
             GSTNo: row.GSTNo || '',
             CustomerName: row.CustomerName || '',
+            ProjectID: row.ProjectID || '',
             ProjectName: row.ProjectName || '',
+            State: row.State || '',
             Location: row.Location || '',
             CustomerSite: row.CustomerSite || row.CustSite || '',
 
@@ -3077,8 +3148,14 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
           { header: 'Trip Close', key: 'TripClose', width: 12 },
 
           // Company/Customer Details (from form)
-          { header: 'Company Name', key: 'CustomerName', width: 25 },
+          { header: 'Customer ID', key: 'CustomerID', width: 15 },
+          { header: 'Company Name', key: 'CompanyName', width: 25 },
+          { header: 'Customer Name', key: 'CustomerName', width: 25 },
+          { header: 'Project ID', key: 'ProjectID', width: 15 },
           { header: 'Project Name', key: 'ProjectName', width: 25 },
+          { header: 'State', key: 'State', width: 18 },
+          { header: 'Location', key: 'Location', width: 20 },
+          { header: 'Customer Site', key: 'CustomerSite', width: 25 },
 
           // Vehicle Details
           { header: 'Vehicle Number', key: 'VehicleNumber', width: 15 },
@@ -3175,9 +3252,15 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
             Status: row.Status || '',
             TripClose: row.TripClose ? 'Yes' : 'No',
 
-            // Company/Customer Details (from form - labeled as "Company Name" in UI)
+            // Company/Customer Details
+            CustomerID: row.CustomerID || '',
+            CompanyName: row.CompanyName || '',
             CustomerName: row.CustomerName || '',
+            ProjectID: row.ProjectID || '',
             ProjectName: row.ProjectName || '',
+            State: row.State || '',
+            Location: row.Location || '',
+            CustomerSite: row.CustomerSite || row.CustSite || '',
 
             // Vehicle Details
             VehicleNumber: row.VehicleNumber || '',
