@@ -8,12 +8,50 @@ module.exports = (pool) => {
     return val;
   };
 
+  // Helper to extract ID from string like "Name / 5" or resolve by DB query
+  const extractId = async (str, table = 'vendor') => {
+    if (!str) return null;
+    if (typeof str === 'number') return str;
+    const strVal = String(str).trim();
+    const parts = strVal.split('/');
+    if (parts.length > 1) {
+      const id = parseInt(parts[parts.length - 1].trim(), 10);
+      if (!isNaN(id)) return id;
+    }
+    const directNum = parseInt(strVal, 10);
+    if (!isNaN(directNum) && String(directNum) === strVal) {
+      return directNum;
+    }
+    // Fallback lookup by name
+    try {
+      if (table === 'vendor') {
+        const [rows] = await pool.query("SELECT VendorID FROM vendor WHERE CompanyName = ? OR VendorName = ? OR VendorName LIKE ?", [strVal, strVal, `%${strVal}%`]);
+        if (rows.length > 0) return rows[0].VendorID;
+      } else if (table === 'project') {
+        const [rows] = await pool.query("SELECT ProjectID, CustomerID FROM project WHERE ProjectName = ? OR ProjectName LIKE ?", [strVal, `%${strVal}%`]);
+        if (rows.length > 0) return rows[0].ProjectID;
+      }
+    } catch (e) {
+      console.error('Error in extractId DB lookup:', e);
+    }
+    return null;
+  };
+
   // Create a new vendor commercial agreement
   router.post('/', async (req, res) => {
     const data = req.body;
     console.log('🚀 POST /api/vendor-commercials - Received payload:', data);
 
     try {
+      const vendor_id = data.vendor_id || await extractId(data.vendor_company_name || data.vendor_name, 'vendor');
+      const project_id = data.project_id || await extractId(data.project, 'project');
+      let customer_id = data.customer_id || null;
+
+      if (!customer_id && project_id) {
+        const [projRows] = await pool.query("SELECT CustomerID FROM project WHERE ProjectID = ?", [project_id]);
+        if (projRows.length > 0) customer_id = projRows[0].CustomerID;
+      }
+
       const query = `
         INSERT INTO vendor_commercial (
           vendor_name, vendor_company_name, project, state, 
@@ -27,8 +65,9 @@ module.exports = (pool) => {
           state_tax_charges, floor_delivery_charges, 
           driver_charges, over_time_charges, holiday_working_charges, 
           additional_delivery_points_charges, per_kg_cost, 
+          vendor_id, customer_id, project_id,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `;
 
       const params = [
@@ -62,12 +101,15 @@ module.exports = (pool) => {
         sanitizeValue(data.over_time_charges),
         sanitizeValue(data.holiday_working_charges),
         sanitizeValue(data.additional_delivery_points_charges),
-        sanitizeValue(data.per_kg_cost)
+        sanitizeValue(data.per_kg_cost),
+        vendor_id || null,
+        customer_id || null,
+        project_id || null
       ];
 
       const [result] = await pool.query(query, params);
 
-      console.log('✅ Vendor Commercial Agreement saved successfully, ID:', result.insertId);
+      console.log('✅ Vendor Commercial Agreement saved successfully, ID:', result.insertId, 'ProjectID:', project_id, 'VendorID:', vendor_id);
 
       res.status(201).json({
         success: true,
@@ -101,6 +143,15 @@ module.exports = (pool) => {
     console.log(`🚀 PUT /api/vendor-commercials/${id} - Received payload:`, data);
 
     try {
+      const vendor_id = data.vendor_id || await extractId(data.vendor_company_name || data.vendor_name, 'vendor');
+      const project_id = data.project_id || await extractId(data.project, 'project');
+      let customer_id = data.customer_id || null;
+
+      if (!customer_id && project_id) {
+        const [projRows] = await pool.query("SELECT CustomerID FROM project WHERE ProjectID = ?", [project_id]);
+        if (projRows.length > 0) customer_id = projRows[0].CustomerID;
+      }
+
       const query = `
         UPDATE vendor_commercial SET
           vendor_name = ?, vendor_company_name = ?, project = ?, state = ?, 
@@ -114,6 +165,7 @@ module.exports = (pool) => {
           state_tax_charges = ?, floor_delivery_charges = ?, 
           driver_charges = ?, over_time_charges = ?, holiday_working_charges = ?, 
           additional_delivery_points_charges = ?, per_kg_cost = ?, 
+          vendor_id = COALESCE(?, vendor_id), customer_id = COALESCE(?, customer_id), project_id = COALESCE(?, project_id),
           updated_at = NOW()
         WHERE id = ?
       `;
@@ -150,6 +202,9 @@ module.exports = (pool) => {
         sanitizeValue(data.holiday_working_charges),
         sanitizeValue(data.additional_delivery_points_charges),
         sanitizeValue(data.per_kg_cost),
+        vendor_id || null,
+        customer_id || null,
+        project_id || null,
         id
       ];
 

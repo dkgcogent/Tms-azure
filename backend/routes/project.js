@@ -294,6 +294,8 @@ module.exports = (pool) => {
       let finalLocation = Location || null;
       let finalState = State || null;
       let finalCustomerSite = CustomerSite || null;
+      // Store the full paired list as JSON to preserve State<->Location pairing
+      let finalLocationsJSON = null;
 
       if (Array.isArray(CustomerSiteList) && CustomerSiteList.length > 0) {
         const locs = Array.from(new Set(CustomerSiteList.map(e => e.Location).filter(Boolean)));
@@ -303,6 +305,9 @@ module.exports = (pool) => {
         if (locs.length > 0) finalLocation = locs.join(', ');
         if (states.length > 0) finalState = states.join(', ');
         if (sites.length > 0) finalCustomerSite = sites.join(', ');
+
+        // Save the EXACT pairing as JSON so edit loads correctly
+        finalLocationsJSON = JSON.stringify(CustomerSiteList);
       }
 
       let pCode = ProjectCode;
@@ -314,12 +319,12 @@ module.exports = (pool) => {
 
       const [insertResult] = await pool.query(
         `INSERT INTO Project (
-          ProjectName, CustomerID, ProjectCode, ProjectDescription, LocationID, Location, State, CustomerSite,
+          ProjectName, CustomerID, ProjectCode, ProjectDescription, LocationID, Location, State, CustomerSite, LocationsJSON,
           ProjectValue, StartDate, EndDate, Status,
           Rates, RatesAnnexureFile, YearlyEscalationClause, GSTNo, TypeOfBilling, GSTRate, BillingTenure, BillingFromDate, BillingToDate
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          ProjectName, CustomerID, pCode, ProjectDescription || '', locationIdValue, finalLocation, finalState, finalCustomerSite,
+          ProjectName, CustomerID, pCode, ProjectDescription || '', locationIdValue, finalLocation, finalState, finalCustomerSite, finalLocationsJSON,
           ProjectValue || null, StartDate || null, EndDate || null, Status || 'Active',
           Rates || null, RatesAnnexureFile || null, YearlyEscalationClause || 'No', GSTNo || null, TypeOfBilling || 'RCM', GSTRate || '0', BillingTenure || null, BillingFromDate || null, BillingToDate || null
         ]
@@ -391,6 +396,8 @@ module.exports = (pool) => {
       let finalLocation = Location || null;
       let finalState = State || null;
       let finalCustomerSite = CustomerSite || null;
+      // Store the full paired list as JSON to preserve State<->Location pairing
+      let finalLocationsJSON = null;
 
       if (Array.isArray(CustomerSiteList) && CustomerSiteList.length > 0) {
         const locs = Array.from(new Set(CustomerSiteList.map(e => e.Location).filter(Boolean)));
@@ -400,17 +407,20 @@ module.exports = (pool) => {
         if (locs.length > 0) finalLocation = locs.join(', ');
         if (states.length > 0) finalState = states.join(', ');
         if (sites.length > 0) finalCustomerSite = sites.join(', ');
+
+        // Save the EXACT pairing as JSON so edit loads correctly
+        finalLocationsJSON = JSON.stringify(CustomerSiteList);
       }
 
       const primaryCode = ProjectCode || await getNextProjectCodeForIndex(ProjectCode, 0);
 
       let updateFields = `
-        ProjectName = ?, CustomerID = ?, ProjectCode = ?, ProjectDescription = ?, LocationID = ?, Location = ?, State = ?, CustomerSite = ?,
+        ProjectName = ?, CustomerID = ?, ProjectCode = ?, ProjectDescription = ?, LocationID = ?, Location = ?, State = ?, CustomerSite = ?, LocationsJSON = ?,
         ProjectValue = ?, StartDate = ?, EndDate = ?, Status = ?,
         Rates = ?, RatesAnnexureFile = ?, YearlyEscalationClause = ?, GSTNo = ?, TypeOfBilling = ?, GSTRate = ?, BillingTenure = ?, BillingFromDate = ?, BillingToDate = ?
       `;
       let updateValues = [
-        ProjectName, CustomerID, primaryCode, ProjectDescription || '', locationIdValue, finalLocation, finalState, finalCustomerSite,
+        ProjectName, CustomerID, primaryCode, ProjectDescription || '', locationIdValue, finalLocation, finalState, finalCustomerSite, finalLocationsJSON,
         ProjectValue || null, StartDate || null, EndDate || null, Status || 'Active',
         Rates || null, RatesAnnexureFile || null, YearlyEscalationClause || 'No', GSTNo || null, TypeOfBilling || 'RCM', GSTRate || '0', BillingTenure || null, BillingFromDate || null, BillingToDate || null,
         id

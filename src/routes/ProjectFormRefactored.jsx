@@ -211,26 +211,19 @@ const ProjectFormRefactored = () => {
     setEditingProject(project);
     const customer = customers.find(c => c.CustomerID.toString() === project.CustomerID.toString());
     setSelectedCustomer(customer);
+    
+    // Try to use LocationsJSON (structured) for exact State<->Location pairing
+    let parsedCustomerSite = null;
 
-    // Find all sibling rows or parse comma-separated locations for this project to load all location cards
-    const siblingRows = projects.filter(p =>
-      p.ProjectName && project.ProjectName &&
-      p.ProjectName.trim().toLowerCase() === project.ProjectName.trim().toLowerCase() &&
-      p.CustomerID.toString() === project.CustomerID.toString()
-    );
-
-    const rowsToProcess = siblingRows.length > 0 ? siblingRows : [project];
-    const locationMap = new Map();
-
-    rowsToProcess.forEach(row => {
-      const locList = (row.Location || '').split(',').map(l => l.trim()).filter(Boolean);
-      const stateList = (row.State || '').split(',').map(s => s.trim());
-      const siteList = (row.CustomerSite || '').split(',').map(cs => cs.trim()).filter(Boolean);
-
-      if (locList.length > 0) {
-        locList.forEach((locKey, idx) => {
-          const state = stateList[idx] || stateList[0] || '';
-          const siteStr = siteList[idx] || '';
+    if (project.LocationsJSON) {
+      try {
+        const locationsList = JSON.parse(project.LocationsJSON);
+        // Group by location - build map of location -> { state, location, sites[] }
+        const locationMap = new Map();
+        locationsList.forEach(entry => {
+          const locKey = (entry.Location || '').trim();
+          const state = (entry.State || '').trim();
+          const siteStr = (entry.CustomerSite || '').trim();
           let siteName = '';
           let empId = '';
 
@@ -240,24 +233,82 @@ const ProjectFormRefactored = () => {
               empId = empMatch[1].trim();
               siteName = siteStr.replace(empMatch[0], '').trim();
             } else {
-              siteName = siteStr.trim();
+              siteName = siteStr;
             }
           }
 
           if (!locationMap.has(locKey)) {
             locationMap.set(locKey, {
-              state: state,
+              state,
               location: locKey,
               sites: siteName ? [{ name: siteName, employee_id: empId }] : [{ name: '', employee_id: '' }]
             });
+          } else {
+            // Add additional sites to the same location group
+            if (siteName) {
+              locationMap.get(locKey).sites.push({ name: siteName, employee_id: empId });
+            }
           }
         });
-      }
-    });
 
-    const parsedCustomerSite = locationMap.size > 0
-      ? Array.from(locationMap.values())
-      : [{ state: '', location: '', sites: [{ name: '', employee_id: '' }] }];
+        if (locationMap.size > 0) {
+          parsedCustomerSite = Array.from(locationMap.values());
+        }
+      } catch (e) {
+        console.warn('Failed to parse LocationsJSON, falling back to comma-split:', e);
+      }
+    }
+
+    // Fallback: parse from comma-separated strings (old format / no LocationsJSON)
+    if (!parsedCustomerSite) {
+      const siblingRows = projects.filter(p =>
+        p.ProjectName &&
+        project.ProjectName &&
+        p.ProjectName.trim().toLowerCase() === project.ProjectName.trim().toLowerCase() &&
+        p.CustomerID.toString() === project.CustomerID.toString()
+      );
+
+      const rowsToProcess = siblingRows.length > 0 ? siblingRows : [project];
+      const locationMap = new Map();
+
+      rowsToProcess.forEach(row => {
+        const locList = (row.Location || '').split(',').map(l => l.trim()).filter(Boolean);
+        const stateList = (row.State || '').split(',').map(s => s.trim());
+        const siteList = (row.CustomerSite || '').split(',').map(cs => cs.trim()).filter(Boolean);
+
+        if (locList.length > 0) {
+          locList.forEach((locKey, idx) => {
+            // Use index-matched state; do NOT fall back to stateList[0] to avoid incorrect mapping
+            const state = stateList[idx] || '';
+            const siteStr = siteList[idx] || '';
+            let siteName = '';
+            let empId = '';
+
+            if (siteStr) {
+              const empMatch = siteStr.match(/\(Emp:\s*([^)]+)\)/);
+              if (empMatch) {
+                empId = empMatch[1].trim();
+                siteName = siteStr.replace(empMatch[0], '').trim();
+              } else {
+                siteName = siteStr.trim();
+              }
+            }
+
+            if (!locationMap.has(locKey)) {
+              locationMap.set(locKey, {
+                state: state,
+                location: locKey,
+                sites: siteName ? [{ name: siteName, employee_id: empId }] : [{ name: '', employee_id: '' }]
+              });
+            }
+          });
+        }
+      });
+
+      parsedCustomerSite = locationMap.size > 0
+        ? Array.from(locationMap.values())
+        : [{ state: '', location: '', sites: [{ name: '', employee_id: '' }] }];
+    }
 
     setProjectData({
       ProjectName: project.ProjectName || '',

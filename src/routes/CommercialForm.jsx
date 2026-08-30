@@ -122,7 +122,7 @@ const CommercialForm = () => {
         }))
     : [];
     
-  const stateOptions = [
+  const ALL_INDIAN_STATES = [
     "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
     "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", 
     "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", 
@@ -131,6 +131,29 @@ const CommercialForm = () => {
     "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", 
     "Ladakh", "Lakshadweep", "Puducherry"
   ];
+  
+  // Derive available states for the selected project
+  const selectedProjectObj = projects.find(p =>
+    p.ProjectID?.toString() === formData.project?.toString() ||
+    `${p.ProjectName} / ${p.ProjectID}` === formData.project
+  );
+
+  let projectStates = [];
+  if (selectedProjectObj) {
+    if (selectedProjectObj.LocationsJSON) {
+      try {
+        const parsed = JSON.parse(selectedProjectObj.LocationsJSON);
+        projectStates = Array.from(new Set(parsed.map(item => item.State).filter(Boolean)));
+      } catch (e) {
+        // fallback
+      }
+    }
+    if (projectStates.length === 0 && selectedProjectObj.State) {
+      projectStates = Array.from(new Set(selectedProjectObj.State.split(',').map(s => s.trim()).filter(Boolean)));
+    }
+  }
+
+  const stateOptions = projectStates.length > 0 ? projectStates : ALL_INDIAN_STATES;
   
   // Standard options from Add Vehicle Form
   const standardVehicleTypes = ['LP', 'LPT', 'Tata Ace', 'Pickup', 'Tata 407 10ft', 'Tata 407 14ft', 'Eicher 17ft'];
@@ -170,8 +193,32 @@ const CommercialForm = () => {
       if (name === 'master_customer') {
         newData.company_name = '';
         newData.project = '';
+        newData.state = '';
       } else if (name === 'company_name') {
         newData.project = '';
+        newData.state = '';
+      } else if (name === 'project') {
+        // Auto-select state if the selected project only has 1 state
+        const proj = projects.find(p => p.ProjectID?.toString() === value?.toString() || `${p.ProjectName} / ${p.ProjectID}` === value);
+        if (proj) {
+          let pStates = [];
+          if (proj.LocationsJSON) {
+            try {
+              const parsed = JSON.parse(proj.LocationsJSON);
+              pStates = Array.from(new Set(parsed.map(item => item.State).filter(Boolean)));
+            } catch (err) {}
+          }
+          if (pStates.length === 0 && proj.State) {
+            pStates = Array.from(new Set(proj.State.split(',').map(s => s.trim()).filter(Boolean)));
+          }
+          if (pStates.length === 1) {
+            newData.state = pStates[0];
+          } else {
+            newData.state = '';
+          }
+        } else {
+          newData.state = '';
+        }
       }
       
       return newData;
