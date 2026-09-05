@@ -67,22 +67,9 @@ const VehicleForm = () => {
         { field: 'VehicleLoadingCapacity', label: 'Vehicle Loading Capacity', element: 'input[name="VehicleLoadingCapacity"]' }
       ];
 
-      // Required vehicle photos (all 8 are mandatory)
-      const requiredPhotoFields = [
-        { field: 'VehiclePhotoFront', label: 'Vehicle Photo - Front View', element: 'input[name="VehiclePhotoFront"]' },
-        { field: 'VehiclePhotoBack', label: 'Vehicle Photo - Back View', element: 'input[name="VehiclePhotoBack"]' },
-        { field: 'VehiclePhotoLeftSide', label: 'Vehicle Photo - Left Side View', element: 'input[name="VehiclePhotoLeftSide"]' },
-        { field: 'VehiclePhotoRightSide', label: 'Vehicle Photo - Right Side View', element: 'input[name="VehiclePhotoRightSide"]' },
-        { field: 'VehiclePhotoInterior', label: 'Vehicle Photo - Interior/Dashboard', element: 'input[name="VehiclePhotoInterior"]' },
-        { field: 'VehiclePhotoEngine', label: 'Vehicle Photo - Engine Bay', element: 'input[name="VehiclePhotoEngine"]' },
-        { field: 'VehiclePhotoRoof', label: 'Vehicle Photo - Roof View', element: 'input[name="VehiclePhotoRoof"]' },
-        { field: 'VehiclePhotoDoor', label: 'Vehicle Photo - Door View', element: 'input[name="VehiclePhotoDoor"]' }
-      ];
-
       // Check required fields
       let firstErrorField = null;
       const missingFields = [];
-      const missingPhotos = []; // Separate tracking for vehicle photos
 
       console.log('📋 Checking required text fields...');
       requiredFields.forEach(({ field, label, element }) => {
@@ -105,45 +92,6 @@ const VehicleForm = () => {
         }
       });
 
-      // Check required vehicle photos (all 8 are mandatory)
-      console.log('📸 Checking required vehicle photos (all 8 required)...');
-      requiredPhotoFields.forEach(({ field, label, element }) => {
-        // Check if there's a new file uploaded in the files state
-        const hasNewPhoto = filesData && filesData[field] && filesData[field] instanceof File;
-
-        // Check if there's an existing photo URL (for edit mode)
-        const hasExistingPhoto = editingVehicle && editingVehicle[field + '_url'] &&
-          typeof editingVehicle[field + '_url'] === 'string' &&
-          editingVehicle[field + '_url'].trim();
-
-        const photoStatus = hasNewPhoto || hasExistingPhoto ? '✅ OK' : '❌ MISSING';
-        console.log(`  ${field}: ${photoStatus}`, {
-          hasNewPhoto,
-          hasExistingPhoto,
-          newFile: filesData?.[field]?.name,
-          existingUrl: editingVehicle?.[field + '_url']
-        });
-
-        if (!hasNewPhoto && !hasExistingPhoto) {
-          errors[field] = `${label} is required`;
-          // Extract just the view name (e.g., "Front View" from "Vehicle Photo - Front View")
-          const viewName = label.replace('Vehicle Photo - ', '');
-          missingPhotos.push(viewName);
-          if (!firstErrorField) {
-            firstErrorField = { field, label, element };
-          }
-        }
-      });
-
-      // Show specific notification for missing vehicle photos
-      if (missingPhotos.length > 0) {
-        const uploadedCount = 8 - missingPhotos.length;
-        console.log('');
-        console.log('📸 VEHICLE PHOTOS STATUS:');
-        console.log(`  Uploaded: ${uploadedCount}/8`);
-        console.log(`  Missing: ${missingPhotos.join(', ')}`);
-        console.log('');
-      }
 
       // Check conditional required fields based on Yes/No selections
       console.log('🔀 Checking conditional required fields...');
@@ -334,57 +282,24 @@ const VehicleForm = () => {
         console.log('═══════════════════════════════════════════════════════');
         console.log(`Total missing fields: ${errorCount}`);
         console.log('Missing fields:', missingFields);
-        console.log('Missing photos:', missingPhotos);
         console.log('First error field:', firstErrorField);
         console.log('═══════════════════════════════════════════════════════');
         console.log('');
 
-        // Show specific notification for missing vehicle photos
-        if (missingPhotos.length > 0) {
-          const uploadedCount = 8 - missingPhotos.length;
-          let photoErrorMessage;
-
-          if (missingPhotos.length === 8) {
-            // No photos uploaded at all
-            photoErrorMessage = `📷 All 8 vehicle photos are required! Please upload: ${missingPhotos.join(', ')}`;
-          } else if (missingPhotos.length <= 3) {
-            // Few photos missing - show all missing ones
-            photoErrorMessage = `📷 Please upload all 8 vehicle photos! (${uploadedCount}/8 uploaded)\nMissing: ${missingPhotos.join(', ')}`;
-          } else {
-            // Many photos missing - show count and first few
-            const firstThree = missingPhotos.slice(0, 3).join(', ');
-            const remaining = missingPhotos.length - 3;
-            photoErrorMessage = `📷 Please upload all 8 vehicle photos! (${uploadedCount}/8 uploaded)\nMissing: ${firstThree}... and ${remaining} more`;
-          }
-
-          apiHelpers.showError(photoErrorMessage);
-        }
-
-        // Show detailed notification alert for other missing fields
-        const otherMissingFields = missingFields.filter(field =>
-          !field.startsWith('Vehicle Photo -')
-        );
-
-        if (otherMissingFields.length > 0) {
+        // Show detailed notification alert for missing fields
+        if (missingFields.length > 0) {
           let errorMessage;
-          if (otherMissingFields.length === 1) {
-            errorMessage = `❌ Missing required field: ${otherMissingFields[0]}`;
-          } else if (otherMissingFields.length <= 3) {
-            errorMessage = `❌ Missing ${otherMissingFields.length} required fields: ${otherMissingFields.join(', ')}`;
+          if (missingFields.length === 1) {
+            errorMessage = `❌ Missing required field: ${missingFields[0]}`;
+          } else if (missingFields.length <= 3) {
+            errorMessage = `❌ Missing ${missingFields.length} required fields: ${missingFields.join(', ')}`;
           } else {
-            const firstThree = otherMissingFields.slice(0, 3).join(', ');
-            const remaining = otherMissingFields.length - 3;
-            errorMessage = `❌ Missing ${otherMissingFields.length} required fields including: ${firstThree}... (and ${remaining} more)`;
+            const firstThree = missingFields.slice(0, 3).join(', ');
+            const remaining = missingFields.length - 3;
+            errorMessage = `❌ Missing ${missingFields.length} required fields including: ${firstThree}... (and ${remaining} more)`;
           }
 
-          // Show this notification after a small delay if photos notification was shown
-          if (missingPhotos.length > 0) {
-            setTimeout(() => {
-              apiHelpers.showError(errorMessage);
-            }, 3000); // 3 second delay
-          } else {
-            apiHelpers.showError(errorMessage);
-          }
+          apiHelpers.showError(errorMessage);
         }
 
         // Auto scroll to first error field and focus with enhanced visual feedback
@@ -2196,7 +2111,7 @@ const VehicleForm = () => {
                 {/* Multiple Vehicle Photos Section */}
                 <div className="form-field full-width">
                   <label className="form-field-label">
-                    Vehicle Photos 📷 <span className="required-indicator">*</span>
+                    Vehicle Photos 📷
                   </label>
                   <div className="vehicle-photos-grid">
                     <DocumentUpload
@@ -2289,7 +2204,7 @@ const VehicleForm = () => {
                     />
                   </div>
                   <small className="photo-hint">
-                    📸 Please upload clear, well-lit photos from all angles. At least front and back views are required.
+                    📸 Please upload clear, well-lit photos from all angles (optional).
                   </small>
                 </div>
 

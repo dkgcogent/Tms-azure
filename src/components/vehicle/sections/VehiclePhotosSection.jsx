@@ -10,7 +10,7 @@ const VehiclePhotosSection = ({ vehicleData, handleInputChange, files, editingVe
     <FormSection title="Vehicle Photos 📷" icon="📷">
       <div className="form-field full-width">
         <label className="form-field-label">
-          Vehicle Photos 📷 <span className="required-indicator">*</span>
+          Vehicle Photos 📷
         </label>
         <div className="vehicle-photos-grid">
           {photoField('Front View', 'VehiclePhotoFront')}
@@ -23,7 +23,7 @@ const VehiclePhotosSection = ({ vehicleData, handleInputChange, files, editingVe
           {photoField('Door View', 'VehiclePhotoDoor')}
         </div>
         <small className="photo-hint">
-          📸 Please upload clear, well-lit photos from all angles. At least front and back views are required.
+          📸 Please upload clear, well-lit photos from all angles (optional).
         </small>
       </div>
     </FormSection>
