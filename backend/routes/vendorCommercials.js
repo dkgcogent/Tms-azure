@@ -37,6 +37,29 @@ module.exports = (pool) => {
     return null;
   };
 
+  // Auto-migrate new columns and reposition them after 'parking'
+  (async () => {
+    try {
+      await pool.query(`ALTER TABLE vendor_commercial ADD COLUMN fixed_charges_loading DECIMAL(10,2) NULL AFTER parking`);
+      console.log('✅ Added column fixed_charges_loading to vendor_commercial');
+    } catch (e) { /* already exists */ }
+    try {
+      await pool.query(`ALTER TABLE vendor_commercial ADD COLUMN fixed_charges_unloading DECIMAL(10,2) NULL AFTER fixed_charges_loading`);
+      console.log('✅ Added column fixed_charges_unloading to vendor_commercial');
+    } catch (e) { /* already exists */ }
+
+    // Ensure columns are positioned after parking
+    try {
+      await pool.query(`ALTER TABLE vendor_commercial MODIFY COLUMN fixed_charges_loading DECIMAL(10,2) NULL AFTER parking`);
+      await pool.query(`ALTER TABLE vendor_commercial MODIFY COLUMN fixed_charges_unloading DECIMAL(10,2) NULL AFTER fixed_charges_loading`);
+    } catch (e) { /* ignore */ }
+
+    // Backfill existing older records
+    try {
+      await pool.query(`UPDATE vendor_commercial SET fixed_charges_loading = fixed_charges_loading_unloading WHERE fixed_charges_loading IS NULL AND fixed_charges_loading_unloading IS NOT NULL`);
+    } catch (e) { /* ignore */ }
+  })();
+
   // Create a new vendor commercial agreement
   router.post('/', async (req, res) => {
     const data = req.body;
@@ -58,7 +81,7 @@ module.exports = (pool) => {
           type_of_vehicle_placement, type_of_vehicle, type_of_body, 
           sunday_option, no_of_days_per_month, hours, fixed_rate, 
           km_include_in_fix_rate, additional_rate_per_km, toll, 
-          parking, fixed_charges_loading_unloading, da_applicable, 
+          parking, fixed_charges_loading, fixed_charges_unloading, fixed_charges_loading_unloading, da_applicable, 
           da_charges, no_entry_pass_charges, above_551_lts, 
           between_351_550_lts, description_only_sbs, 
           handling_charges_applicable, handling_charges, 
@@ -67,7 +90,7 @@ module.exports = (pool) => {
           additional_delivery_points_charges, per_kg_cost, 
           vendor_id, customer_id, project_id,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `;
 
       const params = [
@@ -86,7 +109,9 @@ module.exports = (pool) => {
         sanitizeValue(data.additional_rate_per_km),
         sanitizeValue(data.toll),
         sanitizeValue(data.parking),
-        sanitizeValue(data.fixed_charges_loading_unloading),
+        sanitizeValue(data.fixed_charges_loading),
+        sanitizeValue(data.fixed_charges_unloading),
+        sanitizeValue(data.fixed_charges_loading_unloading || null),
         sanitizeValue(data.da_applicable),
         sanitizeValue(data.da_charges),
         sanitizeValue(data.no_entry_pass_charges),
@@ -158,7 +183,7 @@ module.exports = (pool) => {
           type_of_vehicle_placement = ?, type_of_vehicle = ?, type_of_body = ?, 
           sunday_option = ?, no_of_days_per_month = ?, hours = ?, fixed_rate = ?, 
           km_include_in_fix_rate = ?, additional_rate_per_km = ?, toll = ?, 
-          parking = ?, fixed_charges_loading_unloading = ?, da_applicable = ?, 
+          parking = ?, fixed_charges_loading = ?, fixed_charges_unloading = ?, fixed_charges_loading_unloading = ?, da_applicable = ?, 
           da_charges = ?, no_entry_pass_charges = ?, above_551_lts = ?, 
           between_351_550_lts = ?, description_only_sbs = ?, 
           handling_charges_applicable = ?, handling_charges = ?, 
@@ -186,7 +211,9 @@ module.exports = (pool) => {
         sanitizeValue(data.additional_rate_per_km),
         sanitizeValue(data.toll),
         sanitizeValue(data.parking),
-        sanitizeValue(data.fixed_charges_loading_unloading),
+        sanitizeValue(data.fixed_charges_loading),
+        sanitizeValue(data.fixed_charges_unloading),
+        sanitizeValue(data.fixed_charges_loading_unloading || null),
         sanitizeValue(data.da_applicable),
         sanitizeValue(data.da_charges),
         sanitizeValue(data.no_entry_pass_charges),

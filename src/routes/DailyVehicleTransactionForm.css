@@ -412,6 +412,13 @@
   color: #6c757d !important;
   cursor: not-allowed !important;
   font-style: italic;
+  pointer-events: none;
+}
+
+input[type="date"].readonly-field::-webkit-calendar-picker-indicator {
+  cursor: not-allowed;
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 .calculated-field {

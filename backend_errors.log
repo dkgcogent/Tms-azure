@@ -1950,3 +1950,89 @@ SyntaxError: Unexpected token ')'
     at require (node:internal/modules/helpers:147:16)
     at Object.<anonymous> (C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\server.js:87:39)
 
+[2026-09-03T06:30:14.116Z] UNCAUGHT EXCEPTION: Unexpected token '{'
+Stack: C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\backend\routes\dailyVehicleTransactions.js:3334
+          { header: 'Advance Request No', key: 'AdvanceRequestNo', width: 18 },
+          ^
+
+SyntaxError: Unexpected token '{'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\server.js:87:39)
+
+[2026-09-09T06:00:15.991Z] UNCAUGHT EXCEPTION: Unexpected token ']'
+Stack: C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\backend\routes\customerCommercials.js:206
+      ];
+      ^
+
+SyntaxError: Unexpected token ']'
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\server.js:101:34)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+
+[2026-09-09T06:00:42.101Z] UNCAUGHT EXCEPTION: Missing catch or finally after try
+Stack: C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\backend\routes\vendorCommercials.js:290
+};
+^
+
+SyntaxError: Missing catch or finally after try
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\server.js:102:32)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+
+[2026-09-09T06:07:09.676Z] UNCAUGHT EXCEPTION: Unexpected end of input
+Stack: C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\backend\routes\vendorCommercials.js:274
+
+
+
+SyntaxError: Unexpected end of input
+    at wrapSafe (node:internal/modules/cjs/loader:1638:18)
+    at Module._compile (node:internal/modules/cjs/loader:1680:20)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at Object.<anonymous> (C:\Users\GAURAV\Desktop\Finance-azure\Tms-azure\server.js:102:32)
+    at Module._compile (node:internal/modules/cjs/loader:1706:14)
+    at Object..js (node:internal/modules/cjs/loader:1839:10)
+    at Module.load (node:internal/modules/cjs/loader:1441:32)
+    at Function._load (node:internal/modules/cjs/loader:1263:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+

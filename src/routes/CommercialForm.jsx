@@ -14,6 +14,7 @@ const CommercialForm = () => {
     type_of_vehicle_placement: '',
     type_of_vehicle: '',
     type_of_body: '',
+    sunday_option: 'Sunday Including',
     no_of_days_per_month: '',
     hours: '',
     fixed_rate: '',
@@ -21,6 +22,8 @@ const CommercialForm = () => {
     additional_rate_per_km: '',
     toll: '',
     parking: '',
+    fixed_charges_loading: '',
+    fixed_charges_unloading: '',
     fixed_charges_loading_unloading: '',
     da_applicable: 'No',
     da_charges: '',
@@ -183,12 +186,27 @@ const CommercialForm = () => {
         .filter(opt => opt.name)
     : [];
 
+  const calculateDaysInMonth = (sundayOption, year = new Date().getFullYear(), month = new Date().getMonth()) => {
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    let sundayCount = 0;
+    for (let day = 1; day <= totalDays; day++) {
+      if (new Date(year, month, day).getDay() === 0) {
+        sundayCount++;
+      }
+    }
+    return sundayOption === 'Sunday Excluding' ? totalDays - sundayCount : totalDays;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     
     setFormData(prev => {
       const newData = { ...prev, [name]: value };
       
+      if (name === 'sunday_option') {
+        newData.no_of_days_per_month = calculateDaysInMonth(value);
+      }
+
       // Cascading logic: reset children when parent changes
       if (name === 'master_customer') {
         newData.company_name = '';
@@ -236,7 +254,7 @@ const CommercialForm = () => {
       // Numeric fields (Decimals and Integers)
       const numericFields = [
         'no_of_days_per_month', 'hours', 'fixed_rate', 'km_include_in_fix_rate',
-        'additional_rate_per_km', 'toll', 'parking', 'fixed_charges_loading_unloading',
+        'additional_rate_per_km', 'toll', 'parking', 'fixed_charges_loading', 'fixed_charges_unloading', 'fixed_charges_loading_unloading',
         'da_charges', 'no_entry_pass_charges', 'above_551_lts', 'between_351_550_lts',
         'handling_charges', 'state_tax_charges', 'floor_delivery_charges',
         'driver_charges', 'over_time_charges', 'holiday_working_charges',
@@ -306,6 +324,8 @@ const CommercialForm = () => {
             additional_rate_per_km: '',
             toll: '',
             parking: '',
+            fixed_charges_loading: '',
+            fixed_charges_unloading: '',
             fixed_charges_loading_unloading: '',
             da_charges: '',
             no_entry_pass_charges: '',
@@ -326,9 +346,10 @@ const CommercialForm = () => {
           setFormData({
             master_customer: '', company_name: '', project: '', state: '',
             type_of_vehicle_placement: 'Fixed', type_of_vehicle: '', type_of_body: '',
+            sunday_option: 'Sunday Including',
             no_of_days_per_month: '', hours: '', fixed_rate: '',
             km_include_in_fix_rate: '', additional_rate_per_km: '', toll: '',
-            parking: '', fixed_charges_loading_unloading: '', da_applicable: 'No',
+            parking: '', fixed_charges_loading: '', fixed_charges_unloading: '', fixed_charges_loading_unloading: '', da_applicable: 'No',
             da_charges: '', no_entry_pass_charges: '', above_551_lts: '',
             between_351_550_lts: '', description_only_sbs: '',
             handling_charges_applicable: 'No', handling_charges: '',
@@ -477,13 +498,16 @@ const CommercialForm = () => {
             type_of_vehicle_placement: getVal(['type_of_vehicle_placement', 'Vehicle Placement', 'Placement Type', 'Placement']) || 'Fixed',
             type_of_vehicle: getVal(['type_of_vehicle', 'Vehicle Type', 'Type of Vehicle', 'Vehicle']),
             type_of_body: getVal(['type_of_body', 'Body Type', 'Type of Body', 'Body']),
-            no_of_days_per_month: parseNumeric(getVal(['no_of_days_per_month', 'Days Per Month', 'No of Days', 'Days/Month', 'No. of Days / Month'])),
+            sunday_option: getVal(['sunday_option', 'Sunday Option', 'Sunday']) || 'Sunday Including',
+            no_of_days_per_month: parseNumeric(getVal(['no_of_days_per_month', 'Days Per Month', 'No of Days', 'Days/Month', 'No. of Days / Month'])) || calculateDaysInMonth(getVal(['sunday_option', 'Sunday Option', 'Sunday']) || 'Sunday Including'),
             hours: parseNumeric(getVal(['hours', 'Hours'])),
             fixed_rate: parseNumeric(getVal(['fixed_rate', 'Fixed Rate'])),
             km_include_in_fix_rate: parseNumeric(getVal(['km_include_in_fix_rate', 'KM Included', 'Included KM', 'KM Inc', 'KM Include in Fix Rate'])),
             additional_rate_per_km: parseNumeric(getVal(['additional_rate_per_km', 'Additional Rate KM', 'Extra KM Rate', 'Extra KM', 'Additional Rate per KM'])),
             toll: parseNumeric(getVal(['toll', 'Toll'])),
             parking: parseNumeric(getVal(['parking', 'Parking'])),
+            fixed_charges_loading: parseNumeric(getVal(['fixed_charges_loading', 'Fixed Charges for Loading', 'Fixed Charges Loading', 'Loading Charges', 'fixed_charges_loading_unloading', 'Loading/Unloading'])),
+            fixed_charges_unloading: parseNumeric(getVal(['fixed_charges_unloading', 'Fixed Charges for Unloading', 'Fixed Charges Unloading', 'Unloading Charges'])),
             fixed_charges_loading_unloading: parseNumeric(getVal(['fixed_charges_loading_unloading', 'Loading Unloading Charges', 'Loading/Unloading', 'Fixed Charges for Loading / Unloading'])),
             da_applicable: (getVal(['da_applicable', 'DA Applicable', 'DA?']) === 'Yes' || getVal(['da_applicable', 'DA Applicable', 'DA?']) == 1 || String(getVal(['da_applicable', 'DA?'])).includes('✅')) ? 1 : 0,
             da_charges: parseNumeric(getVal(['da_charges', 'DA Charges'])),
@@ -567,9 +591,10 @@ const CommercialForm = () => {
     setFormData({
       master_customer: '', company_name: '', project: '', state: '',
       type_of_vehicle_placement: 'Fixed', type_of_vehicle: '', type_of_body: '',
+      sunday_option: 'Sunday Including',
       no_of_days_per_month: '', hours: '', fixed_rate: '',
       km_include_in_fix_rate: '', additional_rate_per_km: '', toll: '',
-      parking: '', fixed_charges_loading_unloading: '', da_applicable: 'No',
+      parking: '', fixed_charges_loading: '', fixed_charges_unloading: '', fixed_charges_loading_unloading: '', da_applicable: 'No',
       da_charges: '', no_entry_pass_charges: '', above_551_lts: '',
       between_351_550_lts: '', description_only_sbs: '',
       handling_charges_applicable: 'No', handling_charges: '',
@@ -617,6 +642,7 @@ const CommercialForm = () => {
     { key: 'type_of_vehicle_placement', label: 'Placement', sortable: true },
     { key: 'type_of_vehicle', label: 'Vehicle', sortable: true },
     { key: 'type_of_body', label: 'Body', sortable: true },
+    { key: 'sunday_option', label: 'Sunday Option', sortable: true },
     { key: 'no_of_days_per_month', label: 'Days/Month', sortable: true },
     { key: 'hours', label: 'Hours', sortable: true },
     { key: 'fixed_rate', label: 'Fixed Rate', sortable: true, render: (val) => val ? `₹${val}` : '-' },
@@ -624,7 +650,8 @@ const CommercialForm = () => {
     { key: 'additional_rate_per_km', label: 'Extra KM', sortable: true },
     { key: 'toll', label: 'Toll', sortable: true },
     { key: 'parking', label: 'Parking', sortable: true },
-    { key: 'fixed_charges_loading_unloading', label: 'Loading/Unloading', sortable: true },
+    { key: 'fixed_charges_loading', label: 'Fixed Loading', sortable: true, render: (val, row) => val ? `₹${val}` : (row.fixed_charges_loading_unloading ? `₹${row.fixed_charges_loading_unloading}` : '-') },
+    { key: 'fixed_charges_unloading', label: 'Fixed Unloading', sortable: true, render: (val) => val ? `₹${val}` : '-' },
     { key: 'da_applicable', label: 'DA?', sortable: true, render: (val) => val ? '✅ Yes' : '❌ No' },
     { key: 'da_charges', label: 'DA Charges', sortable: true },
     { key: 'no_entry_pass_charges', label: 'No Entry Pass', sortable: true },
@@ -741,8 +768,15 @@ const CommercialForm = () => {
           <h4>Rates & Charges</h4>
           <div className="form-grid">
             <div className="form-group">
+              <label>Sunday Option</label>
+              <select name="sunday_option" value={formData.sunday_option || 'Sunday Including'} onChange={handleChange} className="form-input">
+                <option value="Sunday Including">Sunday Including (All days)</option>
+                <option value="Sunday Excluding">Sunday Excluding (Excl. Sundays)</option>
+              </select>
+            </div>
+            <div className="form-group">
               <label>No. of Days / Month</label>
-              <input type="number" name="no_of_days_per_month" value={formData.no_of_days_per_month} onChange={handleChange} className="form-input" />
+              <input type="number" name="no_of_days_per_month" value={formData.no_of_days_per_month} onChange={handleChange} className="form-input" placeholder="Calculated automatically" />
             </div>
             <div className="form-group">
               <label>Hours</label>
@@ -762,14 +796,19 @@ const CommercialForm = () => {
             </div>
 
             <div className="form-group">
-              <label>Fixed Charges for Loading / Unloading</label>
-              <input type="number" step="0.01" name="fixed_charges_loading_unloading" value={formData.fixed_charges_loading_unloading} onChange={handleChange} className="form-input" />
+              <label>Fixed Charges for Loading</label>
+              <input type="number" step="0.01" name="fixed_charges_loading" value={formData.fixed_charges_loading !== '' ? formData.fixed_charges_loading : (formData.fixed_charges_loading_unloading || '')} onChange={handleChange} className="form-input" />
+            </div>
+
+            <div className="form-group">
+              <label>Fixed Charges for Unloading</label>
+              <input type="number" step="0.01" name="fixed_charges_unloading" value={formData.fixed_charges_unloading} onChange={handleChange} className="form-input" />
             </div>
           </div>
         </div>
 
         <div className="form-section">
-          <h4>SBS Charges (RIL)</h4>
+          <h4>SBS Charges</h4>
           <div className="form-grid">
             <div className="form-group">
               <label>DA Applicable</label>

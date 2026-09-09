@@ -191,7 +191,13 @@ export const projectAPI = {
 // Vehicle Transaction API
 // Original combined API (keeping for backward compatibility)
 export const vehicleTransactionAPI = {
-  getAll: (params) => api.get('/daily-vehicle-transactions', { params }),
+  getAll: (params) => {
+    if (typeof params === 'string') {
+      const q = params ? (params.startsWith('?') ? params : `?${params}`) : '';
+      return api.get(`/daily-vehicle-transactions${q}`);
+    }
+    return api.get('/daily-vehicle-transactions', { params });
+  },
   getById: (id, type = null) => {
     const typeParam = type ? `?type=${type}` : '';
     return api.get(`/daily-vehicle-transactions/${id}${typeParam}`);
@@ -262,7 +268,13 @@ export const vehicleTransactionAPI = {
 // Fixed Vehicle Transactions API - Uses Master Data Relationships
 // Links to: Customer, Project, Vehicle, Driver, Vendor tables via IDs
 export const fixedTransactionAPI = {
-  getAll: (params) => api.get('/fixed-transactions', { params }),
+  getAll: (params) => {
+    if (typeof params === 'string') {
+      const q = params ? (params.startsWith('?') ? params : `?${params}`) : '';
+      return api.get(`/fixed-transactions${q}`);
+    }
+    return api.get('/fixed-transactions', { params });
+  },
   getById: (id) => api.get(`/fixed-transactions/${id}`),
   create: (data) => api.post('/fixed-transactions', data),
   update: (id, data) => api.put(`/fixed-transactions/${id}`, data),
@@ -273,7 +285,13 @@ export const fixedTransactionAPI = {
 // Adhoc/Replacement Vehicle Transactions API - Uses Manual Data Entry
 // Stores manual entries directly without master data relationships
 export const adhocTransactionAPI = {
-  getAll: (params) => api.get('/adhoc-transactions', { params }),
+  getAll: (params) => {
+    if (typeof params === 'string') {
+      const q = params ? (params.startsWith('?') ? params : `?${params}`) : '';
+      return api.get(`/adhoc-transactions${q}`);
+    }
+    return api.get('/adhoc-transactions', { params });
+  },
   getById: (id) => api.get(`/adhoc-transactions/${id}`),
   create: (data) => api.post('/adhoc-transactions', data),
   update: (id, data) => api.put(`/adhoc-transactions/${id}`, data),

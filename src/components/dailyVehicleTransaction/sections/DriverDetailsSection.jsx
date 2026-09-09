@@ -63,11 +63,11 @@ const DriverDetailsSection = ({
       />
 
       <FormField
-        label="Date"
+        label="Entry Date"
         name="Date"
         type="date"
         value={transactionData.Date}
-        onChange={onTransactionDataChange}
+        readOnly
         required
         error={errors.Date}
       />

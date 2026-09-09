@@ -18,13 +18,12 @@ const AdhocReplacementSection = ({
 
   return (
     <FormSection title="🔄 ADHOC/REPLACEMENT SECTION - Complete Transaction Details" className="adhoc-replacement-section">
-      {/* Basic Transaction Details */}
       <FormField
-        label="Date"
+        label="Entry Date"
         name="Date"
         type="date"
         value={transactionData.Date}
-        onChange={onTransactionDataChange}
+        readOnly
         required
         error={errors.Date}
       />

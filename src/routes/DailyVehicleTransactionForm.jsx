@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as xlsx from 'xlsx';
 import { vehicleTransactionAPI, adhocTransactionAPI, customerAPI, vehicleAPI, driverAPI, projectAPI, vendorAPI, apiHelpers } from '../services/api';
 import DataTable from '../components/DataTable';
+import ExportColumnModal from '../components/ExportColumnModal';
 
 import SearchableDropdown from '../components/SearchableDropdown';
 import DocumentUpload from '../components/DocumentUpload';
@@ -154,7 +155,8 @@ const DailyVehicleTransactionForm = () => {
 
   const initializeTransactionData = () => {
     const savedData = loadFormDataFromStorage();
-    return savedData?.transactionData || {
+    const data = savedData?.transactionData || {};
+    return {
       DriverID: '',
       DriverMobileNo: '',
       TripNo: '',
@@ -183,7 +185,6 @@ const DailyVehicleTransactionForm = () => {
       UnloadingCharges: '',
       OtherCharges: '',
       OtherChargesRemarks: '',
-      Date: getCurrentDate(),
       ServiceDate: getCurrentDate(),
       VehicleReturnDate: getCurrentDate(),
       OpeningKM: '',
@@ -199,7 +200,9 @@ const DailyVehicleTransactionForm = () => {
       Revenue: '',
       Margin: '',
       MarginPercentage: '',
-      TotalDutyHours: ''
+      TotalDutyHours: '',
+      ...data,
+      Date: getCurrentDate()
     };
   };
 
@@ -252,6 +255,7 @@ const DailyVehicleTransactionForm = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // File import state
   const [isImporting, setIsImporting] = useState(false);
@@ -260,34 +264,41 @@ const DailyVehicleTransactionForm = () => {
   const fileInputRef = useRef(null);
 
   // Date filter state
-  const [dateFilter, setDateFilter] = useState({
+  // Comprehensive Filter State for Recent Transactions Table
+  const [tableFilters, setTableFilters] = useState({
     fromDate: '',
-    toDate: ''
+    toDate: '',
+    type: '',
+    customer: '',
+    project: '',
+    vehicle: '',
+    vendor: ''
   });
 
-  // Date filter handlers
-  const handleDateFilterApply = async () => {
-    if (!dateFilter.fromDate || !dateFilter.toDate) {
-      alert('Please select both From Date and To Date');
-      return;
-    }
-
-    if (new Date(dateFilter.fromDate) > new Date(dateFilter.toDate)) {
+  // Filter handlers
+  const handleFilterApply = async () => {
+    if (tableFilters.fromDate && tableFilters.toDate && new Date(tableFilters.fromDate) > new Date(tableFilters.toDate)) {
       alert('From Date cannot be later than To Date');
       return;
     }
 
-    console.log('🗓️ Applying date filter:', dateFilter);
-    await fetchTransactions();
+    console.log('🗓️ Applying filters:', tableFilters);
+    await fetchTransactions(tableFilters);
   };
 
-  const handleDateFilterClear = async () => {
-    setDateFilter({
+  const handleFilterClear = async () => {
+    const cleared = {
       fromDate: '',
-      toDate: ''
-    });
-    console.log('🗑️ Clearing date filter');
-    await fetchTransactions();
+      toDate: '',
+      type: '',
+      customer: '',
+      project: '',
+      vehicle: '',
+      vendor: ''
+    };
+    setTableFilters(cleared);
+    console.log('🗑️ Clearing filters');
+    await fetchTransactions(cleared);
   };
   const [editingTransaction, setEditingTransaction] = useState(null);
 
@@ -297,6 +308,83 @@ const DailyVehicleTransactionForm = () => {
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [vendors, setVendors] = useState([]);
+
+  // Dynamically filter Project options based on selected Customer in filter bar
+  const filteredFilterProjects = React.useMemo(() => {
+    if (!tableFilters.customer) {
+      return Array.from(new Set(projects.map(p => p.ProjectName).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    }
+
+    const selectedCust = tableFilters.customer.trim().toLowerCase();
+    const matchedCustomerIds = customers
+      .filter(c => {
+        const name = (c.MasterCustomerName || c.Name || c.CustomerName || '').trim().toLowerCase();
+        return name === selectedCust || String(c.CustomerID) === String(tableFilters.customer);
+      })
+      .map(c => c.CustomerID);
+
+    const projectSet = new Set();
+
+    // From projects list
+    projects.forEach(p => {
+      const pCustName = (p.CustomerName || '').trim().toLowerCase();
+      if (matchedCustomerIds.includes(p.CustomerID) || pCustName === selectedCust) {
+        if (p.ProjectName) projectSet.add(p.ProjectName);
+      }
+    });
+
+    // From loaded transactions
+    transactions.forEach(t => {
+      const tCust = (t.CustomerName || t.CompanyName || '').trim().toLowerCase();
+      if (tCust === selectedCust && t.ProjectName) {
+        projectSet.add(t.ProjectName);
+      }
+    });
+
+    return Array.from(projectSet).sort((a, b) => a.localeCompare(b));
+  }, [tableFilters.customer, customers, projects, transactions]);
+
+  // Dynamically filter Vehicle options based on selected Customer and Project in filter bar
+  const filteredFilterVehicles = React.useMemo(() => {
+    const selectedCust = (tableFilters.customer || '').trim().toLowerCase();
+    const selectedProj = (tableFilters.project || '').trim().toLowerCase();
+
+    if (!selectedCust && !selectedProj) {
+      return Array.from(new Set(vehicles.map(v => v.VehicleRegistrationNo || v.VehicleNumber).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    }
+
+    const vehicleSet = new Set();
+
+    // From transactions matching the customer / project
+    transactions.forEach(t => {
+      const tCust = (t.CustomerName || t.CompanyName || '').trim().toLowerCase();
+      const tProj = (t.ProjectName || '').trim().toLowerCase();
+
+      const custMatch = !selectedCust || tCust === selectedCust;
+      const projMatch = !selectedProj || tProj === selectedProj;
+
+      if (custMatch && projMatch) {
+        const vNum = t.VehicleRegistrationNo || t.VehicleNumber;
+        if (vNum) vehicleSet.add(vNum);
+      }
+    });
+
+    // From vehicles master list
+    vehicles.forEach(v => {
+      const vCust = (v.CustomerCompanyName || '').trim().toLowerCase();
+      const vProj = (v.Project || '').trim().toLowerCase();
+
+      const custMatch = !selectedCust || vCust === selectedCust;
+      const projMatch = !selectedProj || vProj === selectedProj;
+
+      if (custMatch && projMatch) {
+        const vNum = v.VehicleRegistrationNo || v.VehicleNumber;
+        if (vNum) vehicleSet.add(vNum);
+      }
+    });
+
+    return Array.from(vehicleSet).sort((a, b) => a.localeCompare(b));
+  }, [tableFilters.customer, tableFilters.project, vehicles, transactions]);
 
   // UI state for dropdowns
   const [isProjectDropdownVisible, setIsProjectDropdownVisible] = useState(false);
@@ -1076,24 +1164,22 @@ const DailyVehicleTransactionForm = () => {
     }
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (customFilter = null) => {
     setIsLoading(true);
     try {
-      // Build query parameters for date filtering
-      const queryParams = new URLSearchParams();
-      if (dateFilter.fromDate) {
-        queryParams.append('fromDate', dateFilter.fromDate);
-      }
-      if (dateFilter.toDate) {
-        queryParams.append('toDate', dateFilter.toDate);
-      }
+      const activeFilter = customFilter !== null ? customFilter : tableFilters;
+      const params = {};
+      if (activeFilter?.fromDate) params.fromDate = activeFilter.fromDate;
+      if (activeFilter?.toDate) params.toDate = activeFilter.toDate;
+      if (activeFilter?.type) params.type = activeFilter.type;
+      if (activeFilter?.customer) params.customer = activeFilter.customer;
+      if (activeFilter?.project) params.project = activeFilter.project;
+      if (activeFilter?.vehicle) params.vehicle = activeFilter.vehicle;
+      if (activeFilter?.vendor) params.vendor = activeFilter.vendor;
 
-      const queryString = queryParams.toString();
-      const url = queryString ? `?${queryString}` : '';
+      console.log('🗓️ Fetching transactions with filters:', params);
 
-      console.log('🗓️ Fetching transactions with date filter:', { fromDate: dateFilter.fromDate, toDate: dateFilter.toDate });
-
-      const response = await vehicleTransactionAPI.getAll(url);
+      const response = await vehicleTransactionAPI.getAll(params);
       let transactionData = response.data.data || response.data.value || response.data || [];
 
       console.log('📊 Frontend: Received transaction data:', transactionData.length, 'records');
@@ -3966,67 +4052,134 @@ const DailyVehicleTransactionForm = () => {
     }
   };
 
-  const handleExportAllTransactions = async () => {
-    try {
-      console.log('📊 Exporting all transactions to Excel...');
+  const allExportColumns = React.useMemo(() => {
+    const baseColumns = [
+      { key: '__serial_number__', label: 'S.No', isSerialNumber: true },
+      { key: 'TransactionID', label: 'Transaction ID' },
+      { key: 'TripType', label: 'Type' },
+      { key: 'TransactionDate', label: 'Entry Date' },
+      { key: 'ServiceDate', label: 'Service Date' },
+      { key: 'VehicleReturnDate', label: 'Return Date' },
+      { key: 'TripNo', label: 'Trip No' },
+      { key: 'Shift', label: 'Shift' },
+      { key: 'CustomerID', label: 'Customer ID' },
+      { key: 'CustomerName', label: 'Customer Name' },
+      { key: 'CompanyName', label: 'Company Name' },
+      { key: 'GSTNo', label: 'GST No' },
+      { key: 'ProjectID', label: 'Project ID' },
+      { key: 'ProjectName', label: 'Project Name' },
+      { key: 'State', label: 'State' },
+      { key: 'Location', label: 'Location' },
+      { key: 'CustomerSite', label: 'Customer Site' },
+      { key: 'VehicleNumber', label: 'Vehicle Number' },
+      { key: 'VehicleType', label: 'Vehicle Type' },
+      { key: 'FixVehicleNo', label: 'Fix Vehicle No' },
+      { key: 'VendorID', label: 'Vendor ID' },
+      { key: 'VendorName', label: 'Vendor Name' },
+      { key: 'VendorNumber', label: 'Vendor Number' },
+      { key: 'VendorCode', label: 'Vendor Code' },
+      { key: 'DriverID', label: 'Driver ID' },
+      { key: 'DriverName', label: 'Driver Name' },
+      { key: 'DriverNumber', label: 'Driver Number' },
+      { key: 'DriverAadharNumber', label: 'Driver Aadhar Number' },
+      { key: 'DriverLicenceNumber', label: 'Driver Licence Number' },
+      { key: 'ReplacementDriverID', label: 'Replacement Driver ID' },
+      { key: 'ReplacementDriverName', label: 'Replacement Driver Name' },
+      { key: 'ReplacementDriverNo', label: 'Replacement Driver No' },
+      { key: 'ArrivalTimeAtHub', label: 'Arrival Time at Hub' },
+      { key: 'InTimeByCust', label: 'In Time by Cust' },
+      { key: 'OutTimeFromHub', label: 'Out Time from Hub' },
+      { key: 'OutTimeFrom', label: 'Out Time From HUB' },
+      { key: 'ReturnReportingTime', label: 'Return Reporting Time' },
+      { key: 'VehicleReportingAtHub', label: 'Vehicle Reporting At Hub' },
+      { key: 'VehicleEntryInHub', label: 'Vehicle Entry In Hub' },
+      { key: 'VehicleOutFromHubForDelivery', label: 'Vehicle Out From Hub For Delivery' },
+      { key: 'VehicleReturnAtHub', label: 'Vehicle Return At Hub' },
+      { key: 'VehicleEnteredAtHubReturn', label: 'Vehicle Entered At Hub Return' },
+      { key: 'VehicleOutFromHubFinal', label: 'Vehicle Out From Hub Final' },
+      { key: 'OpeningKM', label: 'Opening KM' },
+      { key: 'ClosingKM', label: 'Closing KM' },
+      { key: 'TotalKM', label: 'Total KM' },
+      { key: 'ExtraKM', label: 'Extra KM' },
+      { key: 'TotalDutyHours', label: 'Total Duty Hours' },
+      { key: 'TotalDeliveries', label: 'Total Deliveries' },
+      { key: 'TotalDeliveriesAttempted', label: 'Total Deliveries Attempted' },
+      { key: 'TotalDeliveriesDone', label: 'Total Deliveries Done' },
+      { key: 'TotalShipmentsForDeliveries', label: 'Total Shipments for Deliveries' },
+      { key: 'TotalShipmentDeliveriesAttempted', label: 'Total Shipment Deliveries Attempted' },
+      { key: 'TotalShipmentDeliveriesDone', label: 'Total Shipment Deliveries Done' },
+      { key: 'VFreightFix', label: 'V.Freight (Fix)' },
+      { key: 'FixKm', label: 'Fix KM' },
+      { key: 'VFreightVariable', label: 'V.Freight (Variable)' },
+      { key: 'TotalFreight', label: 'Total Freight' },
+      { key: 'TollExpenses', label: 'Toll Expenses' },
+      { key: 'ParkingCharges', label: 'Parking Charges' },
+      { key: 'LoadingCharges', label: 'Loading Charges' },
+      { key: 'UnloadingCharges', label: 'Unloading Charges' },
+      { key: 'HandlingCharges', label: 'Handling Charges' },
+      { key: 'OtherCharges', label: 'Other Charges' },
+      { key: 'OtherChargesRemarks', label: 'Other Charges Remarks' },
+      { key: 'AdvanceRequestNo', label: 'Advance Request No' },
+      { key: 'AdvanceToPaid', label: 'Advance To Paid' },
+      { key: 'AdvanceApprovedAmount', label: 'Advance Approved Amount' },
+      { key: 'AdvanceApprovedBy', label: 'Advance Approved By' },
+      { key: 'AdvancePaidAmount', label: 'Advance Paid Amount' },
+      { key: 'AdvancePaidMode', label: 'Advance Paid Mode' },
+      { key: 'AdvancePaidDate', label: 'Advance Paid Date' },
+      { key: 'AdvancePaidBy', label: 'Advance Paid By' },
+      { key: 'EmployeeDetailsAdvance', label: 'Employee Details (Advance)' },
+      { key: 'BalanceToBePaid', label: 'Balance To Be Paid' },
+      { key: 'BalancePaidAmount', label: 'Balance Paid Amount' },
+      { key: 'Variance', label: 'Variance' },
+      { key: 'BalancePaidDate', label: 'Balance Paid Date' },
+      { key: 'BalancePaidBy', label: 'Balance Paid By' },
+      { key: 'EmployeeDetailsBalance', label: 'Employee Details (Balance)' },
+      { key: 'Revenue', label: 'Revenue' },
+      { key: 'Margin', label: 'Margin' },
+      { key: 'MarginPercentage', label: 'Margin %' },
+      { key: 'Status', label: 'Status' },
+      { key: 'TripClose', label: 'Trip Close' },
+      { key: 'DriverAadharDoc', label: 'Driver Aadhar Doc' },
+      { key: 'DriverLicenceDoc', label: 'Driver Licence Doc' },
+      { key: 'TollExpensesDoc', label: 'Toll Expenses Doc' },
+      { key: 'ParkingChargesDoc', label: 'Parking Charges Doc' },
+      { key: 'OpeningKMImage', label: 'Opening KM Image' },
+      { key: 'ClosingKMImage', label: 'Closing KM Image' },
+      { key: 'Remarks', label: 'Remarks' },
+      { key: 'CreatedAt', label: 'Created At' },
+      { key: 'UpdatedAt', label: 'Updated At' }
+    ];
 
-      // Create download link for all transactions
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-      const exportUrl = `${API_BASE_URL}/api/daily-vehicle-transactions/export/all`;
+    // Scan loaded transactions to dynamically capture any additional keys
+    const knownKeys = new Set(baseColumns.map(c => c.key));
+    const extraColumns = [];
 
-      // Show loading message
-      const loadingToast = document.createElement('div');
-      loadingToast.style.cssText = `
-        position: fixed; top: 20px; right: 20px; z-index: 10000;
-        background: #007bff; color: white; padding: 15px 20px;
-        border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        font-family: Arial, sans-serif; font-size: 14px;
-      `;
-      loadingToast.textContent = '🔄 Exporting transactions... Please wait';
-      document.body.appendChild(loadingToast);
-
-      const response = await fetch(exportUrl, { method: 'GET' });
-      if (!response.ok) {
-        throw new Error(`Export failed with status ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      // Create download link
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `Daily_Vehicle_Transactions_${new Date().toISOString().slice(0, 10)}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-
-      // Remove loading message
-      if (document.body.contains(loadingToast)) {
-        document.body.removeChild(loadingToast);
-      }
-
-      // Show success message
-      const successToast = document.createElement('div');
-      successToast.style.cssText = `
-        position: fixed; top: 20px; right: 20px; z-index: 10000;
-        background: #28a745; color: white; padding: 15px 20px;
-        border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        font-family: Arial, sans-serif; font-size: 14px;
-      `;
-      successToast.innerHTML = `✅ Export Complete!<br><small>Downloaded all transactions (Fixed + Adhoc)</small>`;
-      document.body.appendChild(successToast);
-      setTimeout(() => {
-        if (document.body.contains(successToast)) {
-          document.body.removeChild(successToast);
+    if (transactions && transactions.length > 0) {
+      transactions.forEach(row => {
+        if (row && typeof row === 'object') {
+          Object.keys(row).forEach(key => {
+            if (!knownKeys.has(key)) {
+              knownKeys.add(key);
+              const friendlyName = key
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase())
+                .replace(/ID/g, 'ID')
+                .trim();
+              extraColumns.push({
+                key,
+                label: friendlyName
+              });
+            }
+          });
         }
-      }, 5000);
-
-    } catch (error) {
-      console.error('❌ Export error:', error);
-      apiHelpers.showError(error, 'Failed to export transactions');
+      });
     }
+
+    return [...baseColumns, ...extraColumns];
+  }, [transactions]);
+
+  const handleExportAllTransactions = () => {
+    setShowExportModal(true);
   };
 
   const transactionColumns = [
@@ -4517,9 +4670,10 @@ const DailyVehicleTransactionForm = () => {
                   <input
                     type="date"
                     name="Date"
-                    value={transactionData.Date}
-                    onChange={handleTransactionDataChange}
-                    className={errors.Date ? 'error' : ''}
+                    value={transactionData.Date || getCurrentDate()}
+                    readOnly
+                    className={`readonly-field ${errors.Date ? 'error' : ''}`}
+                    title="Entry Date is automatically populated with today's date"
                   />
                   {errors.Date && <span className="error-message">{errors.Date}</span>}
                 </div>
@@ -4730,9 +4884,10 @@ const DailyVehicleTransactionForm = () => {
                   <input
                     type="date"
                     name="Date"
-                    value={transactionData.Date}
-                    onChange={handleTransactionDataChange}
-                    className={errors.Date ? 'error' : ''}
+                    value={transactionData.Date || getCurrentDate()}
+                    readOnly
+                    className={`readonly-field ${errors.Date ? 'error' : ''}`}
+                    title="Entry Date is automatically populated with today's date"
                   />
                   {errors.Date && <span className="error-message">{errors.Date}</span>}
                 </div>
@@ -5280,6 +5435,18 @@ const DailyVehicleTransactionForm = () => {
                   />
                 </div>
 
+                {/* Other Charges Remarks */}
+                <div className="form-group">
+                  <label>Other Charges Remarks</label>
+                  <textarea
+                    name="OtherChargesRemarks"
+                    value={transactionData.OtherChargesRemarks}
+                    onChange={handleTransactionDataChange}
+                    placeholder="Enter remarks for other charges"
+                    rows="2"
+                  />
+                </div>
+
                 {/* DCM Charges */}
                 <div className="form-group">
                   <label>DCM Charges</label>
@@ -5290,19 +5457,6 @@ const DailyVehicleTransactionForm = () => {
                     onChange={handleTransactionDataChange}
                     step="0.01"
                     placeholder="Enter DCM charges"
-                  />
-                </div>
-
-
-                {/* Other Charges Remarks */}
-                <div className="form-group">
-                  <label>Other Charges Remarks</label>
-                  <textarea
-                    name="OtherChargesRemarks"
-                    value={transactionData.OtherChargesRemarks}
-                    onChange={handleTransactionDataChange}
-                    placeholder="Enter remarks for other charges"
-                    rows="2"
                   />
                 </div>
 
@@ -5692,7 +5846,7 @@ const DailyVehicleTransactionForm = () => {
                   />
                 </div>
 
-                <div className="form-group">
+                {/* <div className="form-group">
                   <label>V. FREIGHT (FIX)</label>
                   <input
                     type="number"
@@ -5701,7 +5855,7 @@ const DailyVehicleTransactionForm = () => {
                     onChange={handleCalculatedDataChange}
                     step="0.01"
                   />
-                </div>
+                </div> */}
 
                 <div className="form-group">
                   <label>Toll Expenses</label>
@@ -5726,7 +5880,7 @@ const DailyVehicleTransactionForm = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Handling Charges</label>
+                  <label>Handling Charges (Optional)</label>
                   <input
                     type="number"
                     name="HandlingCharges"
@@ -5841,65 +5995,181 @@ const DailyVehicleTransactionForm = () => {
 
       {/* Transactions Table */}
       <div className="transactions-table-container">
-        {/* Date Range Filter */}
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '15px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <label style={{ fontWeight: 'bold', minWidth: '80px' }}>From Date:</label>
-            <input
-              type="date"
-              value={dateFilter.fromDate}
-              onChange={(e) => setDateFilter(prev => ({ ...prev, fromDate: e.target.value }))}
-              style={{
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            />
+        {/* Comprehensive Filters Bar */}
+        <div style={{
+          backgroundColor: '#f8f9fa',
+          padding: '16px 20px',
+          borderRadius: '8px',
+          border: '1px solid #e9ecef',
+          marginBottom: '20px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+        }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: '12px',
+            alignItems: 'end'
+          }}>
+            {/* From Date */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#495057', marginBottom: '4px' }}>From Date</label>
+              <input
+                type="date"
+                value={tableFilters.fromDate}
+                onChange={(e) => setTableFilters(prev => ({ ...prev, fromDate: e.target.value }))}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '13px', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* To Date */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#495057', marginBottom: '4px' }}>To Date</label>
+              <input
+                type="date"
+                value={tableFilters.toDate}
+                onChange={(e) => setTableFilters(prev => ({ ...prev, toDate: e.target.value }))}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '13px', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            {/* Type */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#495057', marginBottom: '4px' }}>Type</label>
+              <select
+                value={tableFilters.type}
+                onChange={(e) => setTableFilters(prev => ({ ...prev, type: e.target.value }))}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '13px', backgroundColor: 'white', boxSizing: 'border-box' }}
+              >
+                <option value="">All Types</option>
+                <option value="Fixed">Fixed</option>
+                <option value="Adhoc">Adhoc</option>
+                <option value="Replacement">Replacement</option>
+              </select>
+            </div>
+
+            {/* Customer Name */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#495057', marginBottom: '4px' }}>Customer Name</label>
+              <select
+                value={tableFilters.customer}
+                onChange={(e) => {
+                  const newCust = e.target.value;
+                  setTableFilters(prev => ({
+                    ...prev,
+                    customer: newCust,
+                    project: '',
+                    vehicle: ''
+                  }));
+                }}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '13px', backgroundColor: 'white', boxSizing: 'border-box' }}
+              >
+                <option value="">All Customers</option>
+                {Array.from(new Set(customers.map(c => c.MasterCustomerName || c.Name || c.CustomerName).filter(Boolean))).sort((a,b) => a.localeCompare(b)).map(custName => (
+                  <option key={custName} value={custName}>{custName}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Project Name */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#495057', marginBottom: '4px' }}>Project Name</label>
+              <select
+                value={tableFilters.project}
+                onChange={(e) => {
+                  const newProj = e.target.value;
+                  setTableFilters(prev => ({
+                    ...prev,
+                    project: newProj,
+                    vehicle: ''
+                  }));
+                }}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '13px', backgroundColor: 'white', boxSizing: 'border-box' }}
+              >
+                <option value="">All Projects</option>
+                {filteredFilterProjects.map(pName => (
+                  <option key={pName} value={pName}>{pName}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Vehicle No */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#495057', marginBottom: '4px' }}>Vehicle No.</label>
+              <select
+                value={tableFilters.vehicle}
+                onChange={(e) => setTableFilters(prev => ({ ...prev, vehicle: e.target.value }))}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '13px', backgroundColor: 'white', boxSizing: 'border-box' }}
+              >
+                <option value="">All Vehicles</option>
+                {filteredFilterVehicles.map(vNo => (
+                  <option key={vNo} value={vNo}>{vNo}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Vendor Name */}
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#495057', marginBottom: '4px' }}>Vendor Name</label>
+              <select
+                value={tableFilters.vendor}
+                onChange={(e) => setTableFilters(prev => ({ ...prev, vendor: e.target.value }))}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '13px', backgroundColor: 'white', boxSizing: 'border-box' }}
+              >
+                <option value="">All Vendors</option>
+                {Array.from(new Set(vendors.map(v => v.VendorName).filter(Boolean))).sort((a,b) => a.localeCompare(b)).map(vName => (
+                  <option key={vName} value={vName}>{vName}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={handleFilterApply}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  height: '35px'
+                }}
+              >
+                🔍 Filter
+              </button>
+              <button
+                type="button"
+                onClick={handleFilterClear}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  height: '35px'
+                }}
+              >
+                🗑️ Clear
+              </button>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <label style={{ fontWeight: 'bold', minWidth: '70px' }}>To Date:</label>
-            <input
-              type="date"
-              value={dateFilter.toDate}
-              onChange={(e) => setDateFilter(prev => ({ ...prev, toDate: e.target.value }))}
-              style={{
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
-            />
-          </div>
-          <button
-            onClick={handleDateFilterApply}
-            style={{
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold'
-            }}
-          >
-            🔍 Filter
-          </button>
-          <button
-            onClick={handleDateFilterClear}
-            style={{
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            🗑️ Clear
-          </button>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -6041,6 +6311,16 @@ const DailyVehicleTransactionForm = () => {
           customizable={true}
           exportable={false}
           defaultSort={{ key: 'TransactionID', direction: 'desc' }}
+        />
+
+        <ExportColumnModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          columns={allExportColumns}
+          data={transactions}
+          fileName="Daily_Vehicle_Transactions"
+          sheetName="Transactions"
+          title="Customize Export Columns"
         />
       </div>
     </div>

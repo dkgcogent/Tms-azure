@@ -22,6 +22,8 @@ const VendorCommercialForm = () => {
     additional_rate_per_km: '',
     toll: '',
     parking: '',
+    fixed_charges_loading: '',
+    fixed_charges_unloading: '',
     fixed_charges_loading_unloading: '',
     da_applicable: 'No',
     da_charges: '',
@@ -241,7 +243,7 @@ const VendorCommercialForm = () => {
       // Numeric fields (Decimals and Integers)
       const numericFields = [
         'no_of_days_per_month', 'hours', 'fixed_rate', 'km_include_in_fix_rate',
-        'additional_rate_per_km', 'toll', 'parking', 'fixed_charges_loading_unloading',
+        'additional_rate_per_km', 'toll', 'parking', 'fixed_charges_loading', 'fixed_charges_unloading', 'fixed_charges_loading_unloading',
         'da_charges', 'no_entry_pass_charges', 'above_551_lts', 'between_351_550_lts',
         'handling_charges', 'state_tax_charges', 'floor_delivery_charges',
         'driver_charges', 'over_time_charges', 'holiday_working_charges',
@@ -311,6 +313,8 @@ const VendorCommercialForm = () => {
             additional_rate_per_km: '',
             toll: '',
             parking: '',
+            fixed_charges_loading: '',
+            fixed_charges_unloading: '',
             fixed_charges_loading_unloading: '',
             da_charges: '',
             no_entry_pass_charges: '',
@@ -333,7 +337,7 @@ const VendorCommercialForm = () => {
             type_of_vehicle_placement: 'Fixed', type_of_vehicle: '', type_of_body: '',
             no_of_days_per_month: '', hours: '', fixed_rate: '',
             km_include_in_fix_rate: '', additional_rate_per_km: '', toll: '',
-            parking: '', fixed_charges_loading_unloading: '', da_applicable: 'No',
+            parking: '', fixed_charges_loading: '', fixed_charges_unloading: '', fixed_charges_loading_unloading: '', da_applicable: 'No',
             da_charges: '', no_entry_pass_charges: '', above_551_lts: '',
             between_351_550_lts: '', description_only_sbs: '',
             handling_charges_applicable: 'No', handling_charges: '',
@@ -490,6 +494,8 @@ const VendorCommercialForm = () => {
             additional_rate_per_km: parseNumeric(getVal(['additional_rate_per_km', 'Additional Rate KM', 'Extra KM Rate', 'Extra KM', 'Additional Rate per KM'])),
             toll: parseNumeric(getVal(['toll', 'Toll'])),
             parking: parseNumeric(getVal(['parking', 'Parking'])),
+            fixed_charges_loading: parseNumeric(getVal(['fixed_charges_loading', 'Fixed Charges for Loading', 'Fixed Charges Loading', 'Loading Charges', 'fixed_charges_loading_unloading', 'Loading/Unloading'])),
+            fixed_charges_unloading: parseNumeric(getVal(['fixed_charges_unloading', 'Fixed Charges for Unloading', 'Fixed Charges Unloading', 'Unloading Charges'])),
             fixed_charges_loading_unloading: parseNumeric(getVal(['fixed_charges_loading_unloading', 'Loading Unloading Charges', 'Loading/Unloading', 'Fixed Charges for Loading / Unloading'])),
             da_applicable: (getVal(['da_applicable', 'DA Applicable', 'DA?']) === 'Yes' || getVal(['da_applicable', 'DA Applicable', 'DA?']) == 1 || String(getVal(['da_applicable', 'DA?'])).includes('✅')) ? 1 : 0,
             da_charges: parseNumeric(getVal(['da_charges', 'DA Charges'])),
@@ -575,7 +581,7 @@ const VendorCommercialForm = () => {
       type_of_vehicle_placement: 'Fixed', type_of_vehicle: '', type_of_body: '',
       no_of_days_per_month: '', hours: '', fixed_rate: '',
       km_include_in_fix_rate: '', additional_rate_per_km: '', toll: '',
-      parking: '', fixed_charges_loading_unloading: '', da_applicable: 'No',
+      parking: '', fixed_charges_loading: '', fixed_charges_unloading: '', fixed_charges_loading_unloading: '', da_applicable: 'No',
       da_charges: '', no_entry_pass_charges: '', above_551_lts: '',
       between_351_550_lts: '', description_only_sbs: '',
       handling_charges_applicable: 'No', handling_charges: '',
@@ -635,7 +641,8 @@ const VendorCommercialForm = () => {
     { key: 'additional_rate_per_km', label: 'Extra KM', sortable: true },
     { key: 'toll', label: 'Toll', sortable: true },
     { key: 'parking', label: 'Parking', sortable: true },
-    { key: 'fixed_charges_loading_unloading', label: 'Loading/Unloading', sortable: true },
+    { key: 'fixed_charges_loading', label: 'Fixed Loading', sortable: true, render: (val, row) => val ? `₹${val}` : (row.fixed_charges_loading_unloading ? `₹${row.fixed_charges_loading_unloading}` : '-') },
+    { key: 'fixed_charges_unloading', label: 'Fixed Unloading', sortable: true, render: (val) => val ? `₹${val}` : '-' },
     { key: 'da_applicable', label: 'DA?', sortable: true, render: (val) => val ? '✅ Yes' : '❌ No' },
     { key: 'da_charges', label: 'DA Charges', sortable: true },
     { key: 'no_entry_pass_charges', label: 'No Entry Pass', sortable: true },
@@ -787,14 +794,18 @@ const VendorCommercialForm = () => {
                 <input type="number" step="0.01" name="parking" value={formData.parking} onChange={handleChange} className="form-input" />
               </div>
               <div className="form-group">
-                <label>Fixed Charges for Loading / Unloading</label>
-                <input type="number" step="0.01" name="fixed_charges_loading_unloading" value={formData.fixed_charges_loading_unloading} onChange={handleChange} className="form-input" />
+                <label>Fixed Charges for Loading</label>
+                <input type="number" step="0.01" name="fixed_charges_loading" value={formData.fixed_charges_loading !== '' ? formData.fixed_charges_loading : (formData.fixed_charges_loading_unloading || '')} onChange={handleChange} className="form-input" />
+              </div>
+              <div className="form-group">
+                <label>Fixed Charges for Unloading</label>
+                <input type="number" step="0.01" name="fixed_charges_unloading" value={formData.fixed_charges_unloading} onChange={handleChange} className="form-input" />
               </div>
             </div>
           </div>
 
           <div className="form-section">
-            <h4>SBS Charges (RIL)</h4>
+            <h4>SBS Charges</h4>
             <div className="form-grid">
               <div className="form-group">
                 <label>DA Applicable</label>

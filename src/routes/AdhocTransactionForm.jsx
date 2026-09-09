@@ -397,7 +397,7 @@ const AdhocTransactionForm = () => {
             </div>
             <div className="form-group">
               <label>Entry Date *</label>
-              <input type="date" name="Date" value={transactionData.Date} onChange={handleTransactionDataChange} className={errors.Date ? 'error' : ''} />
+              <input type="date" name="Date" value={transactionData.Date} readOnly className={`readonly-field ${errors.Date ? 'error' : ''}`} />
               {errors.Date && <span className="error-message">{errors.Date}</span>}
             </div>
             <div className="form-group">

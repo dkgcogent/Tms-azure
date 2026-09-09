@@ -82,26 +82,93 @@ module.exports = (pool) => {
     try {
       console.log('📊 GET /api/daily-vehicle-transactions called');
 
-      const { page = 1, limit = 1000, fromDate, toDate } = req.query;
+      const {
+        page = 1,
+        limit = 1000,
+        fromDate,
+        toDate,
+        type,
+        customer,
+        project,
+        vehicle,
+        vendor
+      } = req.query;
       const offset = (page - 1) * limit;
 
-      // Build date filter conditions
-      let dateFilter = '';
-      let dateParams = [];
+      // Build filter conditions for Fixed and Adhoc
+      const fixedConditions = [];
+      const fixedParams = [];
+      const adhocConditions = [];
+      const adhocParams = [];
 
+      // Date filtering (checks either TransactionDate / Entry Date or ServiceDate)
       if (fromDate && toDate) {
-        dateFilter = 'WHERE DATE(ft.TransactionDate) BETWEEN ? AND ?';
-        dateParams = [fromDate, toDate];
-        console.log('🗓️ Backend: Applying TransactionDate date filter from', fromDate, 'to', toDate);
+        fixedConditions.push('(DATE(ft.TransactionDate) BETWEEN ? AND ? OR DATE(ft.ServiceDate) BETWEEN ? AND ?)');
+        fixedParams.push(fromDate, toDate, fromDate, toDate);
+        adhocConditions.push('(DATE(at.TransactionDate) BETWEEN ? AND ? OR DATE(at.ServiceDate) BETWEEN ? AND ?)');
+        adhocParams.push(fromDate, toDate, fromDate, toDate);
       } else if (fromDate) {
-        dateFilter = 'WHERE DATE(ft.TransactionDate) >= ?';
-        dateParams = [fromDate];
-        console.log('🗓️ Backend: Applying TransactionDate date filter from', fromDate);
+        fixedConditions.push('(DATE(ft.TransactionDate) >= ? OR DATE(ft.ServiceDate) >= ?)');
+        fixedParams.push(fromDate, fromDate);
+        adhocConditions.push('(DATE(at.TransactionDate) >= ? OR DATE(at.ServiceDate) >= ?)');
+        adhocParams.push(fromDate, fromDate);
       } else if (toDate) {
-        dateFilter = 'WHERE DATE(ft.TransactionDate) <= ?';
-        dateParams = [toDate];
-        console.log('🗓️ Backend: Applying TransactionDate date filter to', toDate);
+        fixedConditions.push('(DATE(ft.TransactionDate) <= ? OR DATE(ft.ServiceDate) <= ?)');
+        fixedParams.push(toDate, toDate);
+        adhocConditions.push('(DATE(at.TransactionDate) <= ? OR DATE(at.ServiceDate) <= ?)');
+        adhocParams.push(toDate, toDate);
       }
+
+      // Type filtering (Fixed, Adhoc, Replacement)
+      if (type && type.trim()) {
+        const selectedType = type.trim().toLowerCase();
+        if (selectedType === 'fixed') {
+          adhocConditions.push('1 = 0');
+        } else if (selectedType === 'adhoc' || selectedType === 'replacement') {
+          fixedConditions.push('1 = 0');
+          adhocConditions.push('LOWER(at.TripType) = ?');
+          adhocParams.push(selectedType);
+        }
+      }
+
+      // Customer filtering
+      if (customer && customer.trim()) {
+        const custVal = customer.trim().toLowerCase();
+        fixedConditions.push('(LOWER(TRIM(ft.CompanyName)) = ? OR LOWER(TRIM(ft.customer)) = ? OR LOWER(TRIM(c.Name)) = ? OR LOWER(TRIM(c.MasterCustomerName)) = ? OR ft.CustomerID = ?)');
+        fixedParams.push(custVal, custVal, custVal, custVal, customer.trim());
+        adhocConditions.push('(LOWER(TRIM(at.CompanyName)) = ? OR LOWER(TRIM(c.Name)) = ? OR LOWER(TRIM(c.MasterCustomerName)) = ? OR at.CustomerID = ?)');
+        adhocParams.push(custVal, custVal, custVal, customer.trim());
+      }
+
+      // Project filtering (Exact match so 'Large' does not match 'Non Large')
+      if (project && project.trim()) {
+        const projVal = project.trim().toLowerCase();
+        fixedConditions.push('(LOWER(TRIM(ft.ProjectName)) = ? OR LOWER(TRIM(p.ProjectName)) = ? OR ft.ProjectID = ?)');
+        fixedParams.push(projVal, projVal, project.trim());
+        adhocConditions.push('(LOWER(TRIM(at.ProjectName)) = ? OR LOWER(TRIM(p.ProjectName)) = ? OR at.ProjectID = ?)');
+        adhocParams.push(projVal, projVal, project.trim());
+      }
+
+      // Vehicle filtering
+      if (vehicle && vehicle.trim()) {
+        const vehVal = vehicle.trim().toLowerCase();
+        fixedConditions.push('(LOWER(TRIM(v.VehicleRegistrationNo)) = ?)');
+        fixedParams.push(vehVal);
+        adhocConditions.push('(LOWER(TRIM(at.VehicleNumber)) = ?)');
+        adhocParams.push(vehVal);
+      }
+
+      // Vendor filtering
+      if (vendor && vendor.trim()) {
+        const vendVal = vendor.trim().toLowerCase();
+        fixedConditions.push('(LOWER(TRIM(ft.VendorName)) = ? OR LOWER(TRIM(vend.VendorName)) = ? OR ft.VendorID = ?)');
+        fixedParams.push(vendVal, vendVal, vendor.trim());
+        adhocConditions.push('(LOWER(TRIM(at.VendorName)) = ? OR LOWER(TRIM(at.VendorNumber)) = ?)');
+        adhocParams.push(vendVal, vendVal);
+      }
+
+      const fixedWhereClause = fixedConditions.length > 0 ? `WHERE ${fixedConditions.join(' AND ')}` : '';
+      const adhocWhereClause = adhocConditions.length > 0 ? `WHERE ${adhocConditions.join(' AND ')}` : '';
 
       // Query both fixed_transactions and adhoc_transactions tables
       const fixedQuery = `
@@ -139,7 +206,7 @@ COALESCE(ft.ProjectName, p.ProjectName) as ProjectName,
         LEFT JOIN vendor vend ON ft.VendorID = vend.VendorID
         LEFT JOIN project p ON ft.ProjectID = p.ProjectID
         LEFT JOIN driver rd ON ft.ReplacementDriverID = rd.DriverID
-        ${dateFilter}
+        ${fixedWhereClause}
       `;
 
       const adhocQuery = `
@@ -171,12 +238,12 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         FROM adhoc_transactions at
         LEFT JOIN customer c ON at.CustomerID = c.CustomerID
         LEFT JOIN project p ON at.ProjectID = p.ProjectID
-        ${dateFilter.replace('ft.TransactionDate', 'at.TransactionDate')}
+        ${adhocWhereClause}
       `;
 
-      // Execute both queries with date parameters
-      const [fixedRows] = await pool.query(fixedQuery, dateParams);
-      const [adhocRows] = await pool.query(adhocQuery, dateParams);
+      // Execute both queries with parameters
+      const [fixedRows] = await pool.query(fixedQuery, fixedParams);
+      const [adhocRows] = await pool.query(adhocQuery, adhocParams);
 
       console.log('🔍 Backend: Fixed transactions found:', fixedRows.length);
       console.log('🔍 Backend: Adhoc transactions found:', adhocRows.length);
@@ -229,13 +296,27 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       const startIndex = parseInt(offset);
       const rows = transformedRows.slice(startIndex, startIndex + parseInt(limit));
 
-      // Get total count for pagination with date filter
-      const fixedCountQuery = `SELECT COUNT(*) as count FROM fixed_transactions ${dateFilter.replace('ft.TransactionDate', 'TransactionDate')}`;
-      const adhocCountQuery = `SELECT COUNT(*) as count FROM adhoc_transactions ${dateFilter.replace('ft.TransactionDate', 'TransactionDate')}`;
+      // Get total count for pagination with filter
+      const fixedCountQuery = `
+        SELECT COUNT(*) as count 
+        FROM fixed_transactions ft
+        LEFT JOIN customer c ON ft.CustomerID = c.CustomerID
+        LEFT JOIN vehicle v ON v.VehicleID = JSON_UNQUOTE(JSON_EXTRACT(ft.VehicleIDs, '$[0]'))
+        LEFT JOIN vendor vend ON ft.VendorID = vend.VendorID
+        LEFT JOIN project p ON ft.ProjectID = p.ProjectID
+        ${fixedWhereClause}
+      `;
+      const adhocCountQuery = `
+        SELECT COUNT(*) as count 
+        FROM adhoc_transactions at
+        LEFT JOIN customer c ON at.CustomerID = c.CustomerID
+        LEFT JOIN project p ON at.ProjectID = p.ProjectID
+        ${adhocWhereClause}
+      `;
 
-      const [fixedCount] = await pool.query(fixedCountQuery, dateParams);
-      const [adhocCount] = await pool.query(adhocCountQuery, dateParams);
-      const totalCount = fixedCount[0].count + adhocCount[0].count;
+      const [fixedCount] = await pool.query(fixedCountQuery, fixedParams);
+      const [adhocCount] = await pool.query(adhocCountQuery, adhocParams);
+      const totalCount = (fixedCount[0]?.count || 0) + (adhocCount[0]?.count || 0);
 
       console.log('✅ Query successful, found', rows.length, 'records');
 

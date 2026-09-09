@@ -18,7 +18,18 @@ async function run() {
     if (e.code === 'ER_DUP_FIELDNAME') {
       console.log('ℹ️ Column sunday_option already exists in vendor_commercial');
     } else {
-      console.error('❌ Error adding sunday_option:', e.message);
+      console.error('❌ Error adding sunday_option to vendor_commercial:', e.message);
+    }
+  }
+
+  try {
+    await pool.query(`ALTER TABLE customer_commercial ADD COLUMN sunday_option VARCHAR(50) DEFAULT 'Sunday Including'`);
+    console.log('✅ Added column sunday_option to customer_commercial');
+  } catch (e) {
+    if (e.code === 'ER_DUP_FIELDNAME') {
+      console.log('ℹ️ Column sunday_option already exists in customer_commercial');
+    } else {
+      console.error('❌ Error adding sunday_option to customer_commercial:', e.message);
     }
   }
 
