@@ -504,7 +504,7 @@ const VendorCommercialForm = () => {
             between_351_550_lts: parseNumeric(getVal(['between_351_550_lts', 'Between 351-550 Lts', '351-550 Lts', '(351–550) Lts'])),
             description_only_sbs: getVal(['description_only_sbs', 'Description', 'If Description Only SBS']),
             handling_charges_applicable: (getVal(['handling_charges_applicable', 'Handling Applicable', 'Handling?']) === 'Yes' || getVal(['handling_charges_applicable', 'Handling Applicable', 'Handling?']) == 1 || String(getVal(['handling_charges_applicable', 'Handling?'])).includes('✅')) ? 1 : 0,
-            handling_charges: parseNumeric(getVal(['handling_charges', 'Handling Charges'])),
+            handling_charges: parseNumeric(getVal(['handling_charges', 'Additional Handling Charges', 'Handling Charges'])),
             state_tax_charges: parseNumeric(getVal(['state_tax_charges', 'State Tax Charges', 'State Tax'])),
             floor_delivery_charges: parseNumeric(getCellValue(row, ['floor_delivery_charges', 'Floor Delivery Charges', 'Floor Delivery'])),
             driver_charges: parseNumeric(getVal(['driver_charges', 'Driver Charges'])),
@@ -649,7 +649,7 @@ const VendorCommercialForm = () => {
     { key: 'above_551_lts', label: '>551 Lts', sortable: true },
     { key: 'between_351_550_lts', label: '351-550 Lts', sortable: true },
     { key: 'handling_charges_applicable', label: 'Handling?', sortable: true, render: (val) => val ? '✅ Yes' : '❌ No' },
-    { key: 'handling_charges', label: 'Handling Charges', sortable: true },
+    { key: 'handling_charges', label: 'Additional Handling Charges', sortable: true },
     { key: 'state_tax_charges', label: 'State Tax', sortable: true },
     { key: 'floor_delivery_charges', label: 'Floor Delivery', sortable: true },
     { key: 'driver_charges', label: 'Driver Charges', sortable: true },
@@ -851,7 +851,7 @@ const VendorCommercialForm = () => {
               </div>
               {formData.handling_charges_applicable === 'Yes' && (
                 <div className="form-group">
-                  <label>Handling Charges</label>
+                  <label>Additional Handling Charges</label>
                   <input type="number" step="0.01" name="handling_charges" value={formData.handling_charges} onChange={handleChange} className="form-input" />
                 </div>
               )}
