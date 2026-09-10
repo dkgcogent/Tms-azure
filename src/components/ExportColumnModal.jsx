@@ -2,6 +2,42 @@ import React, { useState, useMemo, useEffect } from 'react';
 import ExcelJS from 'exceljs';
 import './ExportColumnModal.css';
 
+const MANDATORY_IMPORT_KEYS = new Set([
+  '__serial_number__',
+  'triptype', 'typeoftransaction', 'type',
+  'servicedate', 'service_date',
+  'vehiclereturndate', 'vehicle_return_date', 'returndate',
+  'tripno', 'trip_no',
+  'customername', 'customer_name',
+  'projectname', 'project_name',
+  'location', 'customersite', 'customer_site', 'custsite',
+  'vehiclenumber', 'vehicle_number', 'vehicleno', 'vehicle_no',
+  'vendorname', 'vendor_name',
+  'drivername', 'driver_name', 'drivernumber', 'driver_number',
+  'openingkm', 'opening_km',
+  'closingkm', 'closing_km',
+  // Timing columns
+  'vehiclereportingathub', 'vehicle_reporting_at_hub', 'reportingtime', 'reporting_time',
+  'vehicleentryinhub', 'vehicle_entry_in_hub', 'entrytime', 'entry_time',
+  'vehicleoutfromhubfordelivery', 'vehicle_out_from_hub_for_delivery', 'outtime', 'out_time',
+  'vehiclereturnathub', 'vehicle_return_at_hub', 'returntime', 'return_time',
+  'vehicleenteredathubreturn', 'vehicle_entered_at_hub_return', 'returnentrytime', 'return_entry_time',
+  'vehicleoutfromhubfinal', 'vehicle_out_from_hub_final', 'finalouttime', 'final_out_time',
+  'arrivaltimeathub', 'arrival_time_at_hub',
+  'intimebycust', 'in_time_by_cust',
+  'outtimefromhub', 'out_time_from_hub',
+  'outtimefrom', 'out_time_from',
+  'returnreportingtime', 'return_reporting_time'
+]);
+
+export const isColumnMandatory = (col) => {
+  if (!col) return false;
+  if (col.isMandatory || col.isRequiredForImport || col.required) return true;
+  const k = String(col.key || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const l = String(col.label || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+  return MANDATORY_IMPORT_KEYS.has(k) || MANDATORY_IMPORT_KEYS.has(l);
+};
+
 const ExportColumnModal = ({
   isOpen = false,
   onClose,
@@ -69,6 +105,13 @@ const ExportColumnModal = ({
 
   const handleSelectAll = () => {
     setSelectedKeys(columns.map(c => c.key));
+  };
+
+  const handleSelectMandatory = () => {
+    const mandatoryKeys = columns
+      .filter(c => isColumnMandatory(c))
+      .map(c => c.key);
+    setSelectedKeys(mandatoryKeys.length > 0 ? mandatoryKeys : defaultKeys);
   };
 
   const handleDeselectAll = () => {
@@ -139,20 +182,50 @@ const ExportColumnModal = ({
         return {
           header: headerText,
           key: col.key,
-          width: Math.max(headerText.length + 5, 14)
+          width: Math.max(headerText.length + 5, 15)
         };
       });
 
-      // Style header row
+      // Style header row with distinct color per cell (Mandatory = Orange/Amber, Optional = Purple)
       const headerRow = worksheet.getRow(1);
-      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
-      headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FF4F46E5' } // Indigo gradient tone
-      };
+      headerRow.height = 30;
       headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-      headerRow.height = 28;
+
+      activeColumns.forEach((col, idx) => {
+        const cell = headerRow.getCell(idx + 1);
+        const mandatory = isColumnMandatory(col);
+
+        cell.font = { 
+          bold: true, 
+          color: { argb: 'FFFFFFFF' }, 
+          size: 11,
+          name: 'Calibri'
+        };
+
+        if (mandatory) {
+          // Orange / Amber highlight for mandatory import columns
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFEA580C' } // Vibrant Amber-Orange
+          };
+          cell.note = 'Required for importing Excel into TMS';
+        } else {
+          // Purple / Indigo for optional columns
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF5B45FF' } // Royal Purple
+          };
+        }
+
+        cell.border = {
+          top: { style: 'medium', color: { argb: 'FFFFFFFF' } },
+          bottom: { style: 'medium', color: { argb: 'FFFFFFFF' } },
+          left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+          right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+        };
+      });
 
       // Add data rows
       data.forEach((item, index) => {
@@ -174,21 +247,21 @@ const ExportColumnModal = ({
       // Apply borders to all cells
       worksheet.eachRow((row, rowNumber) => {
         row.eachCell((cell) => {
-          cell.border = {
-            top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-            right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
-          };
           if (rowNumber > 1) {
-            cell.font = { size: 10 };
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+              right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+            };
+            cell.font = { size: 10, name: 'Calibri' };
           }
         });
       });
 
       // Auto-fit column widths with bounds
       worksheet.columns.forEach(column => {
-        let maxLen = column.header ? column.header.length : 12;
+        let maxLen = column.header ? String(column.header).length : 12;
         column.eachCell({ includeEmpty: false }, (cell, rowNumber) => {
           if (rowNumber > 1) {
             const cellVal = cell.value ? String(cell.value) : '';
@@ -197,7 +270,7 @@ const ExportColumnModal = ({
             }
           }
         });
-        column.width = Math.max(maxLen + 4, 12);
+        column.width = Math.max(maxLen + 4, 14);
       });
 
       // Write to buffer and trigger download
@@ -254,12 +327,26 @@ const ExportColumnModal = ({
           <button onClick={handleSelectAll} className="export-action-btn select-all">
             ✅ Select All
           </button>
+          <button onClick={handleSelectMandatory} className="export-action-btn select-mandatory">
+            ⭐ Select Import Mandatory
+          </button>
           <button onClick={handleDeselectAll} className="export-action-btn deselect-all">
             ❌ Deselect All
           </button>
           <button onClick={handleResetToDefault} className="export-action-btn reset">
             🔄 Reset to Default
           </button>
+        </div>
+
+        {/* Legend Bar */}
+        <div className="export-legend-bar">
+          <span className="export-legend-title">Header Colors:</span>
+          <span className="export-legend-item">
+            <span className="export-legend-dot orange"></span> Mandatory for Import
+          </span>
+          <span className="export-legend-item">
+            <span className="export-legend-dot purple"></span> Optional / Details
+          </span>
         </div>
 
         {/* Search Box */}
@@ -287,8 +374,10 @@ const ExportColumnModal = ({
           ) : (
             filteredColumns.map(col => {
               const isChecked = selectedKeys.includes(col.key);
+              const mandatory = isColumnMandatory(col);
+
               return (
-                <div key={col.key} className="export-column-item">
+                <div key={col.key} className={`export-column-item ${mandatory ? 'is-mandatory' : ''}`}>
                   <label className="export-column-checkbox-label">
                     <input
                       type="checkbox"
@@ -299,6 +388,9 @@ const ExportColumnModal = ({
                       <span>{col.label}</span>
                       {col.isSerialNumber && (
                         <span className="export-always-visible-badge">Always Visible</span>
+                      )}
+                      {mandatory && (
+                        <span className="export-mandatory-badge">⭐ Required for Import</span>
                       )}
                       <span className="export-column-key-hint">({col.key})</span>
                     </span>

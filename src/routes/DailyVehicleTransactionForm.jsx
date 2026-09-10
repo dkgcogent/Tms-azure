@@ -2390,6 +2390,11 @@ const DailyVehicleTransactionForm = () => {
         newErrors.DriverID = 'Driver must be selected for Fixed transactions';
         console.log('❌ VALIDATION - Driver validation failed - no driver selected');
       }
+
+      // Trip No is mandatory for Fixed transactions
+      if (!transactionData.TripNo || transactionData.TripNo.trim() === '') {
+        newErrors.TripNo = 'Trip No is required for Fixed transactions';
+      }
     }
 
     // Common transaction data validations
@@ -2397,14 +2402,14 @@ const DailyVehicleTransactionForm = () => {
     if (!transactionData.OpeningKM) newErrors.OpeningKM = 'Opening KM is required';
     if (!transactionData.ClosingKM) newErrors.ClosingKM = 'Closing KM is required';
 
-    // Trip Number validation - Non-mandatory but length limited to 50
+    // Trip Number - length limit check
     if (transactionData.TripNo && transactionData.TripNo.length > 50) {
       newErrors.TripNo = 'Trip Number cannot exceed 50 characters';
     }
 
     // Adhoc/Replacement-specific validations
     if (masterData.TypeOfTransaction === 'Adhoc' || masterData.TypeOfTransaction === 'Replacement') {
-      // if (!transactionData.TripNo) newErrors.TripNo = 'Trip No is required for Adhoc/Replacement transactions';
+      if (!transactionData.TripNo || transactionData.TripNo.trim() === '') newErrors.TripNo = 'Trip No is required for Adhoc/Replacement transactions';
       if (!transactionData.VehicleNumber) newErrors.VehicleNumber = 'Vehicle Number is required for Adhoc/Replacement transactions';
       if (!transactionData.VendorName) newErrors.VendorName = 'Vendor Name is required for Adhoc/Replacement transactions';
       if (!transactionData.DriverName) newErrors.DriverName = 'Driver Name is required for Adhoc/Replacement transactions';
@@ -2458,6 +2463,37 @@ const DailyVehicleTransactionForm = () => {
       }
     }
 
+    // Duplicate Check: Same vehicle on same service date must not be accepted
+    const targetServiceDate = transactionData.ServiceDate || transactionData.Date;
+    let currentVehicleNum = '';
+    if (masterData.TypeOfTransaction === 'Fixed') {
+      const selectedV = vehicles.find(v => (masterData.VehicleNo && masterData.VehicleNo.includes(v.VehicleID)) || v.VehicleID == transactionData.VehicleID);
+      currentVehicleNum = selectedV?.VehicleRegistrationNo || transactionData.VehicleNumber || '';
+    } else {
+      currentVehicleNum = transactionData.VehicleNumber || '';
+    }
+
+    if (currentVehicleNum && currentVehicleNum.trim() !== '' && currentVehicleNum.trim().toUpperCase() !== 'NA' && targetServiceDate && transactions && transactions.length > 0) {
+      const cleanCurrentVeh = currentVehicleNum.replace(/\s+/g, '').toUpperCase();
+      const cleanTargetDate = targetServiceDate.split('T')[0];
+      const editingId = editingTransaction?.TransactionID;
+
+      const duplicateTx = transactions.find(t => {
+        if (editingId && (t.TransactionID === editingId || t.id === editingId)) return false;
+        const tDate = (t.ServiceDate || t.TransactionDate || '').split('T')[0];
+        const tVeh = (t.VehicleNumber || t.VehicleRegistrationNo || '').replace(/\s+/g, '').toUpperCase();
+        return tDate === cleanTargetDate && tVeh === cleanCurrentVeh;
+      });
+
+      if (duplicateTx) {
+        const dupTrip = duplicateTx.TripNo ? `Trip: ${duplicateTx.TripNo}` : `Transaction #${duplicateTx.TransactionID}`;
+        newErrors.VehicleNumber = `Vehicle "${currentVehicleNum}" already has an entry on Service Date "${cleanTargetDate}" (${dupTrip}). Duplicate entries for the same vehicle on the same date are not allowed.`;
+        if (masterData.TypeOfTransaction === 'Fixed') {
+          newErrors.VehicleNo = `Vehicle "${currentVehicleNum}" already has an entry on Service Date "${cleanTargetDate}".`;
+        }
+      }
+    }
+
     setErrors(newErrors);
     const isValid = Object.keys(newErrors).length === 0;
     return isValid;
@@ -2469,6 +2505,7 @@ const DailyVehicleTransactionForm = () => {
 
     // If it's already a Date object
     if (dateVal instanceof Date) {
+      if (isNaN(dateVal.getTime())) return fallbackToToday ? getCurrentDate() : null;
       return dateVal.toISOString().split('T')[0];
     }
 
@@ -2483,8 +2520,13 @@ const DailyVehicleTransactionForm = () => {
 
     // If it's a string, try to parse it
     if (typeof dateVal === 'string') {
+      const str = dateVal.trim();
+      if (!str || str === '-' || str.toLowerCase() === 'na' || str.toLowerCase() === 'n/a' || str.toLowerCase() === 'null') {
+        return fallbackToToday ? getCurrentDate() : null;
+      }
+
       // Handle DD-MM-YYYY or DD/MM/YYYY
-      const parts = dateVal.split(/[-/.]/);
+      const parts = str.split(/[-/.]/);
       if (parts.length === 3) {
         if (parts[2].length === 4) { // DD-MM-YYYY
           return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
@@ -2493,13 +2535,13 @@ const DailyVehicleTransactionForm = () => {
         }
       }
 
-      const date = new Date(dateVal);
+      const date = new Date(str);
       if (!isNaN(date.getTime())) {
         return date.toISOString().split('T')[0];
       }
     }
 
-    return getCurrentDate();
+    return fallbackToToday ? getCurrentDate() : null;
   };
 
   // Helper to find a value in a row by checking multiple possible column name variations
@@ -2529,50 +2571,57 @@ const DailyVehicleTransactionForm = () => {
 
     // Handle Date objects
     if (timeVal instanceof Date) {
+      if (isNaN(timeVal.getTime())) return null;
       const hours = timeVal.getHours();
       const minutes = timeVal.getMinutes();
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
     }
 
     // If it's a number (Excel serial time or just hours)
     if (typeof timeVal === 'number') {
-      // If the number is < 1, it's a fraction of a day (Excel time format)
-      // If it's > 1, it might be a Date+Time serial (e.g. 45000.375) or just raw hours
       let fraction = timeVal;
       if (timeVal >= 1) {
         fraction = timeVal % 1;
       }
       
-      // If it's 0 but the original wasn't 0 and it's large, it might be raw hours
+      // If it's 0 but the original was an integer hour between 1 and 23
       if (fraction === 0 && timeVal > 0 && timeVal < 24) {
-          return `${String(Math.floor(timeVal)).padStart(2, '0')}:00`;
+        return `${String(Math.floor(timeVal)).padStart(2, '0')}:00:00`;
       }
 
       const totalSeconds = Math.round(fraction * 86400);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      const seconds = totalSeconds % 60;
+      return `${String(hours % 24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
     // If it's a string, try to normalize
     if (typeof timeVal === 'string') {
       const str = timeVal.trim();
-      if (!str) return null;
+      if (!str || str === '-' || str.toLowerCase() === 'na' || str.toLowerCase() === 'n/a' || str.toLowerCase() === 'null' || str.toLowerCase() === 'undefined') {
+        return null;
+      }
 
       // Handle HH:MM:SS or HH:MM
-      const timeMatch = str.match(/^(\d{1,2}):(\d{1,2})/);
+      const timeMatch = str.match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
       if (timeMatch) {
-        return `${timeMatch[1].padStart(2, '0')}:${timeMatch[2].padStart(2, '0')}`;
+        const h = parseInt(timeMatch[1], 10);
+        const m = parseInt(timeMatch[2], 10);
+        const s = timeMatch[3] ? parseInt(timeMatch[3], 10) : 0;
+        if (h < 24 && m < 60 && s < 60) {
+          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
       }
       
       // Handle HHMM (4 digits)
       const hhmmMatch = str.match(/^(\d{2})(\d{2})$/);
       if (hhmmMatch) {
-          const h = parseInt(hhmmMatch[1]);
-          const m = parseInt(hhmmMatch[2]);
-          if (h < 24 && m < 60) {
-            return `${hhmmMatch[1]}:${hhmmMatch[2]}`;
-          }
+        const h = parseInt(hhmmMatch[1], 10);
+        const m = parseInt(hhmmMatch[2], 10);
+        if (h < 24 && m < 60) {
+          return `${hhmmMatch[1]}:${hhmmMatch[2]}:00`;
+        }
       }
 
       // Handle "9 AM" or "09:00 PM" etc.
@@ -2581,17 +2630,23 @@ const DailyVehicleTransactionForm = () => {
         if (!isNaN(dummyDate.getTime())) {
           const h = dummyDate.getHours();
           const m = dummyDate.getMinutes();
-          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+          const s = dummyDate.getSeconds();
+          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
       }
       
       // If it's just a number in a string "0.375"
       if (!isNaN(str) && str.includes('.')) {
-          return formatExcelTime(parseFloat(str));
+        return formatExcelTime(parseFloat(str));
+      }
+
+      // If it's an integer string "9" or "14"
+      if (!isNaN(str) && Number(str) >= 0 && Number(str) < 24) {
+        return `${String(Math.floor(Number(str))).padStart(2, '0')}:00:00`;
       }
     }
 
-    return String(timeVal);
+    return null;
   };
 
   const handleExcelImport = async (e) => {
@@ -2637,6 +2692,7 @@ const DailyVehicleTransactionForm = () => {
       const totalRows = allRows.length;
       let successCount = 0;
       let failedCount = 0;
+      const batchProcessedVehicles = new Set();
 
       for (let i = 0; i < totalRows; i++) {
         setImportProgress({ current: i + 1, total: totalRows, success: successCount, failed: failedCount });
@@ -2733,8 +2789,8 @@ const DailyVehicleTransactionForm = () => {
 
           if (normalizedTripType === 'fixed' && resolvedVehicleIds.length === 0) {
             throw new Error(rawVehicle 
-              ? `Vehicle '${rawVehicle}' not found. Fixed transactions require a pre-registered vehicle.` 
-              : 'Vehicle Number is missing. At least one valid vehicle must be provided for Fixed transactions.');
+              ? `Vehicle '${rawVehicle}' not found in Master Data. Fixed transactions require an existing vehicle.` 
+              : 'Vehicle Number is missing. A valid registered vehicle is required for Fixed transactions.');
           }
 
           let resolvedDriverIds = [];
@@ -2754,12 +2810,43 @@ const DailyVehicleTransactionForm = () => {
           }
 
           // Format dates using the helper with expanded column variations
-          const transactionDateStr = getCurrentDate(); // Entry data will always be the date when data is imported
+          const transactionDateStr = getCurrentDate(); // Entry date will always be the date when data is imported
           const serviceDateRaw = getCellValue(row, ['ServiceDate', 'Service Date', 'Service_Date', 'Date', 'TransactionDate', 'Transaction Date', 'Transaction_Date', 'Entry Date', 'EntryDate', 'Entry_Date']);
           const serviceDateStr = formatExcelDate(serviceDateRaw) || transactionDateStr;
 
           const returnDateRaw = getCellValue(row, ['VehicleReturnDate', 'Vehicle Return Date', 'Vehicle_Return_Date', 'Return Date', 'ReturnDate', 'Date', 'TransactionDate']);
           const vehicleReturnDateStr = formatExcelDate(returnDateRaw) || transactionDateStr;
+
+          // Check for duplicate vehicle on same service date
+          const resolvedVehNo = normalizedTripType === 'fixed'
+            ? (vehicles.find(v => resolvedVehicleIds.includes(String(v.VehicleID)))?.VehicleRegistrationNo || getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo', 'Vehicle No']) || '')
+            : (getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo', 'Vehicle No']) || '');
+
+          const cleanVehNo = resolvedVehNo ? String(resolvedVehNo).replace(/\s+/g, '').toUpperCase() : '';
+          const cleanServiceDate = serviceDateStr ? serviceDateStr.split('T')[0] : '';
+
+          if (cleanVehNo && cleanVehNo !== 'NA' && cleanServiceDate) {
+            const batchKey = `${cleanVehNo}_${cleanServiceDate}`;
+
+            // 1. Check if duplicate in current Excel batch
+            if (batchProcessedVehicles.has(batchKey)) {
+              throw new Error(`Duplicate in Excel: Vehicle "${resolvedVehNo}" already appears in this import file for Service Date ${cleanServiceDate}`);
+            }
+
+            // 2. Check if duplicate already exists in database
+            const existingInDb = transactions.find(t => {
+              const tDate = (t.ServiceDate || t.TransactionDate || '').split('T')[0];
+              const tVeh = (t.VehicleNumber || t.VehicleRegistrationNo || '').replace(/\s+/g, '').toUpperCase();
+              return tDate === cleanServiceDate && tVeh === cleanVehNo;
+            });
+
+            if (existingInDb) {
+              const tripStr = existingInDb.TripNo ? `Trip: ${existingInDb.TripNo}` : `Transaction #${existingInDb.TransactionID}`;
+              throw new Error(`Vehicle "${resolvedVehNo}" already exists in database for Service Date ${cleanServiceDate} (${tripStr}). Duplicate not allowed.`);
+            }
+
+            batchProcessedVehicles.add(batchKey);
+          }
 
           if (normalizedTripType === 'fixed') {
             payload = {
@@ -2901,13 +2988,53 @@ const DailyVehicleTransactionForm = () => {
             await vehicleTransactionAPI.create(payload);
             successCount++;
           } else {
-            throw new Error(`Invalid TripType: ${tripType}`);
+            throw new Error(`Invalid TripType "${tripType}". Supported: Fixed, Adhoc, Replacement.`);
           }
         } catch (apiError) {
           failedCount++;
           console.error(`Sheet '${sheetName}' Row ${i + 2} failed:`, apiError);
-          const errorMsg = apiError.response?.data?.error || apiError.message;
-          setImportErrors(prev => [...prev, `[Sheet: ${sheetName}] Row ${i + 2} Failed: ${errorMsg}`]);
+          
+          // Extract backend message or details
+          const resData = apiError.response?.data;
+          let rawError = resData?.details || resData?.message || resData?.error || apiError.message || 'Unknown database error';
+          
+          // Make it clean and human readable
+          let reason = rawError;
+          if (typeof rawError === 'string') {
+            if (rawError.includes('Data truncated for column')) {
+              const colMatch = rawError.match(/column '([^']+)'/i);
+              reason = colMatch ? `Invalid data format or value in column "${colMatch[1]}"` : 'Invalid data format in one of the columns';
+            } else if (rawError.includes('Incorrect time value')) {
+              const timeMatch = rawError.match(/Incorrect time value:\s*'([^']*)'/i);
+              reason = timeMatch ? `Invalid time value "${timeMatch[1]}" (Expected HH:MM or HH:MM:SS)` : 'Invalid time format';
+            } else if (rawError.includes('Incorrect date value')) {
+              const dateMatch = rawError.match(/Incorrect date value:\s*'([^']*)'/i);
+              reason = dateMatch ? `Invalid date value "${dateMatch[1]}" (Expected DD-MM-YYYY or YYYY-MM-DD)` : 'Invalid date format';
+            } else if (rawError.includes('foreign key constraint fails') || rawError.includes('a foreign key constraint')) {
+              reason = 'Customer or Project reference not found in Master Data';
+            } else if (rawError.includes('cannot be null') || (rawError.includes('Column') && rawError.includes('null'))) {
+              const nullMatch = rawError.match(/Column '([^']+)' cannot be null/i);
+              reason = nullMatch ? `Required column "${nullMatch[1]}" is empty` : 'A mandatory column is empty';
+            } else if (rawError.includes('Duplicate entry')) {
+              reason = 'Duplicate entry: record already exists in database';
+            }
+          }
+
+          // Build row identification info so user knows which record didn't import
+          const tripNo = getCellValue(row, ['TripNo', 'Trip No', 'Trip_No']) || '';
+          const vehicleNo = getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo', 'Vehicle No', 'VehicleID']) || '';
+          const cust = getCellValue(row, ['Customer', 'CustomerName', 'Customer Name', 'CompanyName', 'Company Name']) || '';
+          const proj = getCellValue(row, ['Project', 'ProjectName', 'Project Name']) || '';
+
+          const identifiers = [
+            tripNo ? `Trip No: ${tripNo}` : null,
+            vehicleNo ? `Vehicle: ${vehicleNo}` : null,
+            cust ? `Customer: ${cust}` : null,
+            proj ? `Project: ${proj}` : null
+          ].filter(Boolean).join(' | ');
+
+          const rowLabel = `[Sheet: ${sheetName}] Row ${i + 2}${identifiers ? ` (${identifiers})` : ''}`;
+          setImportErrors(prev => [...prev, `${rowLabel} — Failed: ${reason}`]);
         }
       }
 
@@ -4056,49 +4183,49 @@ const DailyVehicleTransactionForm = () => {
     const baseColumns = [
       { key: '__serial_number__', label: 'S.No', isSerialNumber: true },
       { key: 'TransactionID', label: 'Transaction ID' },
-      { key: 'TripType', label: 'Type' },
+      { key: 'TripType', label: 'Type', isMandatory: true },
       { key: 'TransactionDate', label: 'Entry Date' },
-      { key: 'ServiceDate', label: 'Service Date' },
-      { key: 'VehicleReturnDate', label: 'Return Date' },
-      { key: 'TripNo', label: 'Trip No' },
+      { key: 'ServiceDate', label: 'Service Date', isMandatory: true },
+      { key: 'VehicleReturnDate', label: 'Return Date', isMandatory: true },
+      { key: 'TripNo', label: 'Trip No', isMandatory: true },
       { key: 'Shift', label: 'Shift' },
       { key: 'CustomerID', label: 'Customer ID' },
-      { key: 'CustomerName', label: 'Customer Name' },
+      { key: 'CustomerName', label: 'Customer Name', isMandatory: true },
       { key: 'CompanyName', label: 'Company Name' },
       { key: 'GSTNo', label: 'GST No' },
       { key: 'ProjectID', label: 'Project ID' },
-      { key: 'ProjectName', label: 'Project Name' },
+      { key: 'ProjectName', label: 'Project Name', isMandatory: true },
       { key: 'State', label: 'State' },
-      { key: 'Location', label: 'Location' },
-      { key: 'CustomerSite', label: 'Customer Site' },
-      { key: 'VehicleNumber', label: 'Vehicle Number' },
+      { key: 'Location', label: 'Location', isMandatory: true },
+      { key: 'CustomerSite', label: 'Customer Site', isMandatory: true },
+      { key: 'VehicleNumber', label: 'Vehicle Number', isMandatory: true },
       { key: 'VehicleType', label: 'Vehicle Type' },
       { key: 'FixVehicleNo', label: 'Fix Vehicle No' },
       { key: 'VendorID', label: 'Vendor ID' },
-      { key: 'VendorName', label: 'Vendor Name' },
+      { key: 'VendorName', label: 'Vendor Name', isMandatory: true },
       { key: 'VendorNumber', label: 'Vendor Number' },
       { key: 'VendorCode', label: 'Vendor Code' },
       { key: 'DriverID', label: 'Driver ID' },
-      { key: 'DriverName', label: 'Driver Name' },
-      { key: 'DriverNumber', label: 'Driver Number' },
+      { key: 'DriverName', label: 'Driver Name', isMandatory: true },
+      { key: 'DriverNumber', label: 'Driver Number', isMandatory: true },
       { key: 'DriverAadharNumber', label: 'Driver Aadhar Number' },
       { key: 'DriverLicenceNumber', label: 'Driver Licence Number' },
       { key: 'ReplacementDriverID', label: 'Replacement Driver ID' },
       { key: 'ReplacementDriverName', label: 'Replacement Driver Name' },
       { key: 'ReplacementDriverNo', label: 'Replacement Driver No' },
-      { key: 'ArrivalTimeAtHub', label: 'Arrival Time at Hub' },
-      { key: 'InTimeByCust', label: 'In Time by Cust' },
-      { key: 'OutTimeFromHub', label: 'Out Time from Hub' },
-      { key: 'OutTimeFrom', label: 'Out Time From HUB' },
-      { key: 'ReturnReportingTime', label: 'Return Reporting Time' },
-      { key: 'VehicleReportingAtHub', label: 'Vehicle Reporting At Hub' },
-      { key: 'VehicleEntryInHub', label: 'Vehicle Entry In Hub' },
-      { key: 'VehicleOutFromHubForDelivery', label: 'Vehicle Out From Hub For Delivery' },
-      { key: 'VehicleReturnAtHub', label: 'Vehicle Return At Hub' },
-      { key: 'VehicleEnteredAtHubReturn', label: 'Vehicle Entered At Hub Return' },
-      { key: 'VehicleOutFromHubFinal', label: 'Vehicle Out From Hub Final' },
-      { key: 'OpeningKM', label: 'Opening KM' },
-      { key: 'ClosingKM', label: 'Closing KM' },
+      { key: 'ArrivalTimeAtHub', label: 'Arrival Time at Hub', isMandatory: true },
+      { key: 'InTimeByCust', label: 'In Time by Cust', isMandatory: true },
+      { key: 'OutTimeFromHub', label: 'Out Time from Hub', isMandatory: true },
+      { key: 'OutTimeFrom', label: 'Out Time From HUB', isMandatory: true },
+      { key: 'ReturnReportingTime', label: 'Return Reporting Time', isMandatory: true },
+      { key: 'VehicleReportingAtHub', label: 'Vehicle Reporting At Hub', isMandatory: true },
+      { key: 'VehicleEntryInHub', label: 'Vehicle Entry In Hub', isMandatory: true },
+      { key: 'VehicleOutFromHubForDelivery', label: 'Vehicle Out From Hub For Delivery', isMandatory: true },
+      { key: 'VehicleReturnAtHub', label: 'Vehicle Return At Hub', isMandatory: true },
+      { key: 'VehicleEnteredAtHubReturn', label: 'Vehicle Entered At Hub Return', isMandatory: true },
+      { key: 'VehicleOutFromHubFinal', label: 'Vehicle Out From Hub Final', isMandatory: true },
+      { key: 'OpeningKM', label: 'Opening KM', isMandatory: true },
+      { key: 'ClosingKM', label: 'Closing KM', isMandatory: true },
       { key: 'TotalKM', label: 'Total KM' },
       { key: 'ExtraKM', label: 'Extra KM' },
       { key: 'TotalDutyHours', label: 'Total Duty Hours' },
@@ -4549,7 +4676,7 @@ const DailyVehicleTransactionForm = () => {
                     </div>
 
                     <div className="form-group">
-                      <label>Trip Number</label>
+                      <label>Trip Number *</label>
                       <input
                         type="text"
                         name="TripNumber"
@@ -4907,7 +5034,7 @@ const DailyVehicleTransactionForm = () => {
 
                 {/* Trip No */}
                 <div className="form-group">
-                  <label>Trip No</label>
+                  <label>Trip No *</label>
                   <input
                     type="text"
                     name="TripNo"
@@ -6281,14 +6408,46 @@ const DailyVehicleTransactionForm = () => {
         )}
         
         {importErrors.length > 0 && (
-          <div style={{ padding: '15px', marginBottom: '20px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '5px', border: '1px solid #f5c6cb' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <h4 style={{ margin: 0 }}>Import Errors ({importErrors.length})</h4>
-              <button onClick={() => setImportErrors([])} style={{ background: 'none', border: 'none', color: '#721c24', cursor: 'pointer', fontWeight: 'bold' }}>✖ Dismiss</button>
+          <div style={{
+            padding: '16px 20px',
+            marginBottom: '20px',
+            backgroundColor: '#fff5f5',
+            color: '#c53030',
+            borderRadius: '8px',
+            border: '1px solid #feb2b2',
+            boxShadow: '0 2px 8px rgba(229, 62, 62, 0.08)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #fed7d7', paddingBottom: '8px' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#9b2c2c', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>⚠️</span> Import Incomplete — {importErrors.length} {importErrors.length === 1 ? 'Record' : 'Records'} Not Imported
+              </h4>
+              <button
+                onClick={() => setImportErrors([])}
+                style={{
+                  background: '#fed7d7',
+                  border: 'none',
+                  color: '#9b2c2c',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '12px',
+                  padding: '4px 10px',
+                  borderRadius: '4px'
+                }}
+              >
+                ✕ Dismiss
+              </button>
             </div>
-            <ul style={{ margin: 0, paddingLeft: '20px', maxHeight: '150px', overflowY: 'auto', fontSize: '14px' }}>
+            <p style={{ margin: '0 0 10px 0', fontSize: '12px', color: '#742a2a', fontWeight: '500' }}>
+              The following rows could not be imported. Please review the specific error details and correct your Excel file:
+            </p>
+            <ul style={{ margin: 0, paddingLeft: '18px', maxHeight: '200px', overflowY: 'auto', fontSize: '13px', lineHeight: '1.6' }}>
               {importErrors.map((err, idx) => (
-                <li key={idx} style={{ marginBottom: '5px' }}>{err}</li>
+                <li key={idx} style={{ marginBottom: '6px', color: '#742a2a' }}>
+                  <strong style={{ color: '#9b2c2c' }}>{err.split(' — Failed: ')[0]}</strong>
+                  {err.includes(' — Failed: ') && (
+                    <span style={{ color: '#c53030' }}> — <span style={{ textDecoration: 'underline' }}>Reason:</span> {err.split(' — Failed: ')[1]}</span>
+                  )}
+                </li>
               ))}
             </ul>
           </div>
