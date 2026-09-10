@@ -416,45 +416,63 @@ const DataTable = ({
         return exportRow;
       });
 
-      // Create workbook and worksheet
+      // Create workbook and worksheets
       // FALLBACK: Use ExcelJS for styled client-side export
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Data');
+      
+      const isTransactionData = exportFilename?.toLowerCase().includes('transaction') || data.some(d => d.TripType || d.TypeOfTransaction);
 
-      // Define columns
-      const sheetColumns = displayedColumns.map(col => ({
-        header: typeof col.label === 'string' ? col.label : col.key,
-        key: col.label,
-        width: Math.max((typeof col.label === 'string' ? col.label.length : 10), 15)
-      }));
-      worksheet.columns = sheetColumns;
+      const addWorksheetWithData = (sheetTitle, rowsData) => {
+        const worksheet = workbook.addWorksheet(sheetTitle);
 
-      // Add data rows
-      exportData.forEach(row => {
-        worksheet.addRow(row);
-      });
+        // Define columns
+        const sheetColumns = displayedColumns.map(col => ({
+          header: typeof col.label === 'string' ? col.label : col.key,
+          key: col.label,
+          width: Math.max((typeof col.label === 'string' ? col.label.length : 10), 15)
+        }));
+        worksheet.columns = sheetColumns;
 
-      // Style the header row
-      const headerRow = worksheet.getRow(1);
-      headerRow.font = { bold: true };
-      headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFFFD7A7' } // Standard peach color from transaction forms
-      };
-      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-
-      // Add borders to all cells
-      worksheet.eachRow((row) => {
-        row.eachCell((cell) => {
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-          };
+        // Add data rows
+        rowsData.forEach(row => {
+          worksheet.addRow(row);
         });
-      });
+
+        // Style the header row
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFD7A7' } // Standard peach color from transaction forms
+        };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+        // Add borders to all cells
+        worksheet.eachRow((row) => {
+          row.eachCell((cell) => {
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+          });
+        });
+      };
+
+      if (isTransactionData) {
+        const typeCol = displayedColumns.find(c => c.key === 'TripType' || c.key === 'TypeOfTransaction' || c.key === 'Type');
+        const typeKey = typeCol?.label || 'Type';
+
+        const fixedRows = exportData.filter(r => String(r[typeKey] || '').toLowerCase().includes('fixed'));
+        const adhocRows = exportData.filter(r => !String(r[typeKey] || '').toLowerCase().includes('fixed'));
+
+        addWorksheetWithData('Fixed', fixedRows);
+        addWorksheetWithData('Adhoc', adhocRows);
+      } else {
+        addWorksheetWithData('Data', exportData);
+      }
 
       // Generate and download file
       const buffer = await workbook.xlsx.writeBuffer();

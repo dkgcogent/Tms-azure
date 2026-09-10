@@ -147,6 +147,12 @@ module.exports = (pool) => {
             v.Status,
             v.CreatedAt,
             v.UpdatedAt,
+            v.CustomerCompanyName,
+            v.Project,
+            v.Location,
+            v.CustomerSite,
+            v.CogentEmployee,
+            v.GSTNo,
             vn.VendorName,
             vn.VendorCode,
             d.DriverName,
@@ -705,8 +711,8 @@ module.exports = (pool) => {
             VehiclePhotoFront, VehiclePhotoBack, VehiclePhotoLeftSide, VehiclePhotoRightSide,
             VehiclePhotoInterior, VehiclePhotoEngine, VehiclePhotoRoof, VehiclePhotoDoor,
             ServiceBillPhoto, InsuranceCopy, FitnessCertificateUpload, PollutionPhoto, StateTaxPhoto, NoEntryPassCopy, Status,
-            CustomerCompanyName, Project, Location, CustomerSite, CogentEmployee
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            CustomerCompanyName, Project, Location, CustomerSite, CogentEmployee, GSTNo
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
         const fallbackValues = [
           vehicle.VehicleRegistrationNo,
@@ -767,7 +773,8 @@ module.exports = (pool) => {
           vehicle.Project || null,
           vehicle.Location || null,
           vehicle.CustomerSite || null,
-          vehicle.CogentEmployee || null
+          vehicle.CogentEmployee || null,
+          vehicle.GSTNo || null
         ];
 
         [result] = await pool.query(fallbackQuery, fallbackValues);
@@ -958,7 +965,7 @@ module.exports = (pool) => {
           VehicleFitnessCertificateIssue = ?, FitnessExpiry = ?, VehiclePollutionDate = ?,
           PollutionExpiry = ?, StateTaxIssue = ?, StateTaxExpiry = ?,
           Status = ?,
-          CustomerCompanyName = ?, Project = ?, Location = ?, CustomerSite = ?, CogentEmployee = ?, UpdatedAt = CURRENT_TIMESTAMP
+          CustomerCompanyName = ?, Project = ?, Location = ?, CustomerSite = ?, CogentEmployee = ?, GSTNo = ?, UpdatedAt = CURRENT_TIMESTAMP
         WHERE VehicleID = ?`;
 
       const convertGPS = (val) => (val === 'Yes' || val === 1 || val === '1' || val === true ? 1 : 0);
@@ -1007,6 +1014,7 @@ module.exports = (pool) => {
         vehicle.Location || null,
         vehicle.CustomerSite || null,
         vehicle.CogentEmployee || null,
+        vehicle.GSTNo || null,
         id
       ];
 

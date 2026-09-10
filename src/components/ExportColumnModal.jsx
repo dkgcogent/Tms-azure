@@ -22,12 +22,7 @@ const MANDATORY_IMPORT_KEYS = new Set([
   'vehicleoutfromhubfordelivery', 'vehicle_out_from_hub_for_delivery', 'outtime', 'out_time',
   'vehiclereturnathub', 'vehicle_return_at_hub', 'returntime', 'return_time',
   'vehicleenteredathubreturn', 'vehicle_entered_at_hub_return', 'returnentrytime', 'return_entry_time',
-  'vehicleoutfromhubfinal', 'vehicle_out_from_hub_final', 'finalouttime', 'final_out_time',
-  'arrivaltimeathub', 'arrival_time_at_hub',
-  'intimebycust', 'in_time_by_cust',
-  'outtimefromhub', 'out_time_from_hub',
-  'outtimefrom', 'out_time_from',
-  'returnreportingtime', 'return_reporting_time'
+  'vehicleoutfromhubfinal', 'vehicle_out_from_hub_final', 'finalouttime', 'final_out_time'
 ]);
 
 export const isColumnMandatory = (col) => {
@@ -174,104 +169,130 @@ const ExportColumnModal = ({
       workbook.creator = 'Cogentes TMS';
       workbook.created = new Date();
 
-      const worksheet = workbook.addWorksheet(sheetName);
+      // Function to build and style a worksheet
+      const populateWorksheet = (worksheetName, sheetRows) => {
+        const worksheet = workbook.addWorksheet(worksheetName);
 
-      // Define worksheet columns
-      worksheet.columns = activeColumns.map(col => {
-        const headerText = typeof col.label === 'string' ? col.label : col.key;
-        return {
-          header: headerText,
-          key: col.key,
-          width: Math.max(headerText.length + 5, 15)
-        };
-      });
-
-      // Style header row with distinct color per cell (Mandatory = Orange/Amber, Optional = Purple)
-      const headerRow = worksheet.getRow(1);
-      headerRow.height = 30;
-      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-
-      activeColumns.forEach((col, idx) => {
-        const cell = headerRow.getCell(idx + 1);
-        const mandatory = isColumnMandatory(col);
-
-        cell.font = { 
-          bold: true, 
-          color: { argb: 'FFFFFFFF' }, 
-          size: 11,
-          name: 'Calibri'
-        };
-
-        if (mandatory) {
-          // Orange / Amber highlight for mandatory import columns
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFEA580C' } // Vibrant Amber-Orange
+        // Define worksheet columns
+        worksheet.columns = activeColumns.map(col => {
+          const headerText = typeof col.label === 'string' ? col.label : col.key;
+          return {
+            header: headerText,
+            key: col.key,
+            width: Math.max(headerText.length + 5, 15)
           };
-          cell.note = 'Required for importing Excel into TMS';
-        } else {
-          // Purple / Indigo for optional columns
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FF5B45FF' } // Royal Purple
-          };
-        }
-
-        cell.border = {
-          top: { style: 'medium', color: { argb: 'FFFFFFFF' } },
-          bottom: { style: 'medium', color: { argb: 'FFFFFFFF' } },
-          left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
-          right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
-        };
-      });
-
-      // Add data rows
-      data.forEach((item, index) => {
-        const rowData = {};
-        activeColumns.forEach(col => {
-          if (col.isSerialNumber || col.key === '__serial_number__' || col.key === 'SerialNumber') {
-            rowData[col.key] = index + 1;
-          } else {
-            const rawVal = item[col.key];
-            rowData[col.key] = formatCellValue(rawVal, col.key);
-          }
         });
 
-        const row = worksheet.addRow(rowData);
-        row.height = 22;
-        row.alignment = { vertical: 'middle', horizontal: 'left' };
-      });
+        // Style header row with distinct color per cell (Mandatory = Orange/Amber, Optional = Purple)
+        const headerRow = worksheet.getRow(1);
+        headerRow.height = 30;
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-      // Apply borders to all cells
-      worksheet.eachRow((row, rowNumber) => {
-        row.eachCell((cell) => {
-          if (rowNumber > 1) {
-            cell.border = {
-              top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-              left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-              bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
-              right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+        activeColumns.forEach((col, idx) => {
+          const cell = headerRow.getCell(idx + 1);
+          const mandatory = isColumnMandatory(col);
+
+          cell.font = { 
+            bold: true, 
+            color: { argb: 'FFFFFFFF' }, 
+            size: 11,
+            name: 'Calibri'
+          };
+
+          if (mandatory) {
+            // Orange / Amber highlight for mandatory import columns
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFEA580C' } // Vibrant Amber-Orange
             };
-            cell.font = { size: 10, name: 'Calibri' };
+            cell.note = 'Required for importing Excel into TMS';
+          } else {
+            // Purple / Indigo for optional columns
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FF5B45FF' } // Royal Purple
+            };
           }
-        });
-      });
 
-      // Auto-fit column widths with bounds
-      worksheet.columns.forEach(column => {
-        let maxLen = column.header ? String(column.header).length : 12;
-        column.eachCell({ includeEmpty: false }, (cell, rowNumber) => {
-          if (rowNumber > 1) {
-            const cellVal = cell.value ? String(cell.value) : '';
-            if (cellVal.length > maxLen) {
-              maxLen = Math.min(cellVal.length, 50); // cap max column width at 50
-            }
-          }
+          cell.border = {
+            top: { style: 'medium', color: { argb: 'FFFFFFFF' } },
+            bottom: { style: 'medium', color: { argb: 'FFFFFFFF' } },
+            left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+            right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+          };
         });
-        column.width = Math.max(maxLen + 4, 14);
-      });
+
+        // Add data rows
+        sheetRows.forEach((item, index) => {
+          const rowData = {};
+          activeColumns.forEach(col => {
+            if (col.isSerialNumber || col.key === '__serial_number__' || col.key === 'SerialNumber') {
+              rowData[col.key] = index + 1;
+            } else {
+              const rawVal = item[col.key];
+              rowData[col.key] = formatCellValue(rawVal, col.key);
+            }
+          });
+
+          const row = worksheet.addRow(rowData);
+          row.height = 22;
+          row.alignment = { vertical: 'middle', horizontal: 'left' };
+        });
+
+        // Apply borders to all cells
+        worksheet.eachRow((row, rowNumber) => {
+          row.eachCell((cell) => {
+            if (rowNumber > 1) {
+              cell.border = {
+                top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+                right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+              };
+              cell.font = { size: 10, name: 'Calibri' };
+            }
+          });
+        });
+
+        // Auto-fit column widths with bounds
+        worksheet.columns.forEach(column => {
+          let maxLen = column.header ? String(column.header).length : 12;
+          column.eachCell({ includeEmpty: false }, (cell, rowNumber) => {
+            if (rowNumber > 1) {
+              const cellVal = cell.value ? String(cell.value) : '';
+              if (cellVal.length > maxLen) {
+                maxLen = Math.min(cellVal.length, 50); // cap max column width at 50
+              }
+            }
+          });
+          column.width = Math.max(maxLen + 4, 14);
+        });
+      };
+
+      // Check if dataset contains transactions to split into Fixed and Adhoc sheets
+      const isTransactionDataset = sheetName === 'Transactions' || 
+        fileName.toLowerCase().includes('transaction') ||
+        data.some(d => d.TripType || d.TypeOfTransaction);
+
+      if (isTransactionDataset) {
+        const fixedRows = data.filter(d => {
+          const t = String(d.TripType || d.TypeOfTransaction || d.Type || '').trim().toLowerCase();
+          return t === 'fixed';
+        });
+
+        const adhocRows = data.filter(d => {
+          const t = String(d.TripType || d.TypeOfTransaction || d.Type || '').trim().toLowerCase();
+          return t !== 'fixed';
+        });
+
+        // Create both 'Fixed' and 'Adhoc' sheets
+        populateWorksheet('Fixed', fixedRows);
+        populateWorksheet('Adhoc', adhocRows);
+      } else {
+        populateWorksheet(sheetName || 'Data', data);
+      }
 
       // Write to buffer and trigger download
       const buffer = await workbook.xlsx.writeBuffer();
@@ -294,7 +315,8 @@ const ExportColumnModal = ({
         font-family: system-ui, sans-serif; font-size: 14px; font-weight: 500;
         animation: modalSlideUp 0.3s ease;
       `;
-      successToast.innerHTML = `✅ <strong>Export Complete!</strong><br><small>Downloaded ${data.length} records with ${activeColumns.length} columns.</small>`;
+      const sheetNamesList = workbook.worksheets.map(w => w.name).join(', ');
+      successToast.innerHTML = `✅ <strong>Export Complete!</strong><br><small>Downloaded ${data.length} records in sheets: ${sheetNamesList}.</small>`;
       document.body.appendChild(successToast);
       setTimeout(() => {
         if (document.body.contains(successToast)) {

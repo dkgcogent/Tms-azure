@@ -375,6 +375,7 @@ const VehicleForm = () => {
     VehicleCode: '',
     CustomerCompanyName: '',
     Project: '',
+    GSTNo: '',
     Location: '',
     CustomerSite: '',
     CogentEmployee: '',
@@ -772,9 +773,11 @@ const VehicleForm = () => {
       setParsedSiteData([]);
       setFilteredLocations([]);
       setFilteredSites([]);
-      setVehicleData(prev => ({ ...prev, Project: '', Location: '', CustomerSite: '', CogentEmployee: '' }));
+      setVehicleData(prev => ({ ...prev, Project: '', GSTNo: '', Location: '', CustomerSite: '', CogentEmployee: '' }));
       return;
     }
+
+    const customerGst = selectedCustomer.GSTNo || selectedCustomer.GST || selectedCustomer.CompanyGST || '';
 
     // Load projects for selected customer
     projectAPI.getByCustomer(selectedCustomer.CustomerID).then(resp => {
@@ -785,7 +788,7 @@ const VehicleForm = () => {
     setParsedSiteData([]);
     setFilteredLocations([]);
     setFilteredSites([]);
-    setVehicleData(prev => ({ ...prev, Project: '', Location: '', CustomerSite: '', CogentEmployee: '' }));
+    setVehicleData(prev => ({ ...prev, Project: '', GSTNo: customerGst, Location: '', CustomerSite: '', CogentEmployee: '' }));
   }, [vehicleData.CustomerCompanyName, allCustomers]);
 
   // When Project changes, fetch locations & customer sites for that project
@@ -794,12 +797,17 @@ const VehicleForm = () => {
       setParsedSiteData([]);
       setFilteredLocations([]);
       setFilteredSites([]);
-      setVehicleData(prev => ({ ...prev, Location: '', CustomerSite: '', CogentEmployee: '' }));
+      const selectedCustomer = allCustomers.find(c => c.Name === vehicleData.CustomerCompanyName || c.MasterCustomerName === vehicleData.CustomerCompanyName);
+      const customerGst = selectedCustomer?.GSTNo || selectedCustomer?.GST || selectedCustomer?.CompanyGST || '';
+      setVehicleData(prev => ({ ...prev, Location: '', CustomerSite: '', CogentEmployee: '', GSTNo: customerGst }));
       return;
     }
 
     // Find all project records matching the selected ProjectName
     const matchingProjects = filteredProjects.filter(p => p.ProjectName === vehicleData.Project);
+    const projectGst = matchingProjects.find(p => p.GSTNo)?.GSTNo || matchingProjects[0]?.GSTNo || '';
+    const selectedCustomer = allCustomers.find(c => c.Name === vehicleData.CustomerCompanyName || c.MasterCustomerName === vehicleData.CustomerCompanyName);
+    const effectiveGst = projectGst || selectedCustomer?.GSTNo || selectedCustomer?.GST || selectedCustomer?.CompanyGST || '';
 
     const parsed = [];
     const locSet = new Set();
@@ -850,8 +858,8 @@ const VehicleForm = () => {
     setParsedSiteData(parsed);
     setFilteredLocations([...locSet]);
     setFilteredSites([]);
-    setVehicleData(prev => ({ ...prev, Location: '', CustomerSite: '', CogentEmployee: '' }));
-  }, [vehicleData.Project, filteredProjects]);
+    setVehicleData(prev => ({ ...prev, Location: '', CustomerSite: '', CogentEmployee: '', GSTNo: effectiveGst || prev.GSTNo }));
+  }, [vehicleData.Project, filteredProjects, vehicleData.CustomerCompanyName, allCustomers]);
 
   // When Location changes, filter sites for that location
   useEffect(() => {
@@ -1341,6 +1349,7 @@ const VehicleForm = () => {
         VehicleID: 'VehicleID',
         CustomerCompanyName: 'CustomerCompanyName',
         Project: 'Project',
+        GSTNo: 'GSTNo',
         Location: 'Location',
         CustomerSite: 'CustomerSite',
         CogentEmployee: 'CogentEmployee',
@@ -1787,6 +1796,7 @@ const VehicleForm = () => {
   const vehicleColumns = [
     { key: 'CustomerCompanyName', label: 'Company Name', sortable: true },
     { key: 'Project', label: 'Project', sortable: true },
+    { key: 'GSTNo', label: 'GST No', sortable: true },
     { key: 'Location', label: 'Location', sortable: true },
     { key: 'CustomerSite', label: 'Customer Site', sortable: true },
     { key: 'CogentEmployee', label: 'Cogent Employee', sortable: true },
@@ -1865,6 +1875,19 @@ const VehicleForm = () => {
                     placeholder="Select..."
                     emptyLabel="Select..."
                     disabled={!vehicleData.CustomerCompanyName}
+                  />
+                </div>
+
+                {/* GST No. (auto-populated from Customer/Project) */}
+                <div className="form-field">
+                  <label className="form-field-label">GST No.</label>
+                  <input
+                    type="text"
+                    name="GSTNo"
+                    value={vehicleData.GSTNo || ''}
+                    onChange={handleInputChange}
+                    placeholder="Auto-filled from Customer/Project"
+                    className="form-input"
                   />
                 </div>
 

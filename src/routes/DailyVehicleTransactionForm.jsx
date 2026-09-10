@@ -348,14 +348,9 @@ const DailyVehicleTransactionForm = () => {
   const filteredFilterVehicles = React.useMemo(() => {
     const selectedCust = (tableFilters.customer || '').trim().toLowerCase();
     const selectedProj = (tableFilters.project || '').trim().toLowerCase();
-
-    if (!selectedCust && !selectedProj) {
-      return Array.from(new Set(vehicles.map(v => v.VehicleRegistrationNo || v.VehicleNumber).filter(Boolean))).sort((a, b) => a.localeCompare(b));
-    }
-
     const vehicleSet = new Set();
 
-    // From transactions matching the customer / project
+    // 1. From loaded transactions
     transactions.forEach(t => {
       const tCust = (t.CustomerName || t.CompanyName || '').trim().toLowerCase();
       const tProj = (t.ProjectName || '').trim().toLowerCase();
@@ -364,12 +359,16 @@ const DailyVehicleTransactionForm = () => {
       const projMatch = !selectedProj || tProj === selectedProj;
 
       if (custMatch && projMatch) {
-        const vNum = t.VehicleRegistrationNo || t.VehicleNumber;
-        if (vNum) vehicleSet.add(vNum);
+        const vNum = t.VehicleRegistrationNo || t.VehicleNumber || t.DisplayVehicle;
+        if (vNum && typeof vNum === 'string' && vNum.trim() && vNum.toUpperCase() !== 'NA' && vNum !== '-') {
+          // Clean display vehicle if it has '(+1 more)'
+          const cleanVNum = vNum.split(' (')[0].trim();
+          if (cleanVNum) vehicleSet.add(cleanVNum);
+        }
       }
     });
 
-    // From vehicles master list
+    // 2. From vehicles master list
     vehicles.forEach(v => {
       const vCust = (v.CustomerCompanyName || '').trim().toLowerCase();
       const vProj = (v.Project || '').trim().toLowerCase();
@@ -379,7 +378,9 @@ const DailyVehicleTransactionForm = () => {
 
       if (custMatch && projMatch) {
         const vNum = v.VehicleRegistrationNo || v.VehicleNumber;
-        if (vNum) vehicleSet.add(vNum);
+        if (vNum && typeof vNum === 'string' && vNum.trim() && vNum.toUpperCase() !== 'NA' && vNum !== '-') {
+          vehicleSet.add(vNum.trim());
+        }
       }
     });
 
@@ -2639,6 +2640,17 @@ const DailyVehicleTransactionForm = () => {
           return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
       }
+
+      // Handle HH.MM.SS or HH.MM (dot-separated)
+      const dotTimeMatch = str.match(/^(\d{1,2})\.(\d{1,2})(?:\.(\d{1,2}))?$/);
+      if (dotTimeMatch) {
+        const h = parseInt(dotTimeMatch[1], 10);
+        const m = parseInt(dotTimeMatch[2], 10);
+        const s = dotTimeMatch[3] ? parseInt(dotTimeMatch[3], 10) : 0;
+        if (h < 24 && m < 60 && s < 60) {
+          return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+      }
       
       // Handle HHMM (4 digits)
       const hhmmMatch = str.match(/^(\d{2})(\d{2})$/);
@@ -2799,6 +2811,7 @@ const DailyVehicleTransactionForm = () => {
 
           let resolvedVehicleIds = [];
           let resolvedVehNo = '';
+          let foundV = null; // Keep reference to vehicle master record for auto-fill
           const rawVehicle = getCellValue(row, [
             'VehicleNumber', 'Vehicle Number', 'VehicleNo', 'Vehicle No', 'Vehicle', 'Veh No', 'Veh Number',
             'Registration No', 'Reg No', 'Vehicle Reg No', 'VehicleID', 'Vehicle ID', 'Vehicle_Number', 'Vehicle_No'
@@ -2806,7 +2819,7 @@ const DailyVehicleTransactionForm = () => {
 
           if (rawVehicle) {
             const cleanRaw = String(rawVehicle).replace(/\s/g, '').toLowerCase();
-            const foundV = vehicles.find(v =>
+            foundV = vehicles.find(v =>
               String(v.VehicleID) === String(rawVehicle) ||
               String(v.vehicle_id) === String(rawVehicle) ||
               (v.VehicleRegistrationNo && String(v.VehicleRegistrationNo).replace(/\s/g, '').toLowerCase() === cleanRaw) ||
@@ -2829,7 +2842,93 @@ const DailyVehicleTransactionForm = () => {
               : 'Vehicle Number is missing. A valid registered vehicle is required for Fixed transactions.');
           }
 
+          // ── AUTO-FILL FROM VEHICLE MASTER (Fixed type only) ──────────────────
+          // Declare resolvedDriverIds here so it can be populated by auto-fill or Excel lookup below
           let resolvedDriverIds = [];
+          let vehicleMasterFill = {};
+          if (normalizedTripType === 'fixed' && foundV) {
+            // Use already-resolved variables from outer scope; getCellValue for fields not yet resolved
+            const fvCustomerName = customerNameRaw || '';          // from outer scope
+            const fvProjectName  = projectNameRaw || '';           // from outer scope
+            const fvLocation     = rawExcelLocation || '';         // raw excel (not fallback-resolved)
+            const fvCustSite     = rawExcelCustSite || '';         // raw excel (not fallback-resolved)
+            const fvVendorName   = getCellValue(row, ['VendorName', 'Vendor Name', 'Vendor']) || '';
+            const fvDriverName   = getCellValue(row, ['DriverName', 'Driver Name', 'Driver']) || '';
+            const fvDriverNumber = getCellValue(row, ['DriverNumber', 'Driver Number', 'DriverMobile']) || '';
+            const fvGSTNo        = getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || '';
+
+            // If CustomerName is blank, pull from vehicle master
+            if (!fvCustomerName && foundV.CustomerCompanyName) {
+              vehicleMasterFill.CustomerName = foundV.CustomerCompanyName;
+              vehicleMasterFill.CompanyName  = foundV.CustomerCompanyName;
+              if (!resolvedCustomerId) {
+                const autoC = customers.find(c =>
+                  (c.MasterCustomerName || c.Name || c.CustomerName || '').trim().toLowerCase() ===
+                  foundV.CustomerCompanyName.trim().toLowerCase()
+                );
+                if (autoC) {
+                  resolvedCustomerId = autoC.CustomerID || autoC.id;
+                  vehicleMasterFill.CustomerID = resolvedCustomerId;
+                }
+              }
+            }
+
+            // If ProjectName is blank, pull from vehicle master
+            if (!fvProjectName && foundV.Project) {
+              vehicleMasterFill.ProjectName = foundV.Project;
+              if (!resolvedProjectId) {
+                const autoP = projects.find(p =>
+                  (p.ProjectName || '').trim().toLowerCase() === foundV.Project.trim().toLowerCase()
+                );
+                if (autoP) {
+                  resolvedProjectId = autoP.ProjectID || autoP.project_id;
+                  vehicleMasterFill.ProjectID = resolvedProjectId;
+                }
+              }
+            }
+
+            // If Location is blank (no raw value from Excel), pull from vehicle master
+            if (!fvLocation && foundV.Location) {
+              vehicleMasterFill.Location     = foundV.Location;
+              vehicleMasterFill.CustomerSite = foundV.CustomerSite || foundV.Location;
+            }
+            // If CustomerSite is blank specifically, pull from vehicle master
+            if (!fvCustSite && foundV.CustomerSite) {
+              vehicleMasterFill.CustomerSite = foundV.CustomerSite;
+            }
+
+            // If VendorName is blank, pull from vehicle master
+            if (!fvVendorName && foundV.VendorName) {
+              vehicleMasterFill.VendorName = foundV.VendorName;
+            }
+
+            // If DriverName is blank, pull from vehicle master
+            if (!fvDriverName && foundV.DriverName) {
+              vehicleMasterFill.DriverName   = foundV.DriverName;
+              vehicleMasterFill.DriverNumber = foundV.DriverMobileNo || foundV.DriverPhone || fvDriverNumber || '';
+              // Resolve DriverID from drivers list or use vehicle master's stored DriverID
+              const autoD = drivers.find(d =>
+                (d.DriverName || '').trim().toLowerCase() === foundV.DriverName.trim().toLowerCase()
+              );
+              if (autoD) {
+                resolvedDriverIds.push(String(autoD.DriverID || autoD.driver_id));
+              } else if (foundV.DriverID) {
+                resolvedDriverIds.push(String(foundV.DriverID));
+              }
+            }
+
+            // If GSTNo is blank, pull from vehicle master
+            if (!fvGSTNo && foundV.GSTNo) {
+              vehicleMasterFill.GSTNo = foundV.GSTNo;
+            }
+
+            if (Object.keys(vehicleMasterFill).length > 0) {
+              console.log(`🔄 Auto-filled missing fields from Vehicle Master for "${resolvedVehNo}":`, vehicleMasterFill);
+            }
+          }
+          // ── END AUTO-FILL ────────────────────────────────────────────────────
+
+          // Excel-explicit driver lookup — overrides auto-fill if Excel has a driver value
           const rawDriver = getCellValue(row, ['DriverID', 'Driver ID', 'Driver Name', 'DriverName', 'Driver']);
           if (rawDriver) {
             const foundD = drivers.find(d =>
@@ -2839,11 +2938,12 @@ const DailyVehicleTransactionForm = () => {
               (d.driver_name && d.driver_name.toLowerCase() === String(rawDriver).toLowerCase())
             );
             if (foundD) {
-              resolvedDriverIds.push(String(foundD.DriverID || foundD.driver_id));
+              resolvedDriverIds = [String(foundD.DriverID || foundD.driver_id)]; // override auto-fill
             } else if (!isNaN(rawDriver)) {
-              resolvedDriverIds.push(String(rawDriver));
+              resolvedDriverIds = [String(rawDriver)]; // override auto-fill
             }
           }
+
 
           // Format dates using the helper with expanded column variations
           const transactionDateStr = getCurrentDate(); // Entry date will always be the date when data is imported
@@ -2852,6 +2952,73 @@ const DailyVehicleTransactionForm = () => {
 
           const returnDateRaw = getCellValue(row, ['VehicleReturnDate', 'Vehicle Return Date', 'Vehicle_Return_Date', 'Return Date', 'ReturnDate', 'Date', 'TransactionDate']);
           const vehicleReturnDateStr = formatExcelDate(returnDateRaw) || transactionDateStr;
+
+          // ── MANDATORY VALIDATION (Fixed type only) ──────────────────────────
+          // Validate ONLY the required columns for Fixed type:
+          // Vehicle Number, Trip No, Service Date, Return Date, Opening KM, Closing KM, and Hub Timings.
+          // (Customer Name, Project Name, Location, Customer Site, Vendor Name, Driver Name, GST No are auto-filled from vehicle master)
+          if (normalizedTripType === 'fixed') {
+            const rawTripNo = getCellValue(row, ['TripNo', 'Trip No', 'Trip_No']);
+            const rawOpeningKM = getCellValue(row, ['OpeningKM', 'Opening KM']);
+            const rawClosingKM = getCellValue(row, ['ClosingKM', 'Closing KM']);
+            const rawReportingAtHub = getCellValue(row, ['VehicleReportingAtHub', 'Vehicle Reporting at Hub', 'ReportingTime', 'Vehicle Reporting']);
+            const rawEntryInHub = getCellValue(row, ['VehicleEntryInHub', 'Vehicle Entry in Hub', 'EntryTime', 'Vehicle Entry']);
+            const rawOutForDelivery = getCellValue(row, ['VehicleOutFromHubForDelivery', 'Vehicle Out from Hub for Delivery', 'OutTime', 'Out for Delivery']);
+            const rawReturnAtHub = getCellValue(row, ['VehicleReturnAtHub', 'Vehicle Return at Hub', 'ReturnTime', 'Vehicle Return']);
+            const rawEnteredAtHubReturn = getCellValue(row, ['VehicleEnteredAtHubReturn', 'Vehicle Entered at Hub (Return)', 'ReturnEntryTime', 'Return Entry']);
+            const rawOutFinal = getCellValue(row, ['VehicleOutFromHubFinal', 'Vehicle Out from Hub Final (Trip Close)', 'FinalOutTime', 'Final Out']);
+
+            const missingFixedFields = [];
+            if (!rawVehicle) missingFixedFields.push('Vehicle Number');
+            if (!rawTripNo) missingFixedFields.push('Trip No');
+            if (!serviceDateRaw) missingFixedFields.push('Service Date');
+            if (!returnDateRaw) missingFixedFields.push('Return Date');
+            if (rawOpeningKM === '' || rawOpeningKM === undefined || rawOpeningKM === null) missingFixedFields.push('Opening KM');
+            if (rawClosingKM === '' || rawClosingKM === undefined || rawClosingKM === null) missingFixedFields.push('Closing KM');
+            if (!rawReportingAtHub) missingFixedFields.push('Vehicle Reporting At Hub');
+            if (!rawEntryInHub) missingFixedFields.push('Vehicle Entry In Hub');
+            if (!rawOutForDelivery) missingFixedFields.push('Vehicle Out From Hub For Delivery');
+            if (!rawReturnAtHub) missingFixedFields.push('Vehicle Return At Hub');
+            if (!rawEnteredAtHubReturn) missingFixedFields.push('Vehicle Entered At Hub Return');
+            if (!rawOutFinal) missingFixedFields.push('Vehicle Out From Hub Final');
+
+            if (missingFixedFields.length > 0) {
+              throw new Error(`Missing mandatory column(s) for Fixed transaction: ${missingFixedFields.join(', ')}`);
+            }
+          }
+
+          // ── MANDATORY VALIDATION (Adhoc & Replacement types) ─────────────────
+          // Validate required columns for Adhoc / Replacement:
+          // Vehicle Number, Trip No, Service Date, Return Date, Opening KM, Closing KM, and Hub Timings.
+          if (normalizedTripType === 'adhoc' || normalizedTripType === 'replacement') {
+            const rawTripNo = getCellValue(row, ['TripNo', 'Trip No', 'Trip_No']);
+            const rawOpeningKM = getCellValue(row, ['OpeningKM', 'Opening KM']);
+            const rawClosingKM = getCellValue(row, ['ClosingKM', 'Closing KM']);
+            const rawReportingAtHub = getCellValue(row, ['VehicleReportingAtHub', 'Vehicle Reporting at Hub', 'ReportingTime', 'Vehicle Reporting']);
+            const rawEntryInHub = getCellValue(row, ['VehicleEntryInHub', 'Vehicle Entry in Hub', 'EntryTime', 'Vehicle Entry']);
+            const rawOutForDelivery = getCellValue(row, ['VehicleOutFromHubForDelivery', 'Vehicle Out from Hub for Delivery', 'OutTime', 'Out for Delivery']);
+            const rawReturnAtHub = getCellValue(row, ['VehicleReturnAtHub', 'Vehicle Return at Hub', 'ReturnTime', 'Vehicle Return']);
+            const rawEnteredAtHubReturn = getCellValue(row, ['VehicleEnteredAtHubReturn', 'Vehicle Entered at Hub (Return)', 'ReturnEntryTime', 'Return Entry']);
+            const rawOutFinal = getCellValue(row, ['VehicleOutFromHubFinal', 'Vehicle Out from Hub Final (Trip Close)', 'FinalOutTime', 'Final Out']);
+
+            const missingAdhocFields = [];
+            if (!rawVehicle) missingAdhocFields.push('Vehicle Number');
+            if (!rawTripNo) missingAdhocFields.push('Trip No');
+            if (!serviceDateRaw) missingAdhocFields.push('Service Date');
+            if (!returnDateRaw) missingAdhocFields.push('Return Date');
+            if (rawOpeningKM === '' || rawOpeningKM === undefined || rawOpeningKM === null) missingAdhocFields.push('Opening KM');
+            if (rawClosingKM === '' || rawClosingKM === undefined || rawClosingKM === null) missingAdhocFields.push('Closing KM');
+            if (!rawReportingAtHub) missingAdhocFields.push('Vehicle Reporting At Hub');
+            if (!rawEntryInHub) missingAdhocFields.push('Vehicle Entry In Hub');
+            if (!rawOutForDelivery) missingAdhocFields.push('Vehicle Out From Hub For Delivery');
+            if (!rawReturnAtHub) missingAdhocFields.push('Vehicle Return At Hub');
+            if (!rawEnteredAtHubReturn) missingAdhocFields.push('Vehicle Entered At Hub Return');
+            if (!rawOutFinal) missingAdhocFields.push('Vehicle Out From Hub Final');
+
+            if (missingAdhocFields.length > 0) {
+              throw new Error(`Missing mandatory column(s) for ${tripType} transaction: ${missingAdhocFields.join(', ')}`);
+            }
+          }
 
           // Check for duplicate vehicle on same service date
           const cleanVehNo = resolvedVehNo ? String(resolvedVehNo).replace(/\s+/g, '').toUpperCase() : '';
@@ -2899,8 +3066,6 @@ const DailyVehicleTransactionForm = () => {
               TransactionDate: transactionDateStr,
               ServiceDate: serviceDateStr,
               VehicleReturnDate: vehicleReturnDateStr,
-              CustomerID: resolvedCustomerId || null,
-              ProjectID: resolvedProjectId || null,
               TripNo: getCellValue(row, ['TripNo', 'Trip No', 'Trip_No']) || '',
               VehicleIDs: JSON.stringify(resolvedVehicleIds),
               DriverIDs: JSON.stringify(resolvedDriverIds),
@@ -2921,22 +3086,25 @@ const DailyVehicleTransactionForm = () => {
               VehicleOutFromHubFinal: formatExcelTime(getCellValue(row, ['VehicleOutFromHubFinal', 'Vehicle Out from Hub Final (Trip Close)', 'FinalOutTime', 'Final Out'])),
               
               Status: 'Pending',
-              Location: excelLocation,
-              CustomerSite: excelCustSite,
-              CustomerName: customerNameRaw, // Send explicit Customer Name
-              CompanyName: resolvedCompanyName,
-              ProjectName: getCellValue(row, ['ProjectName', 'Project Name', 'Project']) || '',
-              GSTNo: getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || '',
+              // Auto-fill from vehicle master if blank in Excel (Fixed type only)
+              Location: excelLocation || vehicleMasterFill.Location || '',
+              CustomerSite: excelCustSite || vehicleMasterFill.CustomerSite || '',
+              CustomerName: customerNameRaw || vehicleMasterFill.CustomerName || '',
+              CompanyName: resolvedCompanyName || vehicleMasterFill.CompanyName || '',
+              CustomerID: vehicleMasterFill.CustomerID || resolvedCustomerId || null,
+              ProjectName: getCellValue(row, ['ProjectName', 'Project Name', 'Project']) || vehicleMasterFill.ProjectName || '',
+              ProjectID: vehicleMasterFill.ProjectID || resolvedProjectId || null,
+              GSTNo: getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || vehicleMasterFill.GSTNo || '',
               VehicleNumber: resolvedVehNo || getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo']) || '',
-              VendorName: getCellValue(row, ['VendorName', 'Vendor Name', 'Vendor']) || '',
+              VendorName: getCellValue(row, ['VendorName', 'Vendor Name', 'Vendor']) || vehicleMasterFill.VendorName || '',
               VendorNumber: getCellValue(row, ['VendorNumber', 'Vendor Number', 'VendorCode']) || '',
-              DriverName: getCellValue(row, ['DriverName', 'Driver Name', 'Driver']) || '',
-              DriverNumber: getCellValue(row, ['DriverNumber', 'Driver Number', 'DriverMobile']) || '',
+              DriverName: getCellValue(row, ['DriverName', 'Driver Name', 'Driver']) || vehicleMasterFill.DriverName || '',
+              DriverNumber: getCellValue(row, ['DriverNumber', 'Driver Number', 'DriverMobile']) || vehicleMasterFill.DriverNumber || '',
               ReplacementDriverName: getCellValue(row, ['ReplacementDriverName', 'Replacement Driver Name']) || '',
               ReplacementDriverNo: getCellValue(row, ['ReplacementDriverNo', 'Replacement Driver No.', 'Replacement Driver No']) || '',
               DriverAadharNumber: getCellValue(row, ['DriverAadharNumber', 'Driver Aadhar Number', 'AadharNumber']) || '',
               DriverLicenceNumber: getCellValue(row, ['DriverLicenceNumber', 'Driver Licence Number', 'LicenceNumber']) || '',
-              VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || '',
+              VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || foundV?.VehicleType || '',
               
               // Financial and Calculated Fields
               VFreightFix: getCellValue(row, ['VFreightFix', 'V. Freight (Fix)', 'V.Freight (Fix)', 'V. FREIGHT (FIX)']),
@@ -3066,6 +3234,14 @@ const DailyVehicleTransactionForm = () => {
           }
 
           // Build row identification info so user knows which record didn't import
+          const sNoRaw = getCellValue(row, [
+            'S.No', 'S.No.', 'S No', 'S No.', 'SNo', 'Serial No', 'Serial Number',
+            'SerialNumber', 'Sr No', 'Sr. No', 'Sr.No', 'Sr.No.', 'Sl No', 'Sl. No', 'S/N'
+          ]);
+          const rowDisplay = (sNoRaw !== '' && sNoRaw !== null && sNoRaw !== undefined)
+            ? `S.No: ${sNoRaw}`
+            : `Row ${i + 2}`;
+
           const tripNo = getCellValue(row, ['TripNo', 'Trip No', 'Trip_No']) || '';
           const vehicleNo = getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo', 'Vehicle No', 'VehicleID']) || '';
           const cust = getCellValue(row, ['Customer', 'CustomerName', 'Customer Name', 'CompanyName', 'Company Name']) || '';
@@ -3078,7 +3254,7 @@ const DailyVehicleTransactionForm = () => {
             proj ? `Project: ${proj}` : null
           ].filter(Boolean).join(' | ');
 
-          const rowLabel = `[Sheet: ${sheetName}] Row ${i + 2}${identifiers ? ` (${identifiers})` : ''}`;
+          const rowLabel = `[Sheet: ${sheetName}] ${rowDisplay}${identifiers ? ` (${identifiers})` : ''}`;
           setImportErrors(prev => [...prev, `${rowLabel} — Failed: ${reason}`]);
         }
       }
@@ -4235,34 +4411,34 @@ const DailyVehicleTransactionForm = () => {
       { key: 'TripNo', label: 'Trip No', isMandatory: true },
       { key: 'Shift', label: 'Shift' },
       { key: 'CustomerID', label: 'Customer ID' },
-      { key: 'CustomerName', label: 'Customer Name', isMandatory: true },
+      { key: 'CustomerName', label: 'Customer Name' },
       { key: 'CompanyName', label: 'Company Name' },
       { key: 'GSTNo', label: 'GST No' },
       { key: 'ProjectID', label: 'Project ID' },
-      { key: 'ProjectName', label: 'Project Name', isMandatory: true },
+      { key: 'ProjectName', label: 'Project Name' },
       { key: 'State', label: 'State' },
-      { key: 'Location', label: 'Location', isMandatory: true },
-      { key: 'CustomerSite', label: 'Customer Site', isMandatory: true },
+      { key: 'Location', label: 'Location' },
+      { key: 'CustomerSite', label: 'Customer Site' },
       { key: 'VehicleNumber', label: 'Vehicle Number', isMandatory: true },
       { key: 'VehicleType', label: 'Vehicle Type' },
       { key: 'FixVehicleNo', label: 'Fix Vehicle No' },
       { key: 'VendorID', label: 'Vendor ID' },
-      { key: 'VendorName', label: 'Vendor Name', isMandatory: true },
+      { key: 'VendorName', label: 'Vendor Name' },
       { key: 'VendorNumber', label: 'Vendor Number' },
       { key: 'VendorCode', label: 'Vendor Code' },
       { key: 'DriverID', label: 'Driver ID' },
-      { key: 'DriverName', label: 'Driver Name', isMandatory: true },
-      { key: 'DriverNumber', label: 'Driver Number', isMandatory: true },
+      { key: 'DriverName', label: 'Driver Name' },
+      { key: 'DriverNumber', label: 'Driver Number' },
       { key: 'DriverAadharNumber', label: 'Driver Aadhar Number' },
       { key: 'DriverLicenceNumber', label: 'Driver Licence Number' },
       { key: 'ReplacementDriverID', label: 'Replacement Driver ID' },
       { key: 'ReplacementDriverName', label: 'Replacement Driver Name' },
       { key: 'ReplacementDriverNo', label: 'Replacement Driver No' },
-      { key: 'ArrivalTimeAtHub', label: 'Arrival Time at Hub', isMandatory: true },
-      { key: 'InTimeByCust', label: 'In Time by Cust', isMandatory: true },
-      { key: 'OutTimeFromHub', label: 'Out Time from Hub', isMandatory: true },
-      { key: 'OutTimeFrom', label: 'Out Time From HUB', isMandatory: true },
-      { key: 'ReturnReportingTime', label: 'Return Reporting Time', isMandatory: true },
+      { key: 'ArrivalTimeAtHub', label: 'Arrival Time at Hub' },
+      { key: 'InTimeByCust', label: 'In Time by Cust' },
+      { key: 'OutTimeFromHub', label: 'Out Time from Hub' },
+      { key: 'OutTimeFrom', label: 'Out Time From HUB' },
+      { key: 'ReturnReportingTime', label: 'Return Reporting Time' },
       { key: 'VehicleReportingAtHub', label: 'Vehicle Reporting At Hub', isMandatory: true },
       { key: 'VehicleEntryInHub', label: 'Vehicle Entry In Hub', isMandatory: true },
       { key: 'VehicleOutFromHubForDelivery', label: 'Vehicle Out From Hub For Delivery', isMandatory: true },
