@@ -2466,9 +2466,22 @@ const DailyVehicleTransactionForm = () => {
     // Duplicate Check: Same vehicle on same service date must not be accepted
     const targetServiceDate = transactionData.ServiceDate || transactionData.Date;
     let currentVehicleNum = '';
+    let selectedVehicleIds = [];
+
     if (masterData.TypeOfTransaction === 'Fixed') {
-      const selectedV = vehicles.find(v => (masterData.VehicleNo && masterData.VehicleNo.includes(v.VehicleID)) || v.VehicleID == transactionData.VehicleID);
-      currentVehicleNum = selectedV?.VehicleRegistrationNo || transactionData.VehicleNumber || '';
+      const vIds = Array.isArray(masterData.VehicleNo) 
+        ? masterData.VehicleNo.map(String) 
+        : (masterData.VehicleNo ? [String(masterData.VehicleNo)] : []);
+      
+      const selectedV = vehicles.find(v => 
+        vIds.includes(String(v.VehicleID)) || 
+        vIds.includes(String(v.vehicle_id)) ||
+        vIds.some(vid => v.VehicleRegistrationNo && String(v.VehicleRegistrationNo).replace(/\s/g, '').toLowerCase() === vid.replace(/\s/g, '').toLowerCase()) ||
+        String(v.VehicleID) === String(transactionData.VehicleID)
+      );
+
+      selectedVehicleIds = selectedV ? [String(selectedV.VehicleID || selectedV.vehicle_id)] : vIds;
+      currentVehicleNum = selectedV?.VehicleRegistrationNo || (typeof masterData.VehicleNo === 'string' ? masterData.VehicleNo : '') || transactionData.VehicleNumber || '';
     } else {
       currentVehicleNum = transactionData.VehicleNumber || '';
     }
@@ -2481,8 +2494,21 @@ const DailyVehicleTransactionForm = () => {
       const duplicateTx = transactions.find(t => {
         if (editingId && (t.TransactionID === editingId || t.id === editingId)) return false;
         const tDate = (t.ServiceDate || t.TransactionDate || '').split('T')[0];
-        const tVeh = (t.VehicleNumber || t.VehicleRegistrationNo || '').replace(/\s+/g, '').toUpperCase();
-        return tDate === cleanTargetDate && tVeh === cleanCurrentVeh;
+        const tVeh = (t.VehicleNumber || t.VehicleRegistrationNo || t.DisplayVehicle || '').replace(/\s+/g, '').toUpperCase();
+        
+        let tVehIds = [];
+        if (t.VehicleIDs) {
+          try {
+            tVehIds = typeof t.VehicleIDs === 'string' ? JSON.parse(t.VehicleIDs).map(String) : (Array.isArray(t.VehicleIDs) ? t.VehicleIDs.map(String) : []);
+          } catch (e) {
+            tVehIds = [];
+          }
+        }
+
+        const idMatch = selectedVehicleIds.some(id => tVehIds.includes(String(id)));
+        const vehMatch = tVeh === cleanCurrentVeh || (cleanCurrentVeh.length > 4 && tVeh.includes(cleanCurrentVeh));
+
+        return tDate === cleanTargetDate && (vehMatch || idMatch);
       });
 
       if (duplicateTx) {
@@ -2772,18 +2798,28 @@ const DailyVehicleTransactionForm = () => {
           console.log('📊 Excel Import - Resolved Info:', { sheetName, customerNameRaw, resolvedCustomerId, resolvedProjectId, excelLocation, excelCustSite, tripType });
 
           let resolvedVehicleIds = [];
-          const rawVehicle = getCellValue(row, ['VehicleID', 'Vehicle ID', 'Vehicle Number', 'VehicleNumber', 'VehicleNo', 'Vehicle No']);
+          let resolvedVehNo = '';
+          const rawVehicle = getCellValue(row, [
+            'VehicleNumber', 'Vehicle Number', 'VehicleNo', 'Vehicle No', 'Vehicle', 'Veh No', 'Veh Number',
+            'Registration No', 'Reg No', 'Vehicle Reg No', 'VehicleID', 'Vehicle ID', 'Vehicle_Number', 'Vehicle_No'
+          ]);
+
           if (rawVehicle) {
+            const cleanRaw = String(rawVehicle).replace(/\s/g, '').toLowerCase();
             const foundV = vehicles.find(v =>
-              v.VehicleID == rawVehicle ||
-              v.vehicle_id == rawVehicle ||
-              (v.VehicleRegistrationNo && String(v.VehicleRegistrationNo).replace(/\s/g, '').toLowerCase() === String(rawVehicle).replace(/\s/g, '').toLowerCase()) ||
-              (v.vehicle_number && String(v.vehicle_number).replace(/\s/g, '').toLowerCase() === String(rawVehicle).replace(/\s/g, '').toLowerCase())
+              String(v.VehicleID) === String(rawVehicle) ||
+              String(v.vehicle_id) === String(rawVehicle) ||
+              (v.VehicleRegistrationNo && String(v.VehicleRegistrationNo).replace(/\s/g, '').toLowerCase() === cleanRaw) ||
+              (v.vehicle_number && String(v.vehicle_number).replace(/\s/g, '').toLowerCase() === cleanRaw)
             );
             if (foundV) {
               resolvedVehicleIds.push(String(foundV.VehicleID || foundV.vehicle_id));
-            } else if (!isNaN(rawVehicle)) {
-              resolvedVehicleIds.push(String(rawVehicle));
+              resolvedVehNo = foundV.VehicleRegistrationNo || foundV.vehicle_number || String(rawVehicle);
+            } else {
+              resolvedVehNo = String(rawVehicle);
+              if (!isNaN(rawVehicle)) {
+                resolvedVehicleIds.push(String(rawVehicle));
+              }
             }
           }
 
@@ -2818,10 +2854,6 @@ const DailyVehicleTransactionForm = () => {
           const vehicleReturnDateStr = formatExcelDate(returnDateRaw) || transactionDateStr;
 
           // Check for duplicate vehicle on same service date
-          const resolvedVehNo = normalizedTripType === 'fixed'
-            ? (vehicles.find(v => resolvedVehicleIds.includes(String(v.VehicleID)))?.VehicleRegistrationNo || getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo', 'Vehicle No']) || '')
-            : (getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo', 'Vehicle No']) || '');
-
           const cleanVehNo = resolvedVehNo ? String(resolvedVehNo).replace(/\s+/g, '').toUpperCase() : '';
           const cleanServiceDate = serviceDateStr ? serviceDateStr.split('T')[0] : '';
 
@@ -2836,8 +2868,21 @@ const DailyVehicleTransactionForm = () => {
             // 2. Check if duplicate already exists in database
             const existingInDb = transactions.find(t => {
               const tDate = (t.ServiceDate || t.TransactionDate || '').split('T')[0];
-              const tVeh = (t.VehicleNumber || t.VehicleRegistrationNo || '').replace(/\s+/g, '').toUpperCase();
-              return tDate === cleanServiceDate && tVeh === cleanVehNo;
+              const tVeh = (t.VehicleNumber || t.VehicleRegistrationNo || t.DisplayVehicle || '').replace(/\s+/g, '').toUpperCase();
+              
+              let tVehIds = [];
+              if (t.VehicleIDs) {
+                try {
+                  tVehIds = typeof t.VehicleIDs === 'string' ? JSON.parse(t.VehicleIDs).map(String) : (Array.isArray(t.VehicleIDs) ? t.VehicleIDs.map(String) : []);
+                } catch (e) {
+                  tVehIds = [];
+                }
+              }
+
+              const idMatch = resolvedVehicleIds.some(id => tVehIds.includes(String(id)));
+              const vehMatch = tVeh === cleanVehNo || (cleanVehNo.length > 4 && tVeh.includes(cleanVehNo));
+
+              return tDate === cleanServiceDate && (vehMatch || idMatch);
             });
 
             if (existingInDb) {
@@ -2882,7 +2927,7 @@ const DailyVehicleTransactionForm = () => {
               CompanyName: resolvedCompanyName,
               ProjectName: getCellValue(row, ['ProjectName', 'Project Name', 'Project']) || '',
               GSTNo: getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || '',
-              VehicleNumber: getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo']) || '',
+              VehicleNumber: resolvedVehNo || getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo']) || '',
               VendorName: getCellValue(row, ['VendorName', 'Vendor Name', 'Vendor']) || '',
               VendorNumber: getCellValue(row, ['VendorNumber', 'Vendor Number', 'VendorCode']) || '',
               DriverName: getCellValue(row, ['DriverName', 'Driver Name', 'Driver']) || '',
@@ -3015,8 +3060,8 @@ const DailyVehicleTransactionForm = () => {
             } else if (rawError.includes('cannot be null') || (rawError.includes('Column') && rawError.includes('null'))) {
               const nullMatch = rawError.match(/Column '([^']+)' cannot be null/i);
               reason = nullMatch ? `Required column "${nullMatch[1]}" is empty` : 'A mandatory column is empty';
-            } else if (rawError.includes('Duplicate entry')) {
-              reason = 'Duplicate entry: record already exists in database';
+            } else if (rawError.toLowerCase().includes('duplicate') || rawError.toLowerCase().includes('already has') || rawError.toLowerCase().includes('already exists')) {
+              reason = (rawError.includes('Vehicle "') || rawError.startsWith('Duplicate in Excel')) ? rawError : `Duplicate Entry: ${rawError}`;
             }
           }
 

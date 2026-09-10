@@ -77,6 +77,112 @@ module.exports = (pool) => {
     }
   };
 
+  // Helper to check for duplicate transaction (same vehicle on same ServiceDate)
+  const checkDuplicateTransaction = async ({ tripType, serviceDate, transactionDate, vehicleIds, vehicleNumber, excludeTransactionId = null }) => {
+    const targetDate = (serviceDate || transactionDate || '').toString().split('T')[0];
+    if (!targetDate) return null;
+
+    let targetVehicles = [];
+    let targetVehicleIdStrings = [];
+
+    if (tripType === 'Fixed') {
+      let vIds = vehicleIds;
+      if (typeof vIds === 'string') {
+        try { vIds = JSON.parse(vIds); } catch (e) { vIds = []; }
+      }
+      if (Array.isArray(vIds) && vIds.length > 0) {
+        targetVehicleIdStrings = vIds.map(String);
+        try {
+          const [vRows] = await pool.query(
+            'SELECT VehicleID, VehicleRegistrationNo FROM vehicle WHERE VehicleID IN (?)',
+            [vIds]
+          );
+          vRows.forEach(vr => {
+            if (vr.VehicleRegistrationNo) targetVehicles.push(vr.VehicleRegistrationNo.trim());
+          });
+        } catch (vErr) {
+          console.warn('Could not fetch vehicle registration numbers for duplicate check:', vErr);
+        }
+      }
+      if (vehicleNumber && typeof vehicleNumber === 'string' && vehicleNumber.trim() && !targetVehicles.includes(vehicleNumber.trim())) {
+        targetVehicles.push(vehicleNumber.trim());
+      }
+    } else {
+      const rawVeh = Array.isArray(vehicleNumber) ? vehicleNumber[0] : vehicleNumber;
+      if (rawVeh && typeof rawVeh === 'string' && rawVeh.trim() && rawVeh.toUpperCase() !== 'NA') {
+        targetVehicles.push(rawVeh.trim());
+      }
+    }
+
+    if (targetVehicles.length === 0 && targetVehicleIdStrings.length === 0) return null;
+
+    const vehiclesToCheck = targetVehicles.length > 0 ? targetVehicles : [''];
+    for (const vehNo of vehiclesToCheck) {
+      const cleanVeh = vehNo ? vehNo.replace(/\s+/g, '').toLowerCase() : '';
+
+      // Check fixed_transactions
+      let fixedSql = `
+        SELECT ft.TransactionID, ft.TripNo, ft.VehicleNumber, ft.VehicleIDs, v.VehicleRegistrationNo
+        FROM fixed_transactions ft
+        LEFT JOIN vehicle v ON v.VehicleID = JSON_UNQUOTE(JSON_EXTRACT(ft.VehicleIDs, '$[0]'))
+        WHERE (DATE(ft.ServiceDate) = ? OR (ft.ServiceDate IS NULL AND DATE(ft.TransactionDate) = ?))
+      `;
+      const fixedParams = [targetDate, targetDate];
+
+      const vehConditions = [];
+      if (cleanVeh) {
+        vehConditions.push("LOWER(REPLACE(COALESCE(ft.VehicleNumber, ''), ' ', '')) = ?");
+        fixedParams.push(cleanVeh);
+        vehConditions.push("LOWER(REPLACE(COALESCE(v.VehicleRegistrationNo, ''), ' ', '')) = ?");
+        fixedParams.push(cleanVeh);
+      }
+      if (targetVehicleIdStrings.length > 0) {
+        vehConditions.push("JSON_UNQUOTE(JSON_EXTRACT(ft.VehicleIDs, '$[0]')) IN (?)");
+        fixedParams.push(targetVehicleIdStrings);
+      }
+
+      if (vehConditions.length > 0) {
+        fixedSql += ` AND (${vehConditions.join(' OR ')})`;
+      }
+      if (excludeTransactionId) {
+        fixedSql += ` AND ft.TransactionID != ?`;
+        fixedParams.push(excludeTransactionId);
+      }
+      fixedSql += ` LIMIT 1`;
+
+      const [dupFixed] = await pool.query(fixedSql, fixedParams);
+      if (dupFixed.length > 0) {
+        const tripLabel = dupFixed[0].TripNo ? `Trip No: ${dupFixed[0].TripNo}` : `Transaction #${dupFixed[0].TransactionID}`;
+        const matchedVeh = dupFixed[0].VehicleRegistrationNo || dupFixed[0].VehicleNumber || vehNo || 'Selected Vehicle';
+        return `Vehicle "${matchedVeh}" already has a Fixed transaction on Service Date "${targetDate}" (${tripLabel}). Duplicate entries for the same vehicle on the same date are not allowed.`;
+      }
+
+      // Check adhoc_transactions
+      if (cleanVeh) {
+        let adhocSql = `
+          SELECT at.TransactionID, at.TripNo, at.VehicleNumber, at.TripType
+          FROM adhoc_transactions at
+          WHERE (DATE(at.ServiceDate) = ? OR (at.ServiceDate IS NULL AND DATE(at.TransactionDate) = ?))
+            AND LOWER(REPLACE(COALESCE(at.VehicleNumber, ''), ' ', '')) = ?
+        `;
+        const adhocParams = [targetDate, targetDate, cleanVeh];
+        if (excludeTransactionId) {
+          adhocSql += ` AND at.TransactionID != ?`;
+          adhocParams.push(excludeTransactionId);
+        }
+        adhocSql += ` LIMIT 1`;
+
+        const [dupAdhoc] = await pool.query(adhocSql, adhocParams);
+        if (dupAdhoc.length > 0) {
+          const tripLabel = dupAdhoc[0].TripNo ? `Trip No: ${dupAdhoc[0].TripNo}` : `Transaction #${dupAdhoc[0].TransactionID}`;
+          return `Vehicle "${vehNo}" already has an ${dupAdhoc[0].TripType || 'Adhoc'} transaction on Service Date "${targetDate}" (${tripLabel}). Duplicate entries for the same vehicle on the same date are not allowed.`;
+        }
+      }
+    }
+
+    return null;
+  };
+
   // Get all daily vehicle transactions with pagination and date filtering
   router.get('/', async (req, res) => {
     try {
@@ -1279,6 +1385,20 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
         }
       }
 
+      // DUPLICATE TRANSACTION CHECK: Same vehicle on same ServiceDate is not allowed
+      const dupError = await checkDuplicateTransaction({
+        tripType: TripType,
+        serviceDate: ServiceDate,
+        transactionDate: TransactionDate,
+        vehicleIds: vehicleIds,
+        vehicleNumber: VehicleNumber || null,
+        excludeTransactionId: null
+      });
+      if (dupError) {
+        console.warn('⚠️ Duplicate transaction blocked in POST /:', dupError);
+        return res.status(400).json({ success: false, error: dupError });
+      }
+
       // Route to correct table based on TripType and store multiple vehicles/drivers in single row
       let insertQuery, values;
 
@@ -1802,6 +1922,20 @@ COALESCE(at.CompanyName, c.MasterCustomerName, c.Name, 'Unknown Customer') as Cu
       if (transactionTable === 'fixed_transactions') {
         VehicleIDs = ensureValidJsonString(VehicleIDs || existingRecord.VehicleIDs);
         DriverIDs = ensureValidJsonString(DriverIDs || existingRecord.DriverIDs);
+      }
+
+      // DUPLICATE TRANSACTION CHECK: Same vehicle on same ServiceDate is not allowed
+      const dupError = await checkDuplicateTransaction({
+        tripType: TripType || (transactionTable === 'fixed_transactions' ? 'Fixed' : 'Adhoc'),
+        serviceDate: ServiceDate || existingRecord.ServiceDate,
+        transactionDate: TransactionDate || existingRecord.TransactionDate,
+        vehicleIds: VehicleIDs || existingRecord.VehicleIDs,
+        vehicleNumber: VehicleNumber || existingRecord.VehicleNumber || null,
+        excludeTransactionId: originalTransactionID
+      });
+      if (dupError) {
+        console.warn('⚠️ Duplicate transaction blocked in PUT /:id:', dupError);
+        return res.status(400).json({ success: false, error: dupError });
       }
 
       // Build update query based on table type
