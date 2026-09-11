@@ -16,6 +16,8 @@ const MANDATORY_IMPORT_KEYS = new Set([
   'drivername', 'driver_name', 'drivernumber', 'driver_number',
   'openingkm', 'opening_km',
   'closingkm', 'closing_km',
+  // GST fields — mandatory for billing and import
+  'gstno', 'gst_no', 'gstnumber', 'gst_number', 'customergstno', 'customer_gst_no', 'customergst',
   // Timing columns
   'vehiclereportingathub', 'vehicle_reporting_at_hub', 'reportingtime', 'reporting_time',
   'vehicleentryinhub', 'vehicle_entry_in_hub', 'entrytime', 'entry_time',

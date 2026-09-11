@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as xlsx from 'xlsx';
-import { vehicleTransactionAPI, adhocTransactionAPI, customerAPI, vehicleAPI, driverAPI, projectAPI, vendorAPI, apiHelpers } from '../services/api';
+import { vehicleTransactionAPI, adhocTransactionAPI, customerAPI, vehicleAPI, driverAPI, projectAPI, vendorAPI, commercialAPI, apiHelpers } from '../services/api';
 import DataTable from '../components/DataTable';
 import ExportColumnModal from '../components/ExportColumnModal';
 
@@ -2732,6 +2732,15 @@ const DailyVehicleTransactionForm = () => {
       let failedCount = 0;
       const batchProcessedVehicles = new Set();
 
+      // ─── Pre-fetch customer_commercial records ONCE for Adhoc validation ────────
+      let customerCommercials = [];
+      try {
+        const ccRes = await commercialAPI.getAll();
+        customerCommercials = ccRes.data || [];
+      } catch (e) {
+        console.warn('⚠️ Could not load customer_commercial records for validation:', e.message);
+      }
+
       for (let i = 0; i < totalRows; i++) {
         setImportProgress({ current: i + 1, total: totalRows, success: successCount, failed: failedCount });
         const { row, defaultSheetTripType, sheetName } = allRows[i];
@@ -2797,15 +2806,21 @@ const DailyVehicleTransactionForm = () => {
             }
           }
 
-          // 3. Resolve Location and CustomerSite from expanded column headers (fallback to found project/customer location)
-          const rawExcelLocation = getCellValue(row, ['Location', 'CustomerSite', 'Customer Site', 'CustSite', 'Cust Site', 'Hub', 'Site', 'Loc']);
-          const rawExcelCustSite = getCellValue(row, ['CustSite', 'Cust Site', 'CustomerSite', 'Customer Site', 'Location', 'Hub', 'Site']);
+          // 3. Resolve Location and CustomerSite (strict column matching to prevent cross-contamination)
+          const rawExcelLocation = getCellValue(row, ['Location', 'Loc', 'Hub Location', 'HubLocation', 'City']);
+          const rawExcelCustSite = getCellValue(row, ['CustomerSite', 'Customer Site', 'CustSite', 'Cust Site', 'Site', 'Hub']);
 
           const fallbackLoc = foundP?.Location ? foundP.Location.split(',')[0].trim() : (foundC?.Locations ? foundC.Locations.split(',')[0].trim() : '');
           const fallbackSite = foundP?.CustomerSite ? foundP.CustomerSite.split(',')[0].trim() : (foundC?.CustomerSite ? foundC.CustomerSite.split(',')[0].trim() : fallbackLoc);
 
-          const excelLocation = (rawExcelLocation && rawExcelLocation !== 'Default') ? rawExcelLocation : (fallbackLoc || 'Default');
-          const excelCustSite = (rawExcelCustSite && rawExcelCustSite !== 'Default') ? rawExcelCustSite : (fallbackSite || excelLocation);
+          // For Fixed entries, fallbackLoc is allowed if not in Excel.
+          // For Adhoc entries, Location MUST come strictly from Excel.
+          const excelLocation = (rawExcelLocation && rawExcelLocation !== 'Default') 
+            ? rawExcelLocation 
+            : (normalizedTripType === 'fixed' ? (fallbackLoc || 'Default') : '');
+          const excelCustSite = (rawExcelCustSite && rawExcelCustSite !== 'Default') 
+            ? rawExcelCustSite 
+            : (fallbackSite || (normalizedTripType === 'fixed' ? excelLocation : ''));
 
           console.log('📊 Excel Import - Resolved Info:', { sheetName, customerNameRaw, resolvedCustomerId, resolvedProjectId, excelLocation, excelCustSite, tripType });
 
@@ -3015,6 +3030,14 @@ const DailyVehicleTransactionForm = () => {
             if (!rawEnteredAtHubReturn) missingAdhocFields.push('Vehicle Entered At Hub Return');
             if (!rawOutFinal) missingAdhocFields.push('Vehicle Out From Hub Final');
 
+            // Adhoc mandatory business fields (Customer Name, Project Name, Location)
+            const rawAdhocCust = customerNameRaw || getCellValue(row, ['CustomerName', 'Customer Name', 'Customer', 'CompanyName', 'Company Name']);
+            const rawAdhocProj = getCellValue(row, ['ProjectName', 'Project Name', 'Project']);
+            const rawAdhocLoc  = getCellValue(row, ['Location', 'Loc', 'Hub Location', 'HubLocation', 'City']);
+            if (!rawAdhocCust || String(rawAdhocCust).trim() === '') missingAdhocFields.push('Customer Name');
+            if (!rawAdhocProj || String(rawAdhocProj).trim() === '') missingAdhocFields.push('Project Name');
+            if (!rawAdhocLoc || String(rawAdhocLoc).trim() === '' || String(rawAdhocLoc).trim().toLowerCase() === 'default') missingAdhocFields.push('Location');
+
             if (missingAdhocFields.length > 0) {
               throw new Error(`Missing mandatory column(s) for ${tripType} transaction: ${missingAdhocFields.join(', ')}`);
             }
@@ -3087,14 +3110,16 @@ const DailyVehicleTransactionForm = () => {
               
               Status: 'Pending',
               // Auto-fill from vehicle master if blank in Excel (Fixed type only)
-              Location: excelLocation || vehicleMasterFill.Location || '',
-              CustomerSite: excelCustSite || vehicleMasterFill.CustomerSite || '',
+              // NOTE: excelLocation may be the literal string 'Default' if no location was found in Excel or project/customer.
+              // We must NOT let that truthy 'Default' block the vehicle master auto-fill.
+              Location: (excelLocation && excelLocation !== 'Default') ? excelLocation : (vehicleMasterFill.Location || ''),
+              CustomerSite: (excelCustSite && excelCustSite !== 'Default') ? excelCustSite : (vehicleMasterFill.CustomerSite || ''),
               CustomerName: customerNameRaw || vehicleMasterFill.CustomerName || '',
               CompanyName: resolvedCompanyName || vehicleMasterFill.CompanyName || '',
               CustomerID: vehicleMasterFill.CustomerID || resolvedCustomerId || null,
               ProjectName: getCellValue(row, ['ProjectName', 'Project Name', 'Project']) || vehicleMasterFill.ProjectName || '',
               ProjectID: vehicleMasterFill.ProjectID || resolvedProjectId || null,
-              GSTNo: getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || vehicleMasterFill.GSTNo || '',
+              GSTNo: getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || vehicleMasterFill.GSTNo || foundV?.GSTNo || '',
               VehicleNumber: resolvedVehNo || getCellValue(row, ['VehicleNumber', 'Vehicle Number', 'VehicleNo']) || '',
               VendorName: getCellValue(row, ['VendorName', 'Vendor Name', 'Vendor']) || vehicleMasterFill.VendorName || '',
               VendorNumber: getCellValue(row, ['VendorNumber', 'Vendor Number', 'VendorCode']) || '',
@@ -3126,6 +3151,55 @@ const DailyVehicleTransactionForm = () => {
             await vehicleTransactionAPI.create(payload);
             successCount++;
           } else if (normalizedTripType === 'adhoc' || normalizedTripType === 'replacement') {
+            // ─── ADHOC / REPLACEMENT: Mandatory field validation ─────────────────────
+            const rawAdhocCust = customerNameRaw || getCellValue(row, ['CustomerName', 'Customer Name', 'Customer', 'CompanyName', 'Company Name']);
+            const rawAdhocProj = getCellValue(row, ['ProjectName', 'Project Name', 'Project']);
+            const rawAdhocLoc  = getCellValue(row, ['Location', 'Loc', 'Hub Location', 'HubLocation', 'City']);
+            const rawAdhocSite = getCellValue(row, ['CustomerSite', 'Customer Site', 'CustSite', 'Cust Site', 'Site', 'Hub']);
+
+            const adhocCustomerName = rawAdhocCust ? String(rawAdhocCust).trim() : '';
+            const adhocProjectName  = rawAdhocProj ? String(rawAdhocProj).trim() : '';
+            const adhocLocation     = (rawAdhocLoc && String(rawAdhocLoc).trim().toLowerCase() !== 'default') ? String(rawAdhocLoc).trim() : '';
+            const adhocCustSite     = (rawAdhocSite && String(rawAdhocSite).trim().toLowerCase() !== 'default') ? String(rawAdhocSite).trim() : '';
+
+            const adhocMissingFields = [];
+            if (!adhocCustomerName)  adhocMissingFields.push('Customer Name');
+            if (!adhocProjectName)   adhocMissingFields.push('Project Name');
+            if (!adhocLocation)      adhocMissingFields.push('Location');
+
+            if (adhocMissingFields.length > 0) {
+              throw new Error(`Missing mandatory field(s) for Adhoc entry: ${adhocMissingFields.join(', ')}`);
+            }
+
+            // ─── ADHOC: Customer + Project combination must exist in customer_commercial ─
+            const normalize = (s) => String(s || '').trim().toLowerCase();
+            const ccMatch = customerCommercials.find(cc => {
+              // Primary: match by resolved IDs (most reliable)
+              if (resolvedCustomerId && resolvedProjectId) {
+                return (
+                  (Number(cc.customer_id) === Number(resolvedCustomerId) ||
+                   Number(cc.customer_id) === Number(resolvedCustomerId)) &&
+                  (Number(cc.project_id)  === Number(resolvedProjectId)  ||
+                   Number(cc.project_id)  === Number(resolvedProjectId))
+                );
+              }
+              // Fallback: match by name strings stored in commercial table
+              const ccCustomer = normalize(cc.master_customer || cc.company_name);
+              const ccProject  = normalize(cc.project);
+              const rowCustomer = normalize(adhocCustomerName);
+              const rowProject  = normalize(adhocProjectName);
+              return (
+                (ccCustomer.includes(rowCustomer) || rowCustomer.includes(ccCustomer)) &&
+                (ccProject.includes(rowProject)   || rowProject.includes(ccProject))
+              );
+            });
+
+            if (!ccMatch) {
+              throw new Error(
+                `Adhoc entry validation failed — No matching commercial agreement found for Customer "${adhocCustomerName}" + Project "${adhocProjectName}". ` +
+                `Please ensure this Customer-Project combination exists in the Customer Commercial table.`
+              );
+            }
             payload = {
               TripType: normalizedTripType === 'replacement' ? 'Replacement' : 'Adhoc',
               TransactionDate: transactionDateStr,
@@ -3162,16 +3236,16 @@ const DailyVehicleTransactionForm = () => {
               VehicleOutFromHubFinal: formatExcelTime(getCellValue(row, ['VehicleOutFromHubFinal', 'Vehicle Out from Hub Final (Trip Close)', 'FinalOutTime', 'Final Out'])),
               
               Status: 'Pending',
-              Location: excelLocation,
-              CustomerSite: excelCustSite,
-              CustomerName: customerNameRaw, // Send explicit Customer Name
-              ProjectName: getCellValue(row, ['ProjectName', 'Project Name', 'Project']) || '',
+              Location: adhocLocation,
+              CustomerSite: adhocCustSite,
+              CustomerName: adhocCustomerName,
+              ProjectName: adhocProjectName,
               GSTNo: getCellValue(row, ['GSTNo', 'GST No', 'GST Number']) || '',
               VehicleType: getCellValue(row, ['VehicleType', 'Vehicle Type', 'Type of Vehicle']) || '',
 
               // Additional Fields
               State: getCellValue(row, ['State']) || '',
-              CustSite: excelCustSite,
+              CustSite: (excelCustSite && excelCustSite !== 'Default') ? excelCustSite : '',
               VendorCode: getCellValue(row, ['VendorCode', 'Vendor Code']) || '',
               DriverType: getCellValue(row, ['DriverType', 'Driver Type']) || '',
               VehicleOwnershipType: getCellValue(row, ['VehicleOwnershipType', 'Vehicle Ownership Type']) || '',
@@ -4413,12 +4487,13 @@ const DailyVehicleTransactionForm = () => {
       { key: 'CustomerID', label: 'Customer ID' },
       { key: 'CustomerName', label: 'Customer Name' },
       { key: 'CompanyName', label: 'Company Name' },
-      { key: 'GSTNo', label: 'GST No' },
+      { key: 'GSTNo', label: 'GST No', isMandatory: true },
       { key: 'ProjectID', label: 'Project ID' },
       { key: 'ProjectName', label: 'Project Name' },
       { key: 'State', label: 'State' },
       { key: 'Location', label: 'Location' },
-      { key: 'CustomerSite', label: 'Customer Site' },
+      { key: 'CustomerSite', label: 'Customer Site', isMandatory: true },
+      { key: 'CustomerGSTNo', label: 'Customer GST No', isMandatory: true },
       { key: 'VehicleNumber', label: 'Vehicle Number', isMandatory: true },
       { key: 'VehicleType', label: 'Vehicle Type' },
       { key: 'FixVehicleNo', label: 'Fix Vehicle No' },
